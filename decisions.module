@@ -1,0 +1,40 @@
+<?php
+
+/**
+ * @decisions
+ * Modular voting mechanisms, delegatable votes, taxonomy/category influenced controls and weighted voting
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function decisions_help($section) {
+  switch ($section) {
+    case 'admin/modules#description':
+      return t('Allow people to reproduce and surpass the kinds of decision-making instances that exist in face-to-face meetings.');
+  }
+}
+
+function decisions_contents() { 
+  $block = '';
+  return $block;
+}
+
+function decisions_block($op = 'list', $delta = 0, $edit = array()) {
+  switch($op) {
+    case 'list' :
+      $blocks[0]['info'] = t('A decisions block');
+      return $blocks;
+    case 'view' :
+      $blocks["content"] = decisions_contents();
+      $blocks["subject"] = "decisions";
+      return $blocks;
+  }
+}
+
+function decisions_settings() {
+  $output = '';
+  return $output;
+}
+
+?>
