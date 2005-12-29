@@ -11,7 +11,7 @@
 function decisions_help($section) {
   switch ($section) {
     case 'admin/modules#description':
-      return t('Allow people to reproduce and surpass the kinds of decision-making instances that exist in face-to-face meetings.');
+      return t('Allow people to reproduce and surpass the kinds of decision-making instances that exist in face-to-face meetings.<br /><br />Sponsored by <a href="http://www.koumbit.org">Koumbit.org</a>');
   }
 }
 
