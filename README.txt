@@ -1,7 +1,7 @@
 
 More information at http://decisions.gnuvernment.org
 
-Goal : 
+Goals : 
 
 To develop a voting module for integration with Drupal that features flexible 
 voting mechanisms, delegatable votes, taxonomy/category influenced controls 
