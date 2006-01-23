@@ -3,23 +3,36 @@
 /**
  * @decisions
  * Modular voting mechanisms, delegatable votes, taxonomy/category influenced controls and weighted voting
+ * See http://decisions.gnuvernment.org for more information on the project.
  */
 
 /**
- * Implementation of hook_help().
+ * Implementation of hook_access().
  */
-function decisions_help($section) {
-  switch ($section) {
-    case 'admin/modules#description':
-      return t('Allow people to reproduce and surpass the kinds of decision-making instances that exist in face-to-face meetings.<br /><br />Sponsored by <a href="http://www.koumbit.org">Koumbit.org</a>');
+function decisions_access($op, $node) {
+  global $user;
+
+  if ($op == 'create') {
+    // Only users with permission to do so may create this node type.
+    return user_access('create decisions');
+  }
+
+  if ($op == 'delete') {
+    return user_access('delete decisions');
+  }
+
+  if ($op == 'update') {
+  }
+
+  if ($op == 'update' || $op == 'delete') {
+    if (user_access('edit own example nodes') && ($user->uid == $node->uid)) {
+      return TRUE;
+    }
   }
 }
-
-function decisions_contents() { 
-  $block = '';
-  return $block;
-}
-
+/**
+ * Implementation of hook_block().
+ */
 function decisions_block($op = 'list', $delta = 0, $edit = array()) {
   switch($op) {
     case 'list' :
@@ -32,9 +45,136 @@ function decisions_block($op = 'list', $delta = 0, $edit = array()) {
   }
 }
 
+/**
+ * Content of the block, as returned by decisions_block('view')
+ */
+function decisions_contents() {
+  $block = '';
+  if ( user_access('view decisions') ) {
+    /* get list of decisions and show them */
+    if ( user_access('vote on decisions') ) {
+      /* add a link to vote on the decision */
+    }
+  }
+  return $block;
+}
+
+/**
+ * Implementation of hook_cron().
+ *
+ */
+function decisions_cron() {
+  /*
+  $result = db_query('SELECT p.nid FROM {poll} p INNER JOIN {node} n ON p.nid = n.nid WHERE (n.created + p.runtime) < '. time() .' AND p.active = 1 AND p.runtime != 0');
+  while ($poll = db_fetch_object($result)) {
+    db_query("UPDATE {poll} SET active = 0 WHERE nid = %d", $poll->nid);
+  }
+ */
+}
+
+/**
+ * Implementation of hook_delete().
+ */
+function decisions_delete($node) {
+  db_query("DELETE FROM {decisions} WHERE nid = %d", $node->nid);
+  db_query("DELETE FROM {decisions_choices} WHERE nid = %d", $node->nid);
+}
+
+/**
+ * Implementation of hook_form().
+ */
+function decisions_form($node) {
+
+  $form['title'] = array(
+    '#type'=> 'textfield',
+    '#title' => t('Title'),
+    '#required' => TRUE,
+    '#value' => $node->title,
+  );
+  $form['body'] = array(
+    '#type'=> 'textarea',
+    '#title' => t('Description'),
+    '#required' => FALSE,
+    '#value' => $node->body,
+  );
+
+
+  return array_merge($form, filter_form($node->format));
+}
+
+
+/**
+ * Implementation of hook_help().
+ */
+function decisions_help($section) {
+  switch ($section) {
+    case 'admin/modules#description':
+      return t('Allow people to reproduce and surpass the kinds of decision-making instances that exist in face-to-face meetings.');
+    case 'node/add#decisions':
+      return t('Submit a new decision to the electoral list.');
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function decisions_menu($may_cache) {
+  global $user;
+
+  $items = array();
+
+  if ($may_cache) {
+    $items[] = array('path' => 'node/add/decisions', 'title' => t('decision'),
+      'access' => user_access('create decisions'));
+    // Eventually, we could have a 'my decisions' kind of page...
+    /*
+    $items[] = array('path' => 'decisions', 'title' => t('decisions'),
+      'callback' => 'decision_page',
+      'access' => user_access('view decisions'),
+      'type' => MENU_SUGGESTED_ITEM);
+    $items[] = array('path' => 'decisions/'. $user->uid, 'title' => t('my decisions'),
+      'access' => user_access('create decisions'),
+      'type' => MENU_DYNAMIC_ITEM);
+    */
+  }
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_node_info().
+ */
+function decisions_node_info() {
+  return array('decisions' => array('name' => t('decision'), 'base' => 'decisions'));
+}
+
+/**
+ * Implementation of hook_node_name().
+ */
+function decisions_node_name($node) {
+  return t("decisions");
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function decisions_perm() {
+  return array('create decisions', 'delete decisions', 'view decisions', 'vote on decisions');
+}
+
+/**
+ * Implementation of hook_settings().
+ */
 function decisions_settings() {
   $output = '';
   return $output;
+}
+
+/**
+ * Implementation of hook_validate().
+ */
+function decisions_validate($node) {
+  // faut appeler form_set_error si necessaire
 }
 
 ?>
