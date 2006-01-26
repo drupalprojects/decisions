@@ -1,9 +1,12 @@
 <?php
 
 /**
- * @decisions
+ * @file
  * Modular voting mechanisms, delegatable votes, taxonomy/category influenced controls and weighted voting
  * See http://decisions.gnuvernment.org for more information on the project.
+ *
+ * Heavily inspired by other Drupal modules, mostly from poll.module, but we adapted it to "drupal forms api".
+ * Thanks to everyone for all the that was already written. (...and debugged!)
  */
 
 /**
@@ -13,19 +16,14 @@ function decisions_access($op, $node) {
   global $user;
 
   if ($op == 'create') {
-    // Only users with permission to do so may create this node type.
     return user_access('create decisions');
   }
-
   if ($op == 'delete') {
     return user_access('delete decisions');
   }
-
   if ($op == 'update') {
-  }
-
-  if ($op == 'update' || $op == 'delete') {
-    if (user_access('edit own example nodes') && ($user->uid == $node->uid)) {
+    /* if you can create it you can update it, provided it is your own... */
+    if (user_access('create decisions') && ($user->uid == $node->uid)) {
       return TRUE;
     }
   }
@@ -39,7 +37,7 @@ function decisions_block($op = 'list', $delta = 0, $edit = array()) {
       $blocks[0]['info'] = t('A decisions block');
       return $blocks;
     case 'view' :
-      $blocks["content"] = decisions_contents();
+      $blocks["content"] = decisions_block_contents();
       $blocks["subject"] = "decisions";
       return $blocks;
   }
@@ -48,7 +46,7 @@ function decisions_block($op = 'list', $delta = 0, $edit = array()) {
 /**
  * Content of the block, as returned by decisions_block('view')
  */
-function decisions_contents() {
+function decisions_block_contents() {
   $block = '';
   if ( user_access('view decisions') ) {
     /* get list of decisions and show them */
@@ -85,19 +83,57 @@ function decisions_delete($node) {
  */
 function decisions_form($node) {
 
+  /* standard node elements */
   $form['title'] = array(
-    '#type'=> 'textfield',
+    '#type' => 'textfield',
     '#title' => t('Title'),
     '#required' => TRUE,
-    '#value' => $node->title,
+    '#default_value' => $node->title,
   );
   $form['body'] = array(
-    '#type'=> 'textarea',
+    '#type' => 'textarea',
     '#title' => t('Description'),
     '#required' => FALSE,
-    '#value' => $node->body,
+    '#default_value' => $node->body,
   );
+  /* decision-specific elements */
+  /* this code is mostly from poll.module */
+  if (!isset($node->options)) {
+    $node->options = 5;
+  }
+  // User ticked 'need more choices'.
+  if ($node->moreoptions) {
+    $node->options++;
+  }
 
+  // Options list
+  $form['OptionGroup'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Decision options'),
+    '#collapsible' => TRUE,
+  );
+  for ( $option_number = 1; $option_number <= $node->options; $option_number++ ) {
+    $form['OptionGroup']['Option_'.$option_number] = array(
+      '#type' => 'textfield',
+      '#title' => t('Option %n', array('%n' => $option_number)),
+      '#required' => FALSE,
+      '#default_value' => $node->Option_{$option_number},
+      '#size' => 50,
+      '#maxlength' => 127,
+    );
+  }
+
+  $form['OptionGroup']['options'] = array(
+    '#type' => 'hidden',
+    '#value' => $node->options,
+  );
+  $form['OptionGroup']['moreoptions'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Need more options'),
+    '#default_value' => FALSE,
+    '#description' => t("If the amount of boxes above isn't enough, check this box and click the Preview button below to add some more."),
+  );
 
   return array_merge($form, filter_form($node->format));
 }
@@ -113,6 +149,12 @@ function decisions_help($section) {
     case 'node/add#decisions':
       return t('Submit a new decision to the electoral list.');
   }
+}
+
+/**
+ * Implementation of hook_load().
+ */
+function decisions_load() {
 }
 
 /**
@@ -149,13 +191,6 @@ function decisions_node_info() {
 }
 
 /**
- * Implementation of hook_node_name().
- */
-function decisions_node_name($node) {
-  return t("decisions");
-}
-
-/**
  * Implementation of hook_perm().
  */
 function decisions_perm() {
@@ -171,10 +206,25 @@ function decisions_settings() {
 }
 
 /**
+ * Implementation of hook_update().
+ */
+function decisions_update($node) {
+}
+
+/**
  * Implementation of hook_validate().
  */
 function decisions_validate($node) {
+  if ($node->OptionGroup['moreoptions'] == '1') {
+    $node->options++;
+  }
+/*
+  echo '<html><body><pre>';
+  var_export($node);
+  echo '</pre></body></html>';
+  die();
   // faut appeler form_set_error si necessaire
+*/
 }
 
 ?>
