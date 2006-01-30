@@ -1,0 +1,35 @@
+--
+-- Table structure for table `decisions`
+--
+
+CREATE TABLE `decisions` (
+  `nid` int(10) NOT NULL,
+  `quorum` int(10) NOT NULL,
+  PRIMARY KEY  (`nid`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `decisions_electoral_list`
+--
+
+CREATE TABLE `decisions_electoral_list` (
+  `nid` int(10) NOT NULL,
+  `uid` int(10) NOT NULL,
+  PRIMARY KEY  (`nid`,`uid`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `decisions_options`
+--
+
+CREATE TABLE `decisions_options` (
+  `nid` int(10) NOT NULL,
+  `opttext` text NOT NULL,
+  `optorder` int(2) default NULL,
+  PRIMARY KEY  (`nid`),
+  KEY `optorder` (`optorder`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
