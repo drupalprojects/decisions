@@ -30,6 +30,6 @@ CREATE TABLE `decisions_options` (
   `nid` int(10) NOT NULL,
   `opttext` text NOT NULL,
   `optorder` int(2) default NULL,
-  PRIMARY KEY  (`nid`),
+  PRIMARY KEY  (`nid`, `optorder`),
   KEY `optorder` (`optorder`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;

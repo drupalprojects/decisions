@@ -102,9 +102,12 @@ function decisions_form($node) {
     $node->options = 5;
   }
   // User ticked 'need more choices'.
-  if ($node->moreoptions) {
-    $node->options++;
-  }
+  if ($_POST['edit']['OptionGroup']['moreoptions']) {
+    if (!$node->options)
+        $node->options += 1;
+    else
+    	$node->options *= 2;
+   }
 
   // Options list
   $form['OptionGroup'] = array(
@@ -118,7 +121,7 @@ function decisions_form($node) {
       '#type' => 'textfield',
       '#title' => t('Option %n', array('%n' => $option_number)),
       '#required' => FALSE,
-      '#default_value' => $node->Option_{$option_number},
+      '#default_value' => $node->option[$option_number],
       '#size' => 50,
       '#maxlength' => 127,
     );
@@ -154,7 +157,14 @@ function decisions_help($section) {
 /**
  * Implementation of hook_load().
  */
-function decisions_load() {
+function decisions_load($node) {
+   $decision = db_fetch_object(db_query("SELECT * FROM {decisions} WHERE nid = %d", $node->nid));
+   $result = db_query("SELECT optorder, opttext FROM {decisions_options} WHERE nid = %d ORDER BY optorder", $node->nid);
+   while ($option = db_fetch_array($result)) {
+   	$decision->option[$option['optorder']] = $option['opttext'];
+   }
+   $decision->options = count($decision->option);
+   return $decision;
 }
 
 /**
@@ -209,15 +219,39 @@ function decisions_settings() {
  * Implementation of hook_update().
  */
 function decisions_update($node) {
+  # XXX: should update decisions here, when it has some parameters
+
+  db_query('DELETE FROM {decisions_options} WHERE nid = %d', $node->nid);
+
+  foreach ($node->OptionGroup as $key => $option) {
+  	$order = str_replace('Option_', '', $key);
+	if ($order != $key) { # match
+		db_query("INSERT INTO {decisions_options} (nid, opttext, optorder) VALUES (%d, '%s', %d)", $node->nid, $option, intval($order));
+	   }
+	# ignore entries other than options
+  }
+}
+
+function decisions_insert($node) {
+  # just create an empty entry for now
+  db_query("INSERT INTO {decisions} (nid) VALUES (%d)", $node->nid);
+  # XXX: shouldn't becessary
+  db_query('DELETE FROM {decisions_options} WHERE nid = %d', $node->nid);
+
+  foreach ($node->choice as $choice) {
+    if ($choice['opttext'] != '') {
+      db_query("INSERT INTO {decisions_options} (nid, opttext, optorder) VALUES (%d, '%s', %d)", $node->nid, $choice['opttext'], $i++);
+    }
+  }
 }
 
 /**
  * Implementation of hook_validate().
  */
 function decisions_validate($node) {
-  if ($node->OptionGroup['moreoptions'] == '1') {
-    $node->options++;
-  }
+  #if ($node->OptionGroup['moreoptions'] == '1') {
+  #  $node->options++;
+  #}
 /*
   echo '<html><body><pre>';
   var_export($node);
