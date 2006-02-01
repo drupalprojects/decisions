@@ -293,7 +293,7 @@ function decisions_view_voting(&$node, $teaser, $page, $block) {
   if ($node->option) {
     $list = array();
     foreach ($node->option as $i => $option) {
-      $list[$i] = check_plain($option['opttext']);
+      $list[$i] = check_plain($option);
     }
     $form['option'] = array('#type' => 'radios', '#title' => $page ? '' : check_plain($node->title), '#default_value' => -1, '#options' => $list);
   }
