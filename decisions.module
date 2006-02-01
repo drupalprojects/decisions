@@ -256,4 +256,50 @@ function decisions_validate($node) {
 */
 }
 
+/**
+ * Implementation of hook_view().
+ */
+function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
+  if ($page) {
+  }
+
+  $node = node_prepare($node, $teaser);
+  $output .= decisions_view_voting($node, $teaser, $page, $block);
+
+  $node->body .= $output;
+  $node->teaser .= $output;
+
+}
+
+function theme_decisions_view_voting($form) {
+  $output .= '<div class="decisions">';
+  $output .= '  <div class="option-form">';
+  $output .= '    <div class="options">';
+  $output .= form_render($form['option']);
+  $output .= '    </div>';
+  $output .= form_render($form['nid']);
+  $output .= form_render($form['vote']);
+  $output .= '  </div>';
+  $output .= form_render($form);
+  $output .= '</div>';
+  return $output;
+}
+
+function decisions_view_voting(&$node, $teaser, $page, $block) {
+//   if ($_POST['op'] == t('Vote')) {
+//     poll_vote($node);
+//   }
+
+  if ($node->option) {
+    $list = array();
+    foreach ($node->option as $i => $option) {
+      $list[$i] = check_plain($option['opttext']);
+    }
+    $form['option'] = array('#type' => 'radios', '#title' => $page ? '' : check_plain($node->title), '#default_value' => -1, '#options' => $list);
+  }
+  $form['nid'] = array('#type' => 'hidden', '#value' => $node->nid);
+  $form['vote'] = array('#type' => 'submit', '#value' => t('Vote'));
+  $form['#action'] = url('node/'. $node->nid);
+  return drupal_get_form('decisions_view_voting', $form);
+}
 ?>
