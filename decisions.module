@@ -220,7 +220,7 @@ function decisions_settings() {
  */
 function decisions_update($node) {
   # XXX: should update decisions here, when it has some parameters
-
+  # XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
   db_query('DELETE FROM {decisions_options} WHERE nid = %d', $node->nid);
 
   foreach ($node->OptionGroup as $key => $option) {
@@ -235,14 +235,9 @@ function decisions_update($node) {
 function decisions_insert($node) {
   # just create an empty entry for now
   db_query("INSERT INTO {decisions} (nid) VALUES (%d)", $node->nid);
-  # XXX: shouldn't becessary
-  db_query('DELETE FROM {decisions_options} WHERE nid = %d', $node->nid);
 
-  foreach ($node->choice as $choice) {
-    if ($choice['opttext'] != '') {
-      db_query("INSERT INTO {decisions_options} (nid, opttext, optorder) VALUES (%d, '%s', %d)", $node->nid, $choice['opttext'], $i++);
-    }
-  }
+  # insert the options, same sequence than update
+  decisions_update($node);
 }
 
 /**
