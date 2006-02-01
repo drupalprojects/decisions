@@ -104,7 +104,7 @@ function decisions_form($node) {
   // User ticked 'need more choices'.
   if ($_POST['edit']['OptionGroup']['moreoptions']) {
     if (!$node->options)
-        $node->options += 1;
+        $node->options = 2;
     else
     	$node->options *= 2;
    }
