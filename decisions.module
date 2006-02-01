@@ -286,9 +286,9 @@ function theme_decisions_view_voting($form) {
 }
 
 function decisions_view_voting(&$node, $teaser, $page, $block) {
-//   if ($_POST['op'] == t('Vote')) {
-//     poll_vote($node);
-//   }
+  if ($_POST['op'] == t('Vote')) {
+    decisions_vote($node);
+  }
 
   if ($node->option) {
     $list = array();
@@ -301,5 +301,11 @@ function decisions_view_voting(&$node, $teaser, $page, $block) {
   $form['vote'] = array('#type' => 'submit', '#value' => t('Vote'));
   $form['#action'] = url('node/'. $node->nid);
   return drupal_get_form('decisions_view_voting', $form);
+}
+
+function decisions_vote($node) {
+  $vote->value = $_POST['edit']['option'];
+  $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
+  votingapi_set_vote('decisions', $node->nid, $vote);
 }
 ?>
