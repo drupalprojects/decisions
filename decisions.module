@@ -225,7 +225,7 @@ function decisions_update($node) {
 
   foreach ($node->OptionGroup as $key => $option) {
   	$order = str_replace('Option_', '', $key);
-	if ($order != $key) { # match
+	if ($order != $key && $option != '') {
 		db_query("INSERT INTO {decisions_options} (nid, opttext, optorder) VALUES (%d, '%s', %d)", $node->nid, $option, intval($order));
 	   }
 	# ignore entries other than options
