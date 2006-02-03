@@ -72,6 +72,9 @@ function decisions_cron() {
 
 /**
  * Implementation of hook_delete().
+ *
+ * A TESTER !!!!!!  ...et est-ce qu'on efface les votes aussi?
+ *
  */
 function decisions_delete($node) {
   db_query("DELETE FROM {decisions} WHERE nid = %d", $node->nid);
@@ -96,6 +99,15 @@ function decisions_form($node) {
     '#required' => FALSE,
     '#default_value' => $node->body,
   );
+
+  $form['style'] = array(
+    '#type' => 'select',
+    '#title' => t('Decision style'),
+    '#required' => TRUE,
+    '#options' => array( 'poll' => t('Poll'), 'runoff' => t('Runoff') ),
+    '#default_value' => variable_get('style', 'runoff'),
+  );
+
   /* decision-specific elements */
   /* this code is mostly from poll.module */
   if (!isset($node->options)) {
@@ -219,6 +231,7 @@ function decisions_settings() {
  * Implementation of hook_update().
  */
 function decisions_update($node) {
+  db_query("UPDATE {decisions} SET style = '%s' WHERE nid = %d", $node->style, $node->nid);
   # XXX: should update decisions here, when it has some parameters
   # XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
   db_query('DELETE FROM {decisions_options} WHERE nid = %d', $node->nid);
@@ -234,7 +247,7 @@ function decisions_update($node) {
 
 function decisions_insert($node) {
   # just create an empty entry for now
-  db_query("INSERT INTO {decisions} (nid) VALUES (%d)", $node->nid);
+  db_query("INSERT INTO {decisions} (nid, style) VALUES (%d, %s)", $node->nid, $node->style);
 
   # insert the options, same sequence than update
   decisions_update($node);
@@ -286,10 +299,28 @@ function theme_decisions_view_voting($form) {
 }
 
 function decisions_view_voting(&$node, $teaser, $page, $block) {
-  if ($_POST['op'] == t('Vote')) {
-    decisions_vote($node);
-  }
 
+  /**** TODO ****/
+
+  $style = $node->style;
+
+  if ($_POST['op'] == t('Vote')) {
+    if ( function_exists("decisions_vote_$style") ) {
+/*      drupal_set_message(t('Call voting function for style "%style".', array('%style' => $node->style), 'status'));*/
+      call_user_func("decisions_vote_$style", $node);
+    }
+  }
+  if ( function_exists("decisions_view_voting_$style") ) {
+/*    drupal_set_message(t('Known decision style : %style.', array('%style' => $node->style), 'status'));*/
+    return call_user_func("decisions_view_voting_$style", $node, $teaser, $page, $block);
+  }
+  else {
+    watchdog('decisions', t('Unknown decision style : %style.', array('%style' => $node->style), WATCHDOG_ERROR));
+    drupal_set_message(t('Unknown decision style : %style.', array('%style' => $node->style), 'error'));
+  }
+}
+
+function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
   if ($node->option) {
     $list = array();
     foreach ($node->option as $i => $option) {
@@ -303,7 +334,7 @@ function decisions_view_voting(&$node, $teaser, $page, $block) {
   return drupal_get_form('decisions_view_voting', $form);
 }
 
-function decisions_vote($node) {
+function decisions_vote_poll($node) {
   $vote->value = $_POST['edit']['option'];
   $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
   votingapi_set_vote('decisions', $node->nid, $vote);
