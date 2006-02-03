@@ -5,8 +5,9 @@
 CREATE TABLE `decisions` (
   `nid` int(10) NOT NULL,
   `quorum` int(10) NOT NULL,
+  `style` varchar(32) NOT NULL,
   PRIMARY KEY  (`nid`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;
 
 -- --------------------------------------------------------
 
@@ -18,7 +19,7 @@ CREATE TABLE `decisions_electoral_list` (
   `nid` int(10) NOT NULL,
   `uid` int(10) NOT NULL,
   PRIMARY KEY  (`nid`,`uid`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;
 
 -- --------------------------------------------------------
 
@@ -32,4 +33,4 @@ CREATE TABLE `decisions_options` (
   `optorder` int(2) default NULL,
   PRIMARY KEY  (`nid`, `optorder`),
   KEY `optorder` (`optorder`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;
