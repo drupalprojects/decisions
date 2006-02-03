@@ -100,12 +100,12 @@ function decisions_form($node) {
     '#default_value' => $node->body,
   );
 
-  $form['style'] = array(
+  $form['mode'] = array(
     '#type' => 'select',
-    '#title' => t('Decision style'),
+    '#title' => t('Decision mode'),
     '#required' => TRUE,
     '#options' => array( 'poll' => t('Poll'), 'runoff' => t('Runoff') ),
-    '#default_value' => variable_get('style', 'runoff'),
+    '#default_value' => variable_get('mode', 'poll'),
   );
 
   /* decision-specific elements */
@@ -231,7 +231,7 @@ function decisions_settings() {
  * Implementation of hook_update().
  */
 function decisions_update($node) {
-  db_query("UPDATE {decisions} SET style = '%s' WHERE nid = %d", $node->style, $node->nid);
+  db_query("UPDATE {decisions} SET mode = '%s' WHERE nid = %d", $node->mode, $node->nid);
   # XXX: should update decisions here, when it has some parameters
   # XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
   db_query('DELETE FROM {decisions_options} WHERE nid = %d', $node->nid);
@@ -247,7 +247,7 @@ function decisions_update($node) {
 
 function decisions_insert($node) {
   # just create an empty entry for now
-  db_query("INSERT INTO {decisions} (nid, style) VALUES (%d, %s)", $node->nid, $node->style);
+  db_query("INSERT INTO {decisions} (nid, mode) VALUES (%d, %s)", $node->nid, $node->mode);
 
   # insert the options, same sequence than update
   decisions_update($node);
@@ -302,21 +302,21 @@ function decisions_view_voting(&$node, $teaser, $page, $block) {
 
   /**** TODO ****/
 
-  $style = $node->style;
+  $mode = $node->mode;
 
   if ($_POST['op'] == t('Vote')) {
-    if ( function_exists("decisions_vote_$style") ) {
-/*      drupal_set_message(t('Call voting function for style "%style".', array('%style' => $node->style), 'status'));*/
-      call_user_func("decisions_vote_$style", $node);
+    if ( function_exists("decisions_vote_$mode") ) {
+/*      drupal_set_message(t('Call voting function for mode "%mode".', array('%mode' => $node->mode), 'status'));*/
+      call_user_func("decisions_vote_$mode", $node);
     }
   }
-  if ( function_exists("decisions_view_voting_$style") ) {
-/*    drupal_set_message(t('Known decision style : %style.', array('%style' => $node->style), 'status'));*/
-    return call_user_func("decisions_view_voting_$style", $node, $teaser, $page, $block);
+  if ( function_exists("decisions_view_voting_$mode") ) {
+/*    drupal_set_message(t('Known decision mode : %mode.', array('%mode' => $node->mode), 'status'));*/
+    return call_user_func("decisions_view_voting_$mode", $node, $teaser, $page, $block);
   }
   else {
-    watchdog('decisions', t('Unknown decision style : %style.', array('%style' => $node->style), WATCHDOG_ERROR));
-    drupal_set_message(t('Unknown decision style : %style.', array('%style' => $node->style), 'error'));
+    watchdog('decisions', t('Unknown decision mode : %mode.', array('%mode' => $node->mode), WATCHDOG_ERROR));
+    drupal_set_message(t('Unknown decision mode : %mode.', array('%mode' => $node->mode), 'error'));
   }
 }
 

@@ -5,7 +5,7 @@
 CREATE TABLE `decisions` (
   `nid` int(10) NOT NULL,
   `quorum` int(10) NOT NULL,
-  `style` varchar(32) NOT NULL,
+  `mode` varchar(32) NOT NULL,
   PRIMARY KEY  (`nid`)
 ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;
 
