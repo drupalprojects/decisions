@@ -391,7 +391,7 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
 
 function decisions_vote_poll($node) {
   $vote->value = $_POST['edit']['option'];
-  $vote->value_type = VOTINGAPI_VALUE_TYPE_PERCENT;
+  $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
   votingapi_set_vote('decisions', $node->nid, $vote);
 }
 ?>
