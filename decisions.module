@@ -125,7 +125,7 @@ function decisions_form($node) {
   $form['OptionGroup'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
-    '#title' => t('Decision options'),
+    '#title' => t('Options'),
     '#collapsible' => TRUE,
   );
   for ( $option_number = 1; $option_number <= $node->options; $option_number++ ) {
@@ -320,23 +320,78 @@ function decisions_view_voting(&$node, $teaser, $page, $block) {
   }
 }
 
+/**
+ * Mode : Runoff
+ */
+function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
+  if ($node->option) {
+    $list = array();
+    foreach ($node->option as $key => $option) {
+      $list[$i] = check_plain($option);
+
+      $form['OptionGroup']['Option_' . $key] = array(
+        '#type' => 'textfield',
+        '#title' => check_plain($option),
+        '#required' => FALSE,
+/*        '#default_value' => $node->option[$key],*/
+        '#size' => 3,
+        '#maxlength' => 3,
+      );
+    }
+  }
+
+  $form['nid'] = array(
+    '#type' => 'hidden',
+    '#value' => $node->nid
+  );
+  $form['vote'] = array(
+    '#type' => 'submit',
+    '#value' => t('Vote')
+  );
+  $form['#action'] = url('node/'. $node->nid);
+  return drupal_get_form('decisions_view_voting', $form);
+}
+
+function decisions_vote_runoff($node) {
+  foreach ( $node->option AS $key => $option ) {
+    $vote->value = $_POST['edit']['Option_' . $key];
+    $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
+    $vote->tag = $key;
+    votingapi_set_vote('decisions', $node->nid, $vote);
+  }
+}
+
+/**
+ * Mode : Poll
+ */
 function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
   if ($node->option) {
     $list = array();
     foreach ($node->option as $i => $option) {
       $list[$i] = check_plain($option);
     }
-    $form['option'] = array('#type' => 'radios', '#title' => $page ? '' : check_plain($node->title), '#default_value' => -1, '#options' => $list);
+    $form['option'] = array(
+      '#type' => 'radios',
+      '#title' => $page ? '' : check_plain($node->title),
+      '#default_value' => -1,
+      '#options' => $list
+    );
   }
-  $form['nid'] = array('#type' => 'hidden', '#value' => $node->nid);
-  $form['vote'] = array('#type' => 'submit', '#value' => t('Vote'));
+  $form['nid'] = array(
+    '#type' => 'hidden',
+    '#value' => $node->nid
+  );
+  $form['vote'] = array(
+    '#type' => 'submit',
+    '#value' => t('Vote')
+  );
   $form['#action'] = url('node/'. $node->nid);
   return drupal_get_form('decisions_view_voting', $form);
 }
 
 function decisions_vote_poll($node) {
   $vote->value = $_POST['edit']['option'];
-  $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
+  $vote->value_type = VOTINGAPI_VALUE_TYPE_PERCENT;
   votingapi_set_vote('decisions', $node->nid, $vote);
 }
 ?>
