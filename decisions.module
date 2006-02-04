@@ -78,7 +78,7 @@ function decisions_cron() {
  */
 function decisions_delete($node) {
   db_query("DELETE FROM {decisions} WHERE nid = %d", $node->nid);
-  db_query("DELETE FROM {decisions_choices} WHERE nid = %d", $node->nid);
+  db_query("DELETE FROM {decisions_options} WHERE nid = %d", $node->nid);
 }
 
 /**
