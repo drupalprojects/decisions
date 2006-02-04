@@ -247,7 +247,7 @@ function decisions_update($node) {
 
 function decisions_insert($node) {
   # just create an empty entry for now
-  db_query("INSERT INTO {decisions} (nid, mode) VALUES (%d, %s)", $node->nid, $node->mode);
+  db_query("INSERT INTO {decisions} (nid, mode) VALUES (%d, '%s')", $node->nid, $node->mode);
 
   # insert the options, same sequence than update
   decisions_update($node);
