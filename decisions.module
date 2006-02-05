@@ -370,7 +370,7 @@ function decisions_vote_runoff($node) {
 }
 
 /**
- * Mode : Poll
+ * Mode : Poll 
  */
 function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
   if ($node->option) {
@@ -399,12 +399,36 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
 
 function decisions_view_results(&$node, $teaser, $page, $block) {
   if ($node->mode == "runoff") {
-    $runoff_matrix = decision_calculate_runoff_matrix ($node);
-    print_r($runoff_matrix);
+    $runoff = decision_calculate_runoff($node);
+    print "And the winner is :-) : $runoff->winner";
+    print_r($runoff->matrix);
+    $winning_option = $node->option[$runoff->winner];
+    $output .= "The winner is option $winning_option";
+    
+    // On output la table 
+    $output .= "<table><tr><td>round</td>";
+    foreach ($node->option as $key => $optionname) {
+      $output .= "<td>$optionname</td>";
+    }
+    $output .= "</tr>";
+    $round = 1;
+    foreach ($runoff->matrix as $aRound) {
+      $output .= "<tr><td>r-$round</td>";
+      foreach ($node->option as $key => $optionname) { 
+        $output .= "<td>$aRound[$key]</td>";
+      }
+      $output .= "</tr>";
+      $round = $round + 1;
+    }
+     
+ 
+    $output .= "</table>";
+
+    return $output;
   }
 }
 
-function decision_calculate_runoff_matrix ($node) {
+function decision_calculate_runoff ($node) {
 
   $votes = _votingapi_get_raw_votes('decisions', $node->nid);
  
@@ -419,6 +443,7 @@ function decision_calculate_runoff_matrix ($node) {
   print_r($aRound);
   
   while (true) {
+
     //Add the round to the matrix 
     $runoff_matrix[] = $aRound;
 
@@ -429,7 +454,7 @@ function decision_calculate_runoff_matrix ($node) {
       if ($max < $votevalue) {
        $max = $votevalue;
       }
-      if ($min > $votevalue) {
+      if (($min > $votevalue) && ($votevalue != 0)) {
        $min = $votevalue;
       }
     }
@@ -437,15 +462,19 @@ function decision_calculate_runoff_matrix ($node) {
     print "max: $max totalvotes: $totalvotes min: $min";
     // if max has the majority, it wins
     if ($max >= $totalvotes/2) {
-       return $runoff_matrix;
+       $runoff->winner = array_search($max, $aRound);
+       $runoff->matrix = $runoff_matrix;
+       return $runoff;
     }
 
     //sinon, on trouve le prochainround
     $aRound = decision_calculate_runoff_nextround($aRound, $votes, $min);
+    print "après decision calculate";
+    print_r($aRound);
 
     //temporaire: pour n'essayer que deux rounds, on retourne immédiatement la nouvelle matrice
-    $runoff_matrix[] = $aRound;
-    return $runoff_matrix; 
+    // $runoff_matrix[] = $aRound;
+    // return $runoff_matrix; 
   }
 }
 
@@ -475,20 +504,23 @@ function decision_calculate_runoff_nextround($aRound, $votes, $min) {
    }
 
    // step 3: lets find what are the other non-eliminated choices for the ones who voted for the loosers.  Super pas optimal
-   foreach ($voteslost as $voteuid) {
+   foreach ($voteslosts as $voteuid) {
      $minvalue = 0;
-     foreach ($votes as $vote) {
-       if (($vote->uid == $voteuid) &&
-           (aRound[$vote->tag] != 0) &&
-           (aRound[$vote->value] > $minvalue) {
+    foreach ($votes as $vote) {
+       if (($vote->uid == $voteuid) and 
+	($aRound[$vote->tag] != 0) and 
+	($aRound[$vote->value] > $minvalue) ) {
              $votesecond[$voteuid] = $vote->tag;
-       }
+             $minvalue = $vote->value;
+       	} 	
+     }
    }
 
    print "vote losts";
    print_r($voteslosts);
    print "vote second";
    print_r($votesecond);
+   print "print fin";
 
    // step 4: distribute the second vote for all the loosers
    foreach ($voteslosts as $votelost_uid) {
