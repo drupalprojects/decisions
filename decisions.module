@@ -464,23 +464,25 @@ function decision_calculate_runoff_nextround($aRound, $votes, $min) {
    $taglooser = array_search($min, $aRound);  // random elimination
    $aRound[$taglooser] = 0;
 
-   // step 2: lets find what are the second votes for the one who voted 
-   //         for the looser
+   // step 2: lets find which users lost
    foreach ($votes as $vote) {
-
       // step 2.1: find the users who voted for the loosers
       if (($vote->tag == $taglooser) and ($vote->value == 1)) {
             print("taglooser: $taglooser vote:");
             print_r($vote);
             $voteslosts[] = $vote->uid;
       }
+   }
 
-      // step 2.2: record the uid for all second choice
-      if (($vote->value) == 2) {
-            print("votesecond:");
-            print_r($vote);
-            $votesecond[$vote->uid] = $vote->tag;
-      }
+   // step 3: lets find what are the other non-eliminated choices for the ones who voted for the loosers.  Super pas optimal
+   foreach ($voteslost as $voteuid) {
+     $minvalue = 0;
+     foreach ($votes as $vote) {
+       if (($vote->uid == $voteuid) &&
+           (aRound[$vote->tag] != 0) &&
+           (aRound[$vote->value] > $minvalue) {
+             $votesecond[$voteuid] = $vote->tag;
+       }
    }
 
    print "vote losts";
@@ -488,7 +490,7 @@ function decision_calculate_runoff_nextround($aRound, $votes, $min) {
    print "vote second";
    print_r($votesecond);
 
-   // step 3: distribute the second vote for all the loosers
+   // step 4: distribute the second vote for all the loosers
    foreach ($voteslosts as $votelost_uid) {
      $aRound[$votesecond[$votelost_uid]] += 1;
    }
