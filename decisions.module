@@ -282,6 +282,7 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 
   $node = node_prepare($node, $teaser);
   $output .= decisions_view_voting($node, $teaser, $page, $block);
+  $output .= decisions_view_results(&$node, $teaser, $page, $block);
 
   $node->body .= $output;
   $node->teaser .= $output;
@@ -323,6 +324,7 @@ function decisions_view_voting(&$node, $teaser, $page, $block) {
     drupal_set_message(t('Unknown decision mode : %mode.', array('%mode' => $node->mode), 'error'));
   }
 }
+
 
 /**
  * Mode : Runoff
@@ -391,6 +393,53 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
   );
   $form['#action'] = url('node/'. $node->nid);
   return drupal_get_form('decisions_view_voting', $form);
+}
+
+function decisions_view_results(&$node, $teaser, $page, $block) {
+  if ($node->mode == "runoff") {
+    $runoff_matrix = decision_calculate_runoff_matrix ($node);
+    print_r($runoff_matrix);
+  }
+}
+
+function decision_calculate_runoff_matrix ($node) {
+
+  $votes = _votingapi_get_raw_votes('decisions', $node->nid);
+ 
+ 
+  //calculate the first round
+  foreach ($votes as $vote) {
+    if ($vote->value == 1) {
+         $aRound[$vote->tag] = $aRound[$vote->tag] + 1;
+         $totalvotes = $totalvotes + 1;
+    }
+  }
+  
+  
+  while (false) {
+    //Add the round to the matrix 
+    $runoff_matrix[] = $aRound;
+
+    //calculate if we stop the round
+    foreach ($aRound as $votevalue) {
+      if ($max < $votevalue) {
+       $max = $votevalue;
+      }
+    }
+
+    print "max: $max totalvotes: $totalvotes";
+    if ($max >= $totalvotes/2) {
+       return $runoff_matrix;
+    }
+
+    //sinon, on trouve le prochainround
+    $aRound = decision_calculate_runoff_nextround(aRound);
+
+  }
+}
+
+function decision_calculate_runoff_nextround($aRound ) {
+   
 }
 
 function decisions_vote_poll($node) {
