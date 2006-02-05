@@ -79,6 +79,7 @@ function decisions_cron() {
 function decisions_delete($node) {
   db_query("DELETE FROM {decisions} WHERE nid = %d", $node->nid);
   db_query("DELETE FROM {decisions_options} WHERE nid = %d", $node->nid);
+  db_query("DELETE FROM {decisions_electoral_list} WHERE nid = %d", $node->nid);
 }
 
 /**
@@ -248,6 +249,9 @@ function decisions_update($node) {
 function decisions_insert($node) {
   # just create an empty entry for now
   db_query("INSERT INTO {decisions} (nid, mode) VALUES (%d, '%s')", $node->nid, $node->mode);
+
+  # create the electoral list
+  db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users_roles u, permission p WHERE p.perm LIKE '%view decisions%' AND u.rid = p.rid", $node->nid);
 
   # insert the options, same sequence than update
   decisions_update($node);
