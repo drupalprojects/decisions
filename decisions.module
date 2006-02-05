@@ -9,6 +9,8 @@
  * Thanks to everyone for all the that was already written. (...and debugged!)
  */
 
+
+
 /**
  * Implementation of hook_access().
  */
@@ -406,7 +408,6 @@ function decision_calculate_runoff_matrix ($node) {
 
   $votes = _votingapi_get_raw_votes('decisions', $node->nid);
  
- 
   //calculate the first round
   foreach ($votes as $vote) {
     if ($vote->value == 1) {
@@ -415,31 +416,84 @@ function decision_calculate_runoff_matrix ($node) {
     }
   }
   
+  print_r($aRound);
   
-  while (false) {
+  while (true) {
     //Add the round to the matrix 
     $runoff_matrix[] = $aRound;
 
-    //calculate if we stop the round
+    //calculate the min and max number of vote
+    $min = sizeof($aRound);
     foreach ($aRound as $votevalue) {
+
       if ($max < $votevalue) {
        $max = $votevalue;
       }
+      if ($min > $votevalue) {
+       $min = $votevalue;
+      }
     }
 
-    print "max: $max totalvotes: $totalvotes";
+    print "max: $max totalvotes: $totalvotes min: $min";
+    // if max has the majority, it wins
     if ($max >= $totalvotes/2) {
        return $runoff_matrix;
     }
 
     //sinon, on trouve le prochainround
-    $aRound = decision_calculate_runoff_nextround(aRound);
+    $aRound = decision_calculate_runoff_nextround($aRound, $votes, $min);
 
+    //temporaire: pour n'essayer que deux rounds, on retourne immédiatement la nouvelle matrice
+    $runoff_matrix[] = $aRound;
+    return $runoff_matrix; 
   }
 }
 
-function decision_calculate_runoff_nextround($aRound ) {
-   
+function decision_calculate_runoff_nextround($aRound, $votes, $min) {
+
+   // For Tie-breaking rules, lets implement in this first version the 
+   // RANDOM: Eliminate one randomly to break the tie.
+   // http://en.wikipedia.org/wiki/Instant-runoff_voting
+
+   // What do we need to do here: 
+   // "The votes for Nashville have Chattanooga as a second choice, but      as Chattanooga has been eliminated, they instead transfer to      their third choice, Knoxville."
+   // http://en.wikipedia.org/wiki/Instant-runoff_voting
+   // Autrement dit, si le second choix est éliminé, il faut regardé le troisième choix. 
+
+   // step 1: find the loser and put 0 to it
+   $taglooser = array_search($min, $aRound);  // random elimination
+   $aRound[$taglooser] = 0;
+
+   // step 2: lets find what are the second votes for the one who voted 
+   //         for the looser
+   foreach ($votes as $vote) {
+
+      // step 2.1: find the users who voted for the loosers
+      if (($vote->tag == $taglooser) and ($vote->value == 1)) {
+            print("taglooser: $taglooser vote:");
+            print_r($vote);
+            $voteslosts[] = $vote->uid;
+      }
+
+      // step 2.2: record the uid for all second choice
+      if (($vote->value) == 2) {
+            print("votesecond:");
+            print_r($vote);
+            $votesecond[$vote->uid] = $vote->tag;
+      }
+   }
+
+   print "vote losts";
+   print_r($voteslosts);
+   print "vote second";
+   print_r($votesecond);
+
+   // step 3: distribute the second vote for all the loosers
+   foreach ($voteslosts as $votelost_uid) {
+     $aRound[$votesecond[$votelost_uid]] += 1;
+   }
+
+   return $aRound;
 }
 
 function decisions_vote_poll($node) {
