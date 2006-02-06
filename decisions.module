@@ -400,8 +400,6 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
 function decisions_view_results(&$node, $teaser, $page, $block) {
   if ($node->mode == "runoff") {
     $runoff = decision_calculate_runoff($node);
-    print "And the winner is :-) : $runoff->winner";
-    print_r($runoff->matrix);
     $winning_option = $node->option[$runoff->winner];
     $output .= "The winner is option $winning_option";
     
@@ -446,7 +444,8 @@ function decision_calculate_runoff ($node) {
     $runoff_matrix[] = $aRound;
 
     //calculate the min and max number of vote
-    $min = sizeof($aRound);
+    $min = 100000000; // weird min
+    $num_discarded = 0;
     foreach ($aRound as $votevalue) {
 
       if ($max < $votevalue) {
@@ -455,10 +454,17 @@ function decision_calculate_runoff ($node) {
       if (($min > $votevalue) && ($votevalue != 0)) {
        $min = $votevalue;
       }
+      if (!$votevalue) {  // si c'est à zéro, on le compte
+       $num_discarded = $num_discarded + 1;
+     }
     }
 
+    // is there only two options left
+    $twooptionsleft =  ((sizeof($aRound) - $num_discarded) == 2);
+
+   
     // if max has the majority, it wins
-    if ($max >= $totalvotes/2) {
+    if (($max > $totalvotes/2) or $twooptionsleft) {
        $runoff->winner = array_search($max, $aRound);
        $runoff->matrix = $runoff_matrix;
        return $runoff;
@@ -488,18 +494,17 @@ function decision_calculate_runoff_nextround($aRound, &$votes, $min) {
    // step 2: lets find which users needs their vote to be redistributed
    $numbervotes_redistributed = 0;
    $preference_value = 0;
-   while ($numbervotes_redistributed < $min) {
+   while (($numbervotes_redistributed < $min) and $stop < 50){
       $preference_value = $preference_value + 1;
       foreach ($votes as $vote) {
-      
         // step 2.1: find the users who voted for the loosers
         if (($vote->tag == $taglooser) and 
-            ($vote->value == $preference_value) and
-            (!array_search($vote->uid, $voteslosts) ) ){
+            ($vote->value == $preference_value) ) {
              $voteslosts[] = $vote->uid;
              $numbervotes_redistributed = $numbervotes_redistributed + 1;
          }
        }
+       $stop = $stop+1;
     }
 
    // step 3: lets find what are the other non-eliminated choices for the ones who voted for the loosers.  Super pas optimal
