@@ -440,8 +440,6 @@ function decision_calculate_runoff ($node) {
     }
   }
   
-  print_r($aRound);
-  
   while (true) {
 
     //Add the round to the matrix 
@@ -459,7 +457,6 @@ function decision_calculate_runoff ($node) {
       }
     }
 
-    print "max: $max totalvotes: $totalvotes min: $min";
     // if max has the majority, it wins
     if ($max >= $totalvotes/2) {
        $runoff->winner = array_search($max, $aRound);
@@ -469,16 +466,10 @@ function decision_calculate_runoff ($node) {
 
     //sinon, on trouve le prochainround
     $aRound = decision_calculate_runoff_nextround($aRound, $votes, $min);
-    print "après decision calculate";
-    print_r($aRound);
-
-    //temporaire: pour n'essayer que deux rounds, on retourne immédiatement la nouvelle matrice
-    // $runoff_matrix[] = $aRound;
-    // return $runoff_matrix; 
-  }
+   }
 }
 
-function decision_calculate_runoff_nextround($aRound, $votes, $min) {
+function decision_calculate_runoff_nextround($aRound, &$votes, $min) {
 
    // For Tie-breaking rules, lets implement in this first version the 
    // RANDOM: Eliminate one randomly to break the tie.
@@ -493,15 +484,23 @@ function decision_calculate_runoff_nextround($aRound, $votes, $min) {
    $taglooser = array_search($min, $aRound);  // random elimination
    $aRound[$taglooser] = 0;
 
-   // step 2: lets find which users lost
-   foreach ($votes as $vote) {
-      // step 2.1: find the users who voted for the loosers
-      if (($vote->tag == $taglooser) and ($vote->value == 1)) {
-            print("taglooser: $taglooser vote:");
-            print_r($vote);
-            $voteslosts[] = $vote->uid;
-      }
-   }
+
+   // step 2: lets find which users needs their vote to be redistributed
+   $numbervotes_redistributed = 0;
+   $preference_value = 0;
+   while ($numbervotes_redistributed < $min) {
+      $preference_value = $preference_value + 1;
+      foreach ($votes as $vote) {
+      
+        // step 2.1: find the users who voted for the loosers
+        if (($vote->tag == $taglooser) and 
+            ($vote->value == $preference_value) and
+            (!array_search($vote->uid, $voteslosts) ) ){
+             $voteslosts[] = $vote->uid;
+             $numbervotes_redistributed = $numbervotes_redistributed + 1;
+         }
+       }
+    }
 
    // step 3: lets find what are the other non-eliminated choices for the ones who voted for the loosers.  Super pas optimal
    foreach ($voteslosts as $voteuid) {
@@ -511,16 +510,11 @@ function decision_calculate_runoff_nextround($aRound, $votes, $min) {
 	($aRound[$vote->tag] != 0) and 
 	($aRound[$vote->value] > $minvalue) ) {
              $votesecond[$voteuid] = $vote->tag;
+             $vote->value = 1;
              $minvalue = $vote->value;
        	} 	
      }
    }
-
-   print "vote losts";
-   print_r($voteslosts);
-   print "vote second";
-   print_r($votesecond);
-   print "print fin";
 
    // step 4: distribute the second vote for all the loosers
    foreach ($voteslosts as $votelost_uid) {
