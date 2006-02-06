@@ -1,7 +1,5 @@
-
-More information at http://decisions.gnuvernment.org
-
-Goals : 
+Goals
+=====
 
 To develop a voting module for integration with Drupal that features flexible 
 voting mechanisms, delegatable votes, taxonomy/category influenced controls 
@@ -9,7 +7,8 @@ and weighted voting to begin with.
 
 We will make one or more Drupal modules for this and aim to take advantage of existing modules as much as possible.
 
-Basic requirements:
+Basic requirements
+==================
 
 * The tool allow people to reproduce and surpass the kinds of decision-making instances that exist in face-to-face meetings.
 * The tool should also allow evaluation of the representativity/distribution of decisions.
@@ -18,7 +17,7 @@ Basic requirements:
 
 Desired characteristics:
 
-* modularity allows users to pick between different voting mechanisms (
+* modularity allows users to pick between different voting mechanisms:
 	- binary voting 
 	- ranking mechanism : the automatic spinoff voting would need this.
 	- instant runoff voting
@@ -32,3 +31,29 @@ Desired characteristics:
 * spoilable votes
 * notifications
 * ... and a whole lot more that we'll come up with
+
+Installation
+============
+
+See INSTALL.txt.
+
+License
+=======
+
+Under the GPL. See LICENSE.txt.
+
+Contributors
+============
+
+Mathieu Petit-Clair
+Stéphane Couture
+Antoine Beaupré aka anarcat
+Omar Bickell
+Patrice D'Amours
+[who's missing here?]
+
+Updates
+=======
+
+For more information and the latest news, visit
+http://decisions.gnuvernment.org/
