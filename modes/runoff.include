@@ -95,8 +95,6 @@ $votes = _votingapi_get_raw_votes('decisions', $node->nid);
   $maxiter = 1000;
   for ($i = 0; $i < $maxiter; $i++) {
 
-    if (!($i % 10)) print ".";
-    if (!($i % 800)) print "<br>\n";
     //Add the round to the matrix 
     $runoff_matrix[] = $aRound;
 
