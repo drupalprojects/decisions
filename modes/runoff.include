@@ -100,7 +100,12 @@ $votes = _votingapi_get_raw_votes('decisions', $node->nid);
          $totalvotes = $totalvotes + 1;
     }
   }
-
+  
+  /*
+   * XXX: This is an horrible hack to avoid using while(true) which
+   * was the loop setup before. This isn't better design, but avoids
+   * infinite loops.
+   */
   $maxiter = 1000;
   for ($i = 0; $i < $maxiter; $i++) {
 
