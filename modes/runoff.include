@@ -16,6 +16,15 @@ function decisions_runoff_longname() {
  * TODO: make this a nicer UI (http://drupal.org/node/48255)
  */
 function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
+
+  global $user;
+
+  $result = db_query("SELECT COUNT(*) AS eligible FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d", $node->nid, $user->uid);
+  $can_vote = db_fetch_object($result);
+  if ( ! $can_vote->eligible ) {
+    return;
+  }
+
   if ($node->option) {
     $list = array();
     foreach ($node->option as $key => $option) {
@@ -55,8 +64,8 @@ function decisions_view_results_runoff($node, $teaser, $page, $block) {
     $runoff = _decision_calculate_runoff($node);
     $winning_option = $node->option[$runoff->winner];
     $output = "The winner is option $winning_option";
-    
-    // On output la table 
+
+    // On output la table
     $output .= "<table><tr><td>round</td>";
     foreach ($node->option as $key => $optionname) {
       $output .= "<td>$optionname</td>";
@@ -65,25 +74,25 @@ function decisions_view_results_runoff($node, $teaser, $page, $block) {
     $round = 1;
     foreach ($runoff->matrix as $aRound) {
       $output .= "<tr><td>r-$round</td>";
-      foreach ($node->option as $key => $optionname) { 
+      foreach ($node->option as $key => $optionname) {
         $output .= "<td>$aRound[$key]</td>";
       }
       $output .= "</tr>";
       $round = $round + 1;
     }
-     
- 
+
+
     $output .= "</table>";
     return $output;
 }
 
 function _decision_calculate_runoff ($node) {
 
-// Important here: for now, we do not check the weighting of the votes 
-// in the votes array ($vote->value).  $vote->value should 
+// Important here: for now, we do not check the weighting of the votes
+// in the votes array ($vote->value).  $vote->value should
 // be beetween 1 and the max number of options for the runoff.
 $votes = _votingapi_get_raw_votes('decisions', $node->nid);
- 
+
   //calculate the first round
   foreach ($votes as $vote) {
     if ($vote->value == 1) {
@@ -91,11 +100,11 @@ $votes = _votingapi_get_raw_votes('decisions', $node->nid);
          $totalvotes = $totalvotes + 1;
     }
   }
-  
+
   $maxiter = 1000;
   for ($i = 0; $i < $maxiter; $i++) {
 
-    //Add the round to the matrix 
+    //Add the round to the matrix
     $runoff_matrix[] = $aRound;
 
     //calculate the min and max number of vote
@@ -117,9 +126,9 @@ $votes = _votingapi_get_raw_votes('decisions', $node->nid);
     // is there only two options left?
     $twooptionsleft =  ((sizeof($aRound) - $num_discarded) == 2);
 
-   
+
     // if max has the majority, it wins
-    // if there is only two options left, choose the best, 
+    // if there is only two options left, choose the best,
     // or the randomly in case of ties
     if (($max > $totalvotes/2) or $twooptionsleft) {
        $runoff->winner = array_search($max, $aRound);
@@ -137,14 +146,14 @@ $votes = _votingapi_get_raw_votes('decisions', $node->nid);
 
 function _decision_calculate_runoff_nextround($aRound, &$votes, $min) {
 
-   // For Tie-breaking rules, lets implement in this first version the 
+   // For Tie-breaking rules, lets implement in this first version the
    // RANDOM: Eliminate one randomly to break the tie.
    // http://en.wikipedia.org/wiki/Instant-runoff_voting
 
-   // What do we need to do here: 
+   // What do we need to do here:
    // "The votes for Nashville have Chattanooga as a second choice, but      as Chattanooga has been eliminated, they instead transfer to      their third choice, Knoxville."
    // http://en.wikipedia.org/wiki/Instant-runoff_voting
-   // Autrement dit, si le second choix est éliminé, il faut regardé le troisième choix. 
+   // Autrement dit, si le second choix est éliminé, il faut regardé le troisième choix.
 
    // step 1: find the loser and put 0 to it
    $taglooser = array_search($min, $aRound);  // random elimination
@@ -158,7 +167,7 @@ function _decision_calculate_runoff_nextround($aRound, &$votes, $min) {
       $preference_value = $preference_value + 1;
       foreach ($votes as $vote) {
         // step 2.1: find the users who voted for the loosers
-        if (($vote->tag == $taglooser) and 
+        if (($vote->tag == $taglooser) and
             ($vote->value == $preference_value) ) {
              $voteslosts[] = $vote->uid;
              $numbervotes_redistributed = $numbervotes_redistributed + 1;
@@ -171,13 +180,13 @@ function _decision_calculate_runoff_nextround($aRound, &$votes, $min) {
    foreach ($voteslosts as $voteuid) {
      $minvalue = 0;
     foreach ($votes as $vote) {
-       if (($vote->uid == $voteuid) and 
-	($aRound[$vote->tag] != 0) and 
+       if (($vote->uid == $voteuid) and
+	($aRound[$vote->tag] != 0) and
 	($aRound[$vote->value] > $minvalue) ) {
              $votesecond[$voteuid] = $vote->tag;
              $vote->value = 1;
              $minvalue = $vote->value;
-       	} 	
+       	}
      }
    }
 
