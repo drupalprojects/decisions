@@ -17,14 +17,6 @@ function decisions_runoff_longname() {
  */
 function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
 
-  global $user;
-
-  $result = db_query("SELECT COUNT(*) AS eligible FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d", $node->nid, $user->uid);
-  $can_vote = db_fetch_object($result);
-  if ( ! $can_vote->eligible ) {
-    return;
-  }
-
   if ($node->option) {
     $list = array();
     foreach ($node->option as $key => $option) {

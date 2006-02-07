@@ -386,8 +386,16 @@ function decisions_view_results(&$node, $teaser, $page, $block) {
 }
 
 function decisions_vote($node) {
+  global $user;
   $mode = $node->mode;
-    if ( function_exists("decisions_vote_$mode") ) {
+
+  $result = db_query("SELECT COUNT(*) AS eligible FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d", $node->nid, $user->uid);
+  $can_vote = db_fetch_object($result);
+  if ( ! $can_vote->eligible ) {
+    return;
+  }
+
+  if ( function_exists("decisions_vote_$mode") ) {
       call_user_func("decisions_vote_$mode", $node);
     } else {
       _decisions_panic_on_mode($mode);
