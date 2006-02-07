@@ -98,7 +98,7 @@ function decisions_form($node) {
     '#title' => t('Decision mode'),
     '#required' => TRUE,
     '#options' => array( 'poll' => t('Poll'), 'runoff' => t('Runoff') ),
-    '#default_value' => variable_get('mode', 'poll'),
+    '#default_value' => (isset($node->mode) ? $node->mode : variable_get('mode', 'poll')),
   );
 
   /* decision-specific elements */
@@ -350,6 +350,7 @@ function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
         '#type' => 'textfield',
         '#title' => check_plain($option),
         '#required' => FALSE,
+        /* XXX: that's not the right way, we need to fetch the vote */
 /*        '#default_value' => $node->option[$key],*/
         '#size' => 3,
         '#maxlength' => 3,
