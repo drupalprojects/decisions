@@ -443,6 +443,12 @@ function _decisions_panic_on_mode($mode) {
 /**
  * internal function to load the available modes.
  *
+ * this scans the modes subdirectory to find mode.include files, where
+ * mode is considered to be the mode name. found files are loaded and
+ * added to the mode list.
+ *
+ * @uses _decisions_mode_list()
+ * @uses file_scan_directory()
  */
 function _decisions_load_modes() {
   global $_decisions_modes;
