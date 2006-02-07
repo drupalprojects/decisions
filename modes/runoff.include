@@ -80,6 +80,9 @@ function decisions_view_results_runoff($node, $teaser, $page, $block) {
     return $output;
 }
 
+/**
+ * XXX: what does this do?
+ */
 function _decision_calculate_runoff ($node) {
 
 // Important here: for now, we do not check the weighting of the votes
@@ -143,6 +146,9 @@ $votes = _votingapi_get_raw_votes('decisions', $node->nid);
   return array();
 }
 
+/**
+ * XXX: what does this do?
+ */
 function _decision_calculate_runoff_nextround($aRound, &$votes, $min) {
 
    // For Tie-breaking rules, lets implement in this first version the
