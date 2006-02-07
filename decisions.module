@@ -401,12 +401,10 @@ function decisions_view_results(&$node, $teaser, $page, $block) {
  * decisions_view_voting().
  */
 function decisions_vote($node) {
-  global $user;
   $mode = $node->mode;
 
   $ok = FALSE; // error by default
-  $can_vote = db_fetch_object(db_query("SELECT COUNT(*) AS eligible FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d", $node->nid, $user->uid));
-  if ( $can_vote->eligible ) {
+  if ( decision_eligible($node) ) {
     if ( function_exists("decisions_vote_$mode") ) {
       call_user_func("decisions_vote_$mode", $node);
     }
@@ -436,6 +434,19 @@ function decisions_vote_validate($node) {
     return call_user_func("decisions_vote_validate_$mode", $node);
   }
   return TRUE;
+}
+
+/**
+ * check if user is eligible to this decision
+ */
+function decisions_eligible($node, $uid = NULL) {
+  global $user;
+  if (!isset($uid)) {
+    $uid = $user->uid;
+  }
+
+  $can_vote = db_fetch_object(db_query("SELECT COUNT(*) AS eligible FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d", $node->nid, $uid));
+  return $can_vote->eligible;
 }
 
 /**
