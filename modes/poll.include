@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * Implementation of the view_voting hook for the poll module.
+ * 
+ * This creates a list of radios to allow the user to vote on a single
+ * poll option.
+ */
+function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
+  if ($node->option) {
+    $list = array();
+    foreach ($node->option as $i => $option) {
+      $list[$i] = check_plain($option);
+    }
+    $form['option'] = array(
+      '#type' => 'radios',
+      '#title' => $page ? '' : check_plain($node->title),
+      '#default_value' => -1,
+      '#options' => $list
+    );
+  }
+  $form['nid'] = array(
+    '#type' => 'hidden',
+    '#value' => $node->nid
+  );
+  $form['vote'] = array(
+    '#type' => 'submit',
+    '#value' => t('Vote')
+  );
+  $form['#action'] = url('node/'. $node->nid);
+  return drupal_get_form('decisions_view_voting', $form);
+}
+
+/**
+ * Implemntation of the decisions_view_results() hook for the poll module
+ *
+ * TODO: implement (http://drupal.org/node/48249)
+ */
+function decisions_view_results_poll($node, $teaser, $page, $block) {
+  return "FIXME: can't show results for poll yet";
+}
+
+function decisions_vote_poll($node) {
+  $vote->value = $_POST['edit']['option'];
+  $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
+  votingapi_set_vote('decisions', $node->nid, $vote);
+}
+
+?>
