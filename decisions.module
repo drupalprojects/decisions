@@ -270,7 +270,8 @@ function decisions_insert($node) {
     # special case: any authenticated user can vote
     # add all current users to electoral list
     db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.uid != 0", $node->nid);
-  } else {
+  }
+  else {
 # all users must not be allowed to vote, add relevant users only
     db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users_roles u, permission p WHERE FIND_IN_SET(' view decisions', p.perm) AND u.rid = p.rid AND u.uid != 0", $node->nid);
   }
@@ -296,7 +297,8 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 
   if (votingapi_get_user_votes('decisions', $node->nid)) { // show results only if the user has voted
     $output .= decisions_view_results(&$node, $teaser, $page, $block);
-  } else { // otherwise, show the vote form or record vote
+  }
+  else { // otherwise, show the vote form or record vote
     $valid = FALSE;
     if ($_POST['op'] == t('Vote')) {
       // decision_vote will return FALSE on error
@@ -383,7 +385,8 @@ function decisions_view_results(&$node, $teaser, $page, $block) {
   $mode = $node->mode;
   if ( function_exists("decisions_view_results_$mode") ) {
     return call_user_func("decisions_view_results_$mode", $node, $teaser, $page, $block);
-  } else {
+  }
+  else {
     _decisions_panic_on_mode($node->mode);
   }
 }
@@ -404,10 +407,12 @@ function decisions_vote($node) {
   if ( $can_vote->eligible ) {
     if ( function_exists("decisions_vote_$mode") ) {
       call_user_func("decisions_vote_$mode", $node);
-    } else {
+    }
+    else {
       _decisions_panic_on_mode($mode);
     }
-  } else {
+  }
+  else {
     drupal_set_message(t('You are not eligible to this decision.'));
   }
 }
