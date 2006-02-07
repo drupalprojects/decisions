@@ -47,12 +47,24 @@ function decisions_view_results_poll($node, $teaser, $page, $block) {
   return "FIXME: can't show results for poll yet";
 }
 
+/**
+ * implementation of the vote() hook
+ *
+ * registers the vote as a key for this node using votingapi_set_vote()
+ */
 function decisions_vote_poll($node) {
   $vote->value = $_POST['edit']['option'];
   $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
   votingapi_set_vote('decisions', $node->nid, $vote);
 }
 
+/**
+ * implementation of the vote_validate() hook
+ *
+ * check if the submitted key exists, just to make sure the form is not bypassed.
+ *
+ * @returns boolean true if the form is valid
+ */
 function decisions_vote_validate_poll($node) {
   if (!($ok = array_key_exists($_POST['edit']['option'], $node->option))) {
     form_set_error('option', 'You must select one option');
