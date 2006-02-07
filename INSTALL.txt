@@ -34,6 +34,7 @@ Step 2 - Install dependencies
 You need to download, install and activate the following modules in
 order to have decisions working:
 
+ * Drupal >= 4.7 (decisions uses the new forms api)
  * voting_api
 
 Step 3 - Activate the module
