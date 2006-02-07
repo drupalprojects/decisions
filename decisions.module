@@ -280,14 +280,14 @@ function decisions_insert($node) {
   # create the electoral list
 
   # check first if authenticated users have the right to vote, because authenticated users are not added to the users_roles permission, probably for performance reasons
-  $result = db_fetch_object(db_query("SELECT count(*) AS hit FROM `permission` JOIN role ON role.rid = permission.rid WHERE perm LIKE '%vote on decisions%' AND role.name = 'authenticated user'"));
+  $result = db_fetch_object(db_query("SELECT count(*) AS hit FROM `permission` JOIN role ON role.rid = permission.rid WHERE FIND_IN_SET(' vote on decisions', perm) AND role.name = 'authenticated user'"));
   if ($result->hit) {
     # special case: any authenticated user can vote
     # add all current users to electoral list
     db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.uid != 0", $node->nid);
   } else {
 # all users must not be allowed to vote, add relevant users only
-    db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users_roles u, permission p WHERE p.perm LIKE '%view decisions%' AND u.rid = p.rid AND u.uid != 0", $node->nid);
+    db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users_roles u, permission p WHERE FIND_IN_SET(' view decisions', p.perm) AND u.rid = p.rid AND u.uid != 0", $node->nid);
   }
 
   # insert the options, same sequence than update
