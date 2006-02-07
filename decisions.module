@@ -16,7 +16,7 @@ $decisions_available_modes = array();
 if (is_dir($MODES_DIR)) {
   if ($dh = opendir($MODES_DIR)) {
     while (($file = readdir($dh)) !== false) {
-      if (preg_match('/^(.*)\.include$/', $file, $matches)) {
+      if (preg_match('/^([^\.].*)\.include$/', $file, $matches)) {
         require_once($MODES_DIR . $file);
         $mode = $matches[1];
         if ( function_exists("decisions_$mode_longname") ) {
