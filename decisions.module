@@ -482,9 +482,13 @@ function decisions_view_results_poll($node, $teaser, $page, $block) {
   return "FIXME: can't show results for poll yet";
 }
 
+
 function decision_calculate_runoff ($node) {
 
-  $votes = _votingapi_get_raw_votes('decisions', $node->nid);
+// Important here: for now, we do not check the weighting of the votes 
+// in the votes array ($vote->value).  $vote->value should 
+// be beetween 1 and the max number of options for the runoff.
+$votes = _votingapi_get_raw_votes('decisions', $node->nid);
  
   //calculate the first round
   foreach ($votes as $vote) {
@@ -515,18 +519,20 @@ function decision_calculate_runoff ($node) {
      }
     }
 
-    // is there only two options left
+    // is there only two options left?
     $twooptionsleft =  ((sizeof($aRound) - $num_discarded) == 2);
 
    
     // if max has the majority, it wins
+    // if there is only two options left, choose the best, 
+    // or the randomly in case of ties
     if (($max > $totalvotes/2) or $twooptionsleft) {
        $runoff->winner = array_search($max, $aRound);
        $runoff->matrix = $runoff_matrix;
        return $runoff;
     }
 
-    //sinon, on trouve le prochainround
+    // get to the next round
     $aRound = decision_calculate_runoff_nextround($aRound, $votes, $min);
    }
 }
@@ -563,7 +569,7 @@ function decision_calculate_runoff_nextround($aRound, &$votes, $min) {
        $stop = $stop+1;
     }
 
-   // step 3: lets find what are the other non-eliminated choices for the ones who voted for the loosers.  Super pas optimal
+   // step 3: lets find what are the other non-eliminated choices for the ones who voted for the loosers.  Not optimised at all
    foreach ($voteslosts as $voteuid) {
      $minvalue = 0;
     foreach ($votes as $vote) {
@@ -577,7 +583,7 @@ function decision_calculate_runoff_nextround($aRound, &$votes, $min) {
      }
    }
 
-   // step 4: distribute the second vote for all the loosers
+   // step 4: distribute the remaining votes of the users
    foreach ($voteslosts as $votelost_uid) {
      $aRound[$votesecond[$votelost_uid]] += 1;
    }
