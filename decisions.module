@@ -312,11 +312,13 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
   if (votingapi_get_user_votes('decisions', $node->nid)) { // show results only if the user has voted
     $output .= decisions_view_results(&$node, $teaser, $page, $block);
   } else { // otherwise, show the vote form or record vote
+    $show_form = TRUE;
     if ($_POST['op'] == t('Vote')) {
-      $output .= decisions_vote($node);
-    } else {
-      $output .= decisions_view_voting($node, $teaser, $page, $block);
+      // decision_vote will return FALSE on error
+      $show_form = !decisions_vote($node);
     }
+    
+    $output .= decisions_view_voting($node, $teaser, $page, $block);
   }
 
   $output .= decisions_view_electoral_list($node, $teaser);
@@ -401,21 +403,32 @@ function decisions_view_results(&$node, $teaser, $page, $block) {
  * this calls the appropriate vote recording function, depending on
  * the mode. It will call decisions_vote_$mode, similarly to
  * decisions_view_voting().
+ *
+ * Hooks should return true if vote was successful, false if the form
+ * should be displayed again.
+ *
+ * XXX: Maybe we need a separate validation function to decide wether
+ * to show the form again.
+ *
+ * @returns true if vote was successfully registered, false if not and
+ * the form needs to be displayed again.
  */
 function decisions_vote($node) {
   global $user;
   $mode = $node->mode;
 
+  $ok = FALSE; // error by default
   $can_vote = db_fetch_object(db_query("SELECT COUNT(*) AS eligible FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d", $node->nid, $user->uid));
   if ( $can_vote->eligible ) {
     if ( function_exists("decisions_vote_$mode") ) {
-      call_user_func("decisions_vote_$mode", $node);
+      $ok = call_user_func("decisions_vote_$mode", $node);
     } else {
       _decisions_panic_on_mode($mode);
     }
   } else {
     drupal_set_message(t('You are not eligible to this decision.'));
   }
+  return $ok;
 }
 
 /**

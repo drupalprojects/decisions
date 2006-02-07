@@ -199,14 +199,26 @@ function _decision_calculate_runoff_nextround($aRound, &$votes, $min) {
  * Implementation of the vote hook for the runoff module.
  *
  * This takes care of registering the vote in runoff nodes.
+ *
+ * @returns false on error
  */
 function decisions_vote_runoff($node) {
+  $ok = TRUE;
+  foreach ( $node->option as $key => $option ) {
+    if ($_POST['edit']['Option_' . $key] > count($node->option)) {
+      form_set_error('Option_'.$key, "illegal rank for option $key: " . $_POST['edit']['Option_' . $key] . ' > ' . count($node->option));
+      $ok = FALSE;
+    }
+  }
+  if ($ok) {
   foreach ( $node->option as $key => $option ) {
     $vote->value = $_POST['edit']['Option_' . $key];
     $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
     $vote->tag = $key;
     votingapi_set_vote('decisions', $node->nid, $vote);
   }
+  }
+  return $ok;
 }
 
 ?>
