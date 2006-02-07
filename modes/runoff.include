@@ -72,7 +72,7 @@ function decisions_view_results_runoff($node, $teaser, $page, $block) {
         $output .= "<td>$aRound[$key]</td>";
       }
       $output .= "</tr>";
-      $round = $round + 1;
+      $round++;
     }
 
 
@@ -93,8 +93,8 @@ $votes = _votingapi_get_raw_votes('decisions', $node->nid);
   //calculate the first round
   foreach ($votes as $vote) {
     if ($vote->value == 1) {
-         $aRound[$vote->tag] = $aRound[$vote->tag] + 1;
-         $totalvotes = $totalvotes + 1;
+         $aRound[$vote->tag]++;
+         $totalvotes++;
     }
   }
   
@@ -121,7 +121,7 @@ $votes = _votingapi_get_raw_votes('decisions', $node->nid);
        $min = $votevalue;
       }
       if (!$votevalue) {  // si c'est à zéro, on le compte
-       $num_discarded = $num_discarded + 1;
+       $num_discarded++;
      }
     }
 
@@ -169,7 +169,7 @@ function _decision_calculate_runoff_nextround($aRound, &$votes, $min) {
    $numbervotes_redistributed = 0;
    $preference_value = 0;
    while (($numbervotes_redistributed < $min) and $stop < 50){
-      $preference_value = $preference_value + 1;
+      $preference_value++;
       foreach ($votes as $vote) {
         // step 2.1: find the users who voted for the loosers
         if (($vote->tag == $taglooser) and
@@ -178,7 +178,7 @@ function _decision_calculate_runoff_nextround($aRound, &$votes, $min) {
              $numbervotes_redistributed = $numbervotes_redistributed + 1;
          }
        }
-       $stop = $stop+1;
+       $stop++;
     }
 
    // step 3: lets find what are the other non-eliminated choices for the ones who voted for the loosers.  Not optimised at all
@@ -197,7 +197,7 @@ function _decision_calculate_runoff_nextround($aRound, &$votes, $min) {
 
    // step 4: distribute the remaining votes of the users
    foreach ($voteslosts as $votelost_uid) {
-     $aRound[$votesecond[$votelost_uid]] += 1;
+     $aRound[$votesecond[$votelost_uid]]++;
    }
 
    return $aRound;
