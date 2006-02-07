@@ -371,29 +371,6 @@ function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
   return drupal_get_form('decisions_view_voting', $form);
 }
 
-function decisions_vote($node) {
-  $mode = $node->mode;
-    if ( function_exists("decisions_vote_$mode") ) {
-      call_user_func("decisions_vote_$mode", $node);
-    } else {
-      _decisions_panic_on_mode($mode);
-    }
-}
-
-/**
- * Implementation of the vote hook for the runoff module.
- *
- * This takes care of registering the vote in runoff nodes.
- */
-function decisions_vote_runoff($node) {
-  foreach ( $node->option AS $key => $option ) {
-    $vote->value = $_POST['edit']['Option_' . $key];
-    $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
-    $vote->tag = $key;
-    votingapi_set_vote('decisions', $node->nid, $vote);
-  }
-}
-
 /**
  * Implementation of the view_voting hook for the poll module.
  * 
@@ -589,6 +566,29 @@ function decision_calculate_runoff_nextround($aRound, &$votes, $min) {
    }
 
    return $aRound;
+}
+
+function decisions_vote($node) {
+  $mode = $node->mode;
+    if ( function_exists("decisions_vote_$mode") ) {
+      call_user_func("decisions_vote_$mode", $node);
+    } else {
+      _decisions_panic_on_mode($mode);
+    }
+}
+
+/**
+ * Implementation of the vote hook for the runoff module.
+ *
+ * This takes care of registering the vote in runoff nodes.
+ */
+function decisions_vote_runoff($node) {
+  foreach ( $node->option AS $key => $option ) {
+    $vote->value = $_POST['edit']['Option_' . $key];
+    $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
+    $vote->tag = $key;
+    votingapi_set_vote('decisions', $node->nid, $vote);
+  }
 }
 
 function decisions_vote_poll($node) {
