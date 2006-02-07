@@ -1,0 +1,47 @@
+Installation procedures for Decisions.gnuvernment.org
+=====================================================
+
+Step 0 - Fetch the source code
+------------------------------
+
+Since you're reading this, you probably know how to find the source
+code. I'll tell you anyways. The decisions module is developped in the
+contrib Drupal CVS repository. You can read the general instructions
+on how to access this repository at:
+
+http://drupal.org/node/321
+
+... but the general recipe is something like:
+
+cd drupal/modules
+cvs -d :pserver:anonymous@cvs.drupal.org:/cvs/drupal-contrib login
+cvs -d :pserver:anonymous@cvs.drupal.org:/cvs/drupal-contrib co -d decisions contributions/modules/decisions
+
+That's all.
+
+Step 1 - Load the database schema
+---------------------------------
+
+Simply load the .mysql file using phpMyAdmin or the commandline mysql
+client, following instructions similar to the original Drupal
+INSTALL.txt file. Something like this should do the trick:
+
+mysql -u drupal -p drupal < decisions.mysql
+
+Step 2 - Install dependencies
+-----------------------------
+
+You need to download, install and activate the following modules in
+order to have decisions working:
+
+ * voting_api
+
+Step 3 - Activate the module
+----------------------------
+
+By then you generally want to activate the module in the configuration
+to have it do something significative. Head for:
+
+http://localhost/admin/modules
+
+(if you have clean_urls active).
