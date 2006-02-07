@@ -9,8 +9,19 @@
  * Thanks to everyone for all the that was already written. (...and debugged!)
  */
 
-require_once('modes/runoff.include');
-require_once('modes/poll.include');
+$MODES_DIR = dirname(__FILE__) . '/modes/';
+
+if (is_dir($MODES_DIR)) {
+  if ($dh = opendir($MODES_DIR)) {
+    while (($file = readdir($dh)) !== false) {
+      if (preg_match('/\.include$/', $file)) {
+        require_once($MODES_DIR . $file);
+      }
+    }
+  }
+} else {
+  watchdog('decisions', "cannot find the modes directory containing decisions modes definitions in $MODES_DIR. This will cause problems.", WATCHDOG_ERROR);
+}
 
 /**
  * Implementation of hook_access().
