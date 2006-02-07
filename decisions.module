@@ -11,11 +11,20 @@
 
 $MODES_DIR = dirname(__FILE__) . '/modes/';
 
+$decisions_available_modes = array();
+
 if (is_dir($MODES_DIR)) {
   if ($dh = opendir($MODES_DIR)) {
     while (($file = readdir($dh)) !== false) {
-      if (preg_match('/\.include$/', $file)) {
+      if (preg_match('/^(.*)\.include$/', $file, $matches)) {
         require_once($MODES_DIR . $file);
+        $mode = $matches[1];
+        if ( function_exists("decisions_$mode_longname") ) {
+          $decisions_available_modes[$mode] = call_user_func("decisions_$mode_longname");
+        }
+        else {
+          _decisions_panic_on_mode($mode);
+        }
       }
     }
   }

@@ -1,6 +1,13 @@
 <?php
 
 /**
+ * Implementation of the decisions_longname() hook
+ */
+function decisions_runoff_longname() {
+  return t("Runoff");
+}
+
+/**
  * Implementation of the view_voting_() hook for the runoff module.
  *
  * This displays a textfield per options, that should be filled with a

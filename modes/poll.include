@@ -1,6 +1,13 @@
 <?php
 
 /**
+ * Implementation of the decisions_longname() hook
+ */
+function decisions_poll_longname() {
+  return t("Poll");
+}
+
+/**
  * Implementation of the view_voting hook for the poll module.
  * 
  * This creates a list of radios to allow the user to vote on a single
