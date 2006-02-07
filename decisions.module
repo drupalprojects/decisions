@@ -404,7 +404,7 @@ function decisions_vote($node) {
   $mode = $node->mode;
 
   $ok = FALSE; // error by default
-  if ( decision_eligible($node) ) {
+  if ( decisions_eligible($node) ) {
     if ( function_exists("decisions_vote_$mode") ) {
       call_user_func("decisions_vote_$mode", $node);
     }
