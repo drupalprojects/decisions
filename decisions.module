@@ -277,8 +277,12 @@ function decisions_validate($node) {
  */
 function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
   $node = node_prepare($node, $teaser);
-  $output .= decisions_view_voting($node, $teaser, $page, $block);
-  $output .= decisions_view_results(&$node, $teaser, $page, $block);
+
+  if (votingapi_get_user_votes('decisions', $node->nid)) { // show results only if the user has voted
+    $output .= decisions_view_results(&$node, $teaser, $page, $block);
+  } else { // otherwise, show the vote form
+    $output .= decisions_view_voting($node, $teaser, $page, $block);
+  }
 
   $node->body .= $output;
   $node->teaser .= $output;
@@ -318,7 +322,11 @@ function decisions_view_voting(&$node, $teaser, $page, $block) {
   $mode = $node->mode;
 
   if ($_POST['op'] == t('Vote')) {
-    if ( function_exists("decisions_vote_$mode") ) {
+    if (votingapi_get_user_votes('decisions', $node->nid)) {
+      global $user;
+      watchdog('decisions', t('Attempt to change existing vote on node %nid, uid: %uid', array('%nid' => $node->nid, '%uid' => $user->uid)), WATCHDOG_WARNING);
+      drupal_set_message(t('Vote already registered'));
+    } elseif ( function_exists("decisions_vote_$mode") ) {
       call_user_func("decisions_vote_$mode", $node);
     }
   }
