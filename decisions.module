@@ -30,6 +30,7 @@ function decisions_access($op, $node) {
     }
   }
 }
+
 /**
  * Implementation of hook_block().
  */
@@ -60,23 +61,10 @@ function decisions_block_contents() {
 }
 
 /**
- * Implementation of hook_cron().
- *
- */
-function decisions_cron() {
-  /*
-  $result = db_query('SELECT p.nid FROM {poll} p INNER JOIN {node} n ON p.nid = n.nid WHERE (n.created + p.runtime) < '. time() .' AND p.active = 1 AND p.runtime != 0');
-  while ($poll = db_fetch_object($result)) {
-    db_query("UPDATE {poll} SET active = 0 WHERE nid = %d", $poll->nid);
-  }
- */
-}
-
-/**
  * Implementation of hook_delete().
  *
- * A TESTER !!!!!!  ...et est-ce qu'on efface les votes aussi?
- *
+ * TODO: to test
+ * TODO: do we remove the votes themselves?
  */
 function decisions_delete($node) {
   db_query("DELETE FROM {decisions} WHERE nid = %d", $node->nid);
@@ -86,6 +74,8 @@ function decisions_delete($node) {
 
 /**
  * Implementation of hook_form().
+ *
+ * This hook displays the form necessary to edit the *node* (ie. not the votes).
  */
 function decisions_form($node) {
 
@@ -171,6 +161,8 @@ function decisions_help($section) {
 
 /**
  * Implementation of hook_load().
+ *
+ * Load the votes and decision-specific data into the node object.
  */
 function decisions_load($node) {
    $decision = db_fetch_object(db_query("SELECT * FROM {decisions} WHERE nid = %d", $node->nid));
@@ -184,6 +176,10 @@ function decisions_load($node) {
 
 /**
  * Implementation of hook_menu().
+ *
+ * Just a path for creating new decisions for now, but we could
+ * eventually have a 'my decisions' and 'view decisions' kind of
+ * page. (TODO)
  */
 function decisions_menu($may_cache) {
   global $user;
@@ -193,7 +189,6 @@ function decisions_menu($may_cache) {
   if ($may_cache) {
     $items[] = array('path' => 'node/add/decisions', 'title' => t('decision'),
       'access' => user_access('create decisions'));
-    // Eventually, we could have a 'my decisions' kind of page...
     /*
     $items[] = array('path' => 'decisions', 'title' => t('decisions'),
       'callback' => 'decision_page',
@@ -224,6 +219,8 @@ function decisions_perm() {
 
 /**
  * Implementation of hook_settings().
+ *
+ * Not configurable yet.
  */
 function decisions_settings() {
   $output = '';
@@ -232,6 +229,8 @@ function decisions_settings() {
 
 /**
  * Implementation of hook_update().
+ *
+ * This is called upon node edition.
  */
 function decisions_update($node) {
   db_query("UPDATE {decisions} SET mode = '%s' WHERE nid = %d", $node->mode, $node->nid);
@@ -248,6 +247,11 @@ function decisions_update($node) {
   }
 }
 
+/**
+ * Implementation of hook_insert()
+ *
+ * This is called upon node creation
+ */
 function decisions_insert($node) {
   # just create an empty entry for now
   db_query("INSERT INTO {decisions} (nid, mode) VALUES (%d, '%s')", $node->nid, $node->mode);
@@ -261,27 +265,17 @@ function decisions_insert($node) {
 
 /**
  * Implementation of hook_validate().
+ *
+ * XXX: No validation yet.
  */
 function decisions_validate($node) {
-  #if ($node->OptionGroup['moreoptions'] == '1') {
-  #  $node->options++;
-  #}
-/*
-  echo '<html><body><pre>';
-  var_export($node);
-  echo '</pre></body></html>';
-  die();
   // faut appeler form_set_error si necessaire
-*/
 }
 
 /**
  * Implementation of hook_view().
  */
 function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
-  if ($page) {
-  }
-
   $node = node_prepare($node, $teaser);
   $output .= decisions_view_voting($node, $teaser, $page, $block);
   $output .= decisions_view_results(&$node, $teaser, $page, $block);
@@ -291,6 +285,10 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 
 }
 
+/**
+ * Theme stub for redering the voting form, to allow the chance for
+ * themes to make this nicer/different
+ */
 function theme_decisions_view_voting($form) {
   $output .= '<div class="decisions">';
   $output .= '  <div class="option-form">';
@@ -305,18 +303,26 @@ function theme_decisions_view_voting($form) {
   return $output;
 }
 
+/**
+ * View the voting form.
+ *
+ * This calls a function decisions_vote_$mode, where $mode is defined
+ * in the node. If the function does not exist, a watchdog error is
+ * raised and the error is reported using drupal_set_message().
+ *
+ * This also takes care of registering new votes, if the vote button
+ * has been pressed.
+ */
 function decisions_view_voting(&$node, $teaser, $page, $block) {
 
   $mode = $node->mode;
 
   if ($_POST['op'] == t('Vote')) {
     if ( function_exists("decisions_vote_$mode") ) {
-/*      drupal_set_message(t('Call voting function for mode "%mode".', array('%mode' => $node->mode), 'status'));*/
       call_user_func("decisions_vote_$mode", $node);
     }
   }
   if ( function_exists("decisions_view_voting_$mode") ) {
-/*    drupal_set_message(t('Known decision mode : %mode.', array('%mode' => $node->mode), 'status'));*/
     return call_user_func("decisions_view_voting_$mode", $node, $teaser, $page, $block);
   }
   else {
@@ -327,7 +333,12 @@ function decisions_view_voting(&$node, $teaser, $page, $block) {
 
 
 /**
- * Mode : Runoff
+ * Implementation of the view_voting_() hook for the runoff module.
+ *
+ * This displays a textfield per options, that should be filled with a
+ * ranking.
+ *
+ * TODO: make this a nicer UI (http://drupal.org/node/48255)
  */
 function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
   if ($node->option) {
@@ -358,6 +369,11 @@ function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
   return drupal_get_form('decisions_view_voting', $form);
 }
 
+/**
+ * Implementation of the vote hook for the runoff module.
+ *
+ * This takes care of registering the vote in runoff nodes.
+ */
 function decisions_vote_runoff($node) {
   foreach ( $node->option AS $key => $option ) {
     $vote->value = $_POST['edit']['Option_' . $key];
@@ -368,7 +384,10 @@ function decisions_vote_runoff($node) {
 }
 
 /**
- * Mode : Poll 
+ * Implementation of the view_voting hook for the poll module.
+ * 
+ * This creates a list of radios to allow the user to vote on a single
+ * poll option.
  */
 function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
   if ($node->option) {
@@ -395,6 +414,13 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
   return drupal_get_form('decisions_view_voting', $form);
 }
 
+/**
+ * show results of the vote
+ *
+ * this calls the appropriate vote results function, depending on the
+ * mode. It will call decisions_view_results_$mode, similarly to
+ * decisions_view_voting().
+ */
 function decisions_view_results(&$node, $teaser, $page, $block) {
   $mode = $node->mode;
   if ( function_exists("decisions_view_results_$mode") ) {
@@ -405,6 +431,12 @@ function decisions_view_results(&$node, $teaser, $page, $block) {
   }
 }
 
+/**
+ * implementation of the decisions_view_results() hook for the runoff
+ * module
+ *
+ * TODO: fix display (http://drupal.org/node/48248)
+ */
 function decisions_view_results_runoff($node, $teaser, $page, $block) {
     $runoff = decision_calculate_runoff($node);
     $winning_option = $node->option[$runoff->winner];
@@ -431,6 +463,11 @@ function decisions_view_results_runoff($node, $teaser, $page, $block) {
     return $output;
 }
 
+/**
+ * Implemntation of the decisions_view_results() hook for the poll module
+ *
+ * TODO: implement (http://drupal.org/node/48249)
+ */
 function decisions_view_results_poll($node, $teaser, $page, $block) {
   return "FIXME: can't show results for poll yet";
 }
