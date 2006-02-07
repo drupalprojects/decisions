@@ -92,8 +92,11 @@ $votes = _votingapi_get_raw_votes('decisions', $node->nid);
     }
   }
   
-  while (true) {
+  $maxiter = 1000;
+  for ($i = 0; $i < $maxiter; $i++) {
 
+    if (!($i % 10)) print ".";
+    if (!($i % 800)) print "<br>\n";
     //Add the round to the matrix 
     $runoff_matrix[] = $aRound;
 
@@ -129,6 +132,9 @@ $votes = _votingapi_get_raw_votes('decisions', $node->nid);
     // get to the next round
     $aRound = _decision_calculate_runoff_nextround($aRound, $votes, $min);
    }
+  watchdog('decisions', "could not reach a decision within $maxiter iterations", WATCHDOG_ERROR);
+  drupal_set_message("could not reach a decision within $maxiter iterations");
+  return array();
 }
 
 function _decision_calculate_runoff_nextround($aRound, &$votes, $min) {
