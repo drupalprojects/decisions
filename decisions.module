@@ -309,9 +309,25 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
     }
   }
 
+  $output .= decisions_view_electoral_list($node, $teaser);
+
   $node->body .= $output;
   $node->teaser .= $output;
 
+}
+
+function decisions_view_electoral_list($node, $teaser = FALSE) {
+  if ( $teaser )
+    return;
+
+  $result = db_query("SELECT COUNT(*) AS voters FROM {decisions_electoral_list} WHERE nid=%d", $node->nid);
+  $electoral_list = db_fetch_object($result);
+
+  $output = '<div class="decisions-electoral-list">';
+  $output .= "Total number of voters in the list : " . $electoral_list->voters;
+  $output .= '</div>';
+
+  return $output;
 }
 
 /**
