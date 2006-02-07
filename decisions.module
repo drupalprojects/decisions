@@ -326,9 +326,11 @@ function decisions_view_electoral_list($node, $teaser = FALSE) {
   if ( ! $teaser ) {
     $result = db_query("SELECT COUNT(*) AS voters FROM {decisions_electoral_list} WHERE nid=%d", $node->nid);
     $electoral_list = db_fetch_object($result);
+    $result = db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid);
+    $votes = db_fetch_object($result);
 
     $output = '<div class="decisions-electoral-list">';
-    $output .= t('%v eligible voters are on the list', array('%v' => $electoral_list->voters));
+    $output .= t('%d out of %v eligible voters have voted.', array('%d' => $votes->voters, '%v' => $electoral_list->voters));
     $output .= '</div>';
   }
   return $output;
@@ -468,7 +470,7 @@ function _decisions_load_modes() {
             drupal_set_message("decisions_${mode}_longname ??");
             _decisions_mode_list($mode);
           }
-    
+
   }
 }
 
@@ -482,7 +484,7 @@ function _decisions_load_modes() {
  */
 function _decisions_mode_list($mode = NULL, $longname = NULL) {
   static $_decisions_modes = array();
-  
+
   if (!is_null($mode)) {
     if (is_null($longname)) {
       $longname = $mode;
