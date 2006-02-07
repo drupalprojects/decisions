@@ -280,8 +280,12 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 
   if (votingapi_get_user_votes('decisions', $node->nid)) { // show results only if the user has voted
     $output .= decisions_view_results(&$node, $teaser, $page, $block);
-  } else { // otherwise, show the vote form
-    $output .= decisions_view_voting($node, $teaser, $page, $block);
+  } else { // otherwise, show the vote form or record vote
+    if ($_POST['op'] == t('Vote')) {
+      $output .= decisions_vote($node);
+    } else {
+      $output .= decisions_view_voting($node, $teaser, $page, $block);
+    }
   }
 
   $node->body .= $output;
@@ -321,24 +325,13 @@ function decisions_view_voting(&$node, $teaser, $page, $block) {
 
   $mode = $node->mode;
 
-  if ($_POST['op'] == t('Vote')) {
-    if (votingapi_get_user_votes('decisions', $node->nid)) {
-      global $user;
-      watchdog('decisions', t('Attempt to change existing vote on node %nid, uid: %uid', array('%nid' => $node->nid, '%uid' => $user->uid)), WATCHDOG_WARNING);
-      drupal_set_message(t('Vote already registered'));
-    } elseif ( function_exists("decisions_vote_$mode") ) {
-      call_user_func("decisions_vote_$mode", $node);
-    }
-  }
   if ( function_exists("decisions_view_voting_$mode") ) {
     return call_user_func("decisions_view_voting_$mode", $node, $teaser, $page, $block);
   }
   else {
-    watchdog('decisions', t('Unknown decision mode : %mode.', array('%mode' => $node->mode), WATCHDOG_ERROR));
-    drupal_set_message(t('Unknown decision mode : %mode.', array('%mode' => $node->mode), 'error'));
+    _decisions_panic_on_mode($node->mode);
   }
 }
-
 
 /**
  * Implementation of the view_voting_() hook for the runoff module.
@@ -376,6 +369,15 @@ function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
   );
   $form['#action'] = url('node/'. $node->nid);
   return drupal_get_form('decisions_view_voting', $form);
+}
+
+function decisions_vote($node) {
+  $mode = $node->mode;
+    if ( function_exists("decisions_vote_$mode") ) {
+      call_user_func("decisions_vote_$mode", $node);
+    } else {
+      _decisions_panic_on_mode($mode);
+    }
 }
 
 /**
@@ -435,8 +437,7 @@ function decisions_view_results(&$node, $teaser, $page, $block) {
   if ( function_exists("decisions_view_results_$mode") ) {
     return call_user_func("decisions_view_results_$mode", $node, $teaser, $page, $block);
   } else {
-    watchdog('decisions', t('Unknown decision mode : %mode.', array('%mode' => $node->mode), WATCHDOG_ERROR));
-    drupal_set_message(t('Unknown decision mode : %mode.', array('%mode' => $node->mode), 'error'));
+    _decisions_panic_on_mode($node->mode);
   }
 }
 
@@ -589,4 +590,14 @@ function decisions_vote_poll($node) {
   $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
   votingapi_set_vote('decisions', $node->nid, $vote);
 }
+
+/**
+ * internal function factored out that just rings lots of bells when
+ * we detect an unknown mode
+ */
+function _decisions_panic_on_mode($mode)
+    watchdog('decisions', t('Unknown decision mode : %mode.', array('%mode' => $mode), WATCHDOG_ERROR));
+    drupal_set_message(t('Unknown decision mode : %mode.', array('%mode' => $mode), 'error'));
+}
+
 ?>
