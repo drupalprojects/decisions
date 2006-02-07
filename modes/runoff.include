@@ -17,6 +17,8 @@ function decisions_runoff_longname() {
  */
 function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
 
+  $weight = 0;
+
   if ($node->option) {
     $list = array();
     foreach ($node->option as $key => $option) {
@@ -30,6 +32,7 @@ function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
 /*        '#default_value' => $node->option[$key],*/
         '#size' => 3,
         '#maxlength' => 3,
+        '#weight' => $weight++,
       );
     }
   }
@@ -37,10 +40,12 @@ function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
   $form['nid'] = array(
     '#type' => 'hidden',
     '#value' => $node->nid,
+    '#weight' => $weight++,
   );
   $form['vote'] = array(
     '#type' => 'submit',
     '#value' => t('Vote'),
+    '#weight' => $weight++,
   );
   $form['#action'] = url('node/'. $node->nid);
   return drupal_get_form('decisions_view_voting', $form);
@@ -97,7 +102,7 @@ $votes = _votingapi_get_raw_votes('decisions', $node->nid);
          $totalvotes++;
     }
   }
-  
+
   /*
    * XXX: This is an horrible hack to avoid using while(true) which
    * was the loop setup before. This isn't better design, but avoids
