@@ -398,10 +398,19 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
 }
 
 function decisions_view_results(&$node, $teaser, $page, $block) {
-  if ($node->mode == "runoff") {
+  $mode = $node->mode;
+  if ( function_exists("decisions_view_results_$mode") ) {
+    return call_user_func("decisions_view_results_$mode", $node, $teaser, $page, $block);
+  } else {
+    watchdog('decisions', t('Unknown decision mode : %mode.', array('%mode' => $node->mode), WATCHDOG_ERROR));
+    drupal_set_message(t('Unknown decision mode : %mode.', array('%mode' => $node->mode), 'error'));
+  }
+}
+
+function decisions_view_results_runoff($node, $teaser, $page, $block) {
     $runoff = decision_calculate_runoff($node);
     $winning_option = $node->option[$runoff->winner];
-    $output .= "The winner is option $winning_option";
+    $output = "The winner is option $winning_option";
     
     // On output la table 
     $output .= "<table><tr><td>round</td>";
@@ -421,9 +430,11 @@ function decisions_view_results(&$node, $teaser, $page, $block) {
      
  
     $output .= "</table>";
-
     return $output;
-  }
+}
+
+function decisions_view_results_poll($node, $teaser, $page, $block) {
+  return "FIXME: can't show results for poll yet";
 }
 
 function decision_calculate_runoff ($node) {
