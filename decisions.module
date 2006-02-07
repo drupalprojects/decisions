@@ -312,15 +312,21 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
   if (votingapi_get_user_votes('decisions', $node->nid)) { // show results only if the user has voted
     $output .= decisions_view_results(&$node, $teaser, $page, $block);
   } else { // otherwise, show the vote form or record vote
-    $show_form = TRUE;
+    $valid = FALSE;
     if ($_POST['op'] == t('Vote')) {
       // decision_vote will return FALSE on error
-      $show_form = !decisions_vote($node);
+      $valid = decisions_vote_validate($node);
+      if ($valid) {
+        drupal_set_message(t("Your vote was registered."));
+        decisions_vote($node);
+      }
     }
-    
-    $output .= decisions_view_voting($node, $teaser, $page, $block);
+    if (!$valid) {
+      $output .= decisions_view_voting($node, $teaser, $page, $block);
+    }
   }
 
+  // XXX: when and to whom do we show this?
   $output .= decisions_view_electoral_list($node, $teaser);
 
   $node->body .= $output;
@@ -403,15 +409,6 @@ function decisions_view_results(&$node, $teaser, $page, $block) {
  * this calls the appropriate vote recording function, depending on
  * the mode. It will call decisions_vote_$mode, similarly to
  * decisions_view_voting().
- *
- * Hooks should return true if vote was successful, false if the form
- * should be displayed again.
- *
- * XXX: Maybe we need a separate validation function to decide wether
- * to show the form again.
- *
- * @returns true if vote was successfully registered, false if not and
- * the form needs to be displayed again.
  */
 function decisions_vote($node) {
   global $user;
@@ -421,14 +418,32 @@ function decisions_vote($node) {
   $can_vote = db_fetch_object(db_query("SELECT COUNT(*) AS eligible FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d", $node->nid, $user->uid));
   if ( $can_vote->eligible ) {
     if ( function_exists("decisions_vote_$mode") ) {
-      $ok = call_user_func("decisions_vote_$mode", $node);
+      call_user_func("decisions_vote_$mode", $node);
     } else {
       _decisions_panic_on_mode($mode);
     }
   } else {
     drupal_set_message(t('You are not eligible to this decision.'));
   }
-  return $ok;
+}
+
+/**
+ * validate vote form submission
+ *
+ * this will call a hook named decisions_vote_validate_$mode and
+ * return its value. hooks should check $POST to see if the vote data
+ * submitted is valid and use form_set_error() if the form has invalid
+ * data.
+ *
+ * @returns boolean true if form has valid data or if no hook is
+ * defined in mode
+ */
+function decisions_vote_validate($node) {
+  $mode = $node->mode;
+  if ( function_exists("decisions_vote_validate_$mode") ) {
+    return call_user_func("decisions_vote_validate_$mode", $node);
+  }
+  return TRUE;
 }
 
 /**

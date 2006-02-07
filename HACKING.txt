@@ -44,3 +44,13 @@ decisions_$mode_longname()
 
 Optional. The nice long name associated with this mode. Defaults to
 "$mode".
+
+
+decisions_validate_vote_$mode()
+-------------------------------
+
+Optional. Additional validation of vote submissions. Defaults to no
+validation. This hook should behave as a normal form validation hook
+(ie. hook_validate() in drupal terminology), that is, amongst other
+things, set errors using form_set_error(). It should return TRUE if
+the form is valid, FALSE otherwise.
