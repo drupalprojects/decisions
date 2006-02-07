@@ -11,15 +11,16 @@ Mode hooks
 ==========
 
 In addition to the usual module hooks defined by Drupal,
-decisions.module also has its own hooks.
+decisions.module also has its own hooks. modes that do not define
+mandatory hooks will create warnings and problems.
 
 decisions_view_voting_$mode()
 -----------------------------
 
-This hook has the duty to return a HTML form suitable for submitting
-new votes in the decision. It can also add arbitrary HTML. It is
-suggested to setup the form using the new form API and call
-drupal_get_form() to allow the theme to override the display.
+Mandatory. This hook has the duty to return a HTML form suitable for
+submitting new votes in the decision. It can also add arbitrary
+HTML. It is suggested to setup the form using the new form API and
+call drupal_get_form() to allow the theme to override the display.
 
 TODO: right now, there is a common theme hook for all hooks, which
 might be a problem.
@@ -27,18 +28,19 @@ might be a problem.
 decision_vote_$mode()
 ---------------------
 
-This hook is called when a vote is registered. Form data setup in
-decisions_view_voting_$mode() will be available in the POST,
+Mandatory. This hook is called when a vote is registered. Form data
+setup in decisions_view_voting_$mode() will be available in the POST,
 normally. This will usually call votingapi_set_vote() or similar.
 
 decision_view_results_$mode()
 -----------------------------
 
-This hook is called when the user has already voted or when the module
-thinks it's relevant to display a decision's results. This will
-generally call _voting_api_get_raw_votes() or something similar.
+Mandatory. This hook is called when the user has already voted or when
+the module thinks it's relevant to display a decision's results. This
+will generally call _voting_api_get_raw_votes() or something similar.
 
 decisions_$mode_longname()
 --------------------------
 
-The nice long name associated with this mode.
+Optional. The nice long name associated with this mode. Defaults to
+"$mode".

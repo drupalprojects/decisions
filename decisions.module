@@ -23,7 +23,7 @@ if (is_dir($MODES_DIR)) {
           $decisions_available_modes[$mode] = call_user_func("decisions_$mode_longname");
         }
         else {
-          _decisions_panic_on_mode($mode);
+          $decisions_available_modes[$mode] = $mode;
         }
       }
     }
