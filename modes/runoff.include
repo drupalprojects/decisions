@@ -55,10 +55,10 @@ function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
 function decisions_view_results_runoff($node, $teaser, $page, $block) {
     $runoff = _decision_calculate_runoff($node);
     $winning_option = $node->option[$runoff->winner];
-    $output = "The winner is option $winning_option";
+    $output = '<p>'.t("The winner is option %option", array('%option' => $winning_option)).'</p>';
 
     // On output la table
-    $output .= "<table><tr><td>round</td>";
+    $output .= "<table border=\"1\"><tr><td>round</td>";
     foreach ($node->option as $key => $optionname) {
       $output .= "<td>$optionname</td>";
     }
