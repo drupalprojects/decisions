@@ -308,7 +308,7 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
         decisions_vote($node);
       }
     }
-    if (!$valid) {
+    if (!$valid && decisions_eligible($node)) {
       $output .= decisions_view_voting($node, $teaser, $page, $block);
     }
   }
