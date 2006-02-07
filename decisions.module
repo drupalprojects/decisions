@@ -307,8 +307,6 @@ function theme_decisions_view_voting($form) {
 
 function decisions_view_voting(&$node, $teaser, $page, $block) {
 
-  /**** TODO ****/
-
   $mode = $node->mode;
 
   if ($_POST['op'] == t('Vote')) {
