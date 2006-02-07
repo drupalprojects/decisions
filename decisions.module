@@ -91,12 +91,15 @@ function decisions_form($node) {
     '#default_value' => $node->body,
   );
 
+  // to pick a reasonable default, configurable
+  $modes = _decisions_mode_list();
+
   $form['mode'] = array(
     '#type' => 'select',
     '#title' => t('Decision mode'),
     '#required' => TRUE,
-    '#options' => array( 'poll' => t('Poll'), 'runoff' => t('Runoff') ),
-    '#default_value' => (isset($node->mode) ? $node->mode : variable_get('mode', 'poll')),
+    '#options' => _decisions_mode_list(),
+    '#default_value' => (isset($node->mode) ? $node->mode : variable_get('decisions_default_mode', $modes[0])),
   );
 
   /* decision-specific elements */
@@ -438,9 +441,9 @@ function _decisions_panic_on_mode($mode) {
 }
 
 function _decisions_load_modes() {
-  $MODES_DIR = dirname(__FILE__) . '/modes/';
+  global $_decisions_modes;
 
-  $decisions_available_modes = array();
+  $MODES_DIR = dirname(__FILE__) . '/modes/';
 
   if (is_dir($MODES_DIR)) {
     if ($dh = opendir($MODES_DIR)) {
@@ -448,11 +451,12 @@ function _decisions_load_modes() {
         if (preg_match('/^([^\.].*)\.include$/', $file, $matches)) {
           require_once($MODES_DIR . $file);
           $mode = $matches[1];
-          if ( function_exists("decisions_$mode_longname") ) {
-            $decisions_available_modes[$mode] = call_user_func("decisions_$mode_longname");
+          if ( function_exists("decisions_${mode}_longname") ) {
+            _decisions_mode_list($mode, call_user_func("decisions_${mode}_longname"));
           }
           else {
-            $decisions_available_modes[$mode] = $mode;
+            drupal_set_message("decisions_${mode}_longname ??");
+            _decisions_mode_list($mode);
           }
         }
       }
@@ -460,6 +464,18 @@ function _decisions_load_modes() {
   } else {
     watchdog('decisions', "cannot find the modes directory containing decisions modes definitions in $MODES_DIR. This will cause problems.", WATCHDOG_ERROR);
   }
+}
+
+function _decisions_mode_list($mode = NULL, $longname = NULL) {
+  static $_decisions_modes = array();
+  
+  if (!is_null($mode)) {
+    if (is_null($longname)) {
+      $longname = $mode;
+    }
+    $_decisions_modes[$mode] = $longname;
+  }
+  return $_decisions_modes;
 }
 
 ?>
