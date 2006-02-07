@@ -26,7 +26,7 @@ function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
         '#type' => 'textfield',
         '#title' => check_plain($option),
         '#required' => FALSE,
-        /* XXX: that's not the right way, we need to fetch the vote */
+        /* XXX: that's not the right way, we need to fetch the vote using votingapi */
 /*        '#default_value' => $node->option[$key],*/
         '#size' => 3,
         '#maxlength' => 3,
@@ -59,7 +59,7 @@ function decisions_view_results_runoff($node, $teaser, $page, $block) {
 
     // XXX: debugging code
     $output .= "Internal values, for debugging purposes:";
-    // output the table
+    // output the table of runoff rounds
     $output .= "<table border=\"1\"><tr><td>round</td>";
     foreach ($node->option as $key => $optionname) {
       $output .= "<td>$optionname</td>";
@@ -141,6 +141,7 @@ $votes = _votingapi_get_raw_votes('decisions', $node->nid);
     // get to the next round
     $aRound = _decision_calculate_runoff_nextround($aRound, $votes, $min);
    }
+  // loop detected. signal user and record.
   watchdog('decisions', "could not reach a decision within $maxiter iterations", WATCHDOG_ERROR);
   drupal_set_message("could not reach a decision within $maxiter iterations");
   return array();
@@ -168,6 +169,7 @@ function _decision_calculate_runoff_nextround($aRound, &$votes, $min) {
    // step 2: lets find which users needs their vote to be redistributed
    $numbervotes_redistributed = 0;
    $preference_value = 0;
+   // XXX: what is $stop for?
    while (($numbervotes_redistributed < $min) and $stop < 50){
       $preference_value++;
       foreach ($votes as $vote) {
