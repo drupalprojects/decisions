@@ -385,6 +385,13 @@ function decisions_view_results(&$node, $teaser, $page, $block) {
   }
 }
 
+/**
+ * record a vote on the node
+ *
+ * this calls the appropriate vote recording function, depending on
+ * the mode. It will call decisions_vote_$mode, similarly to
+ * decisions_view_voting().
+ */
 function decisions_vote($node) {
   global $user;
   $mode = $node->mode;
@@ -396,12 +403,11 @@ function decisions_vote($node) {
   }
 
   if ( function_exists("decisions_vote_$mode") ) {
-      call_user_func("decisions_vote_$mode", $node);
-    } else {
-      _decisions_panic_on_mode($mode);
-    }
+    call_user_func("decisions_vote_$mode", $node);
+  } else {
+    _decisions_panic_on_mode($mode);
+  }
 }
-
 
 /**
  * internal function factored out that just rings lots of bells when
