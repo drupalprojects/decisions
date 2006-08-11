@@ -1,0 +1,31 @@
+<?php
+// $Id$
+
+function decisions_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE `decisions` (
+          `nid` int(10) NOT NULL,
+          `quorum` int(10) NOT NULL,
+          `mode` varchar(32) NOT NULL,
+          PRIMARY KEY  (`nid`)
+      ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
+
+      db_query("CREATE TABLE `decisions_electoral_list` (
+          `nid` int(10) NOT NULL,
+          `uid` int(10) NOT NULL,
+          PRIMARY KEY  (`nid`,`uid`)
+      ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
+
+      db_query("CREATE TABLE `decisions_options` (
+          `nid` int(10) NOT NULL,
+          `opttext` text NOT NULL,
+          `optorder` int(2) default NULL,
+          PRIMARY KEY  (`nid`, `optorder`),
+          KEY `optorder` (`optorder`)
+        ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
+
+      break;
+  }
+}
