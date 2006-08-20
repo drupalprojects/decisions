@@ -63,25 +63,28 @@ function decisions_view_results_runoff($node, $teaser, $page, $block) {
     $output = '<p>'.t("The winner is option %option", array('%option' => $winning_option)).'</p>';
 
     // XXX: debugging code
-    $output .= "Internal values, for debugging purposes:";
-    // output the table of runoff rounds
-    $output .= "<table border=\"1\"><tr><td>round</td>";
-    foreach ($node->option as $key => $optionname) {
-      $output .= "<td>$optionname</td>";
-    }
-    $output .= "</tr>";
-    $round = 1;
-    foreach ($runoff->matrix as $aRound) {
-      $output .= "<tr><td>r-$round</td>";
-      foreach ($node->option as $key => $optionname) {
-        $output .= "<td>$aRound[$key]</td>";
-      }
-      $output .= "</tr>";
-      $round++;
-    }
+		if (user_access('administer decisions')) {
+    	$output .= "Internal values, for debugging purposes:";
+    	// output the table of runoff rounds
+    	$output .= "<table border=\"1\"><tr><td>Round</td>";
+    	foreach ($node->option as $key => $optionname) {
+      	$output .= "<td>$optionname</td>";
+    	}
+    	$output .= "</tr>";
+    	$round = 1;
+    	foreach ($runoff->matrix as $aRound) {
+      	$output .= "<tr><td>$round.</td>";
+      	foreach ($node->option as $key => $optionname) {
+        	$output .= "<td>$aRound[$key]</td>";
+      	}
+      	$output .= "</tr>";
+      	$round++;
+    	}
 
 
-    $output .= "</table>";
+    	$output .= "</table>";
+		}
+
     return $output;
 }
 
