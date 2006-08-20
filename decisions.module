@@ -221,7 +221,7 @@ function decisions_node_info() {
  * Implementation of hook_perm().
  */
 function decisions_perm() {
-  return array('create decisions', 'delete decisions', 'view decisions', 'vote on decisions');
+  return array('create decisions', 'delete decisions', 'view decisions', 'vote on decisions', 'administer decisions');
 }
 
 /**
