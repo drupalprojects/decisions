@@ -9,6 +9,9 @@
  * Thanks to everyone for all the that was already written. (...and debugged!)
  */
 
+
+define('DECISIONS_DEFAULT_ELECTORAL_LIST', 0);
+
 /**
  * Implementation of hook_access().
  */
@@ -76,7 +79,8 @@ function decisions_delete($node) {
  * This hook displays the form necessary to edit the *node* (ie. not the votes).
  */
 function decisions_form($node) {
-
+	
+	$enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
   /* standard node elements */
   $form['title'] = array(
     '#type' => 'textfield',
@@ -104,6 +108,14 @@ function decisions_form($node) {
 			'#default_value' => variable_get('decisions_default_mode', $modes[0]),
   	);
 	}
+
+	$form['uselist'] = array(
+		'#type' => 'radios',
+		'#title' => t('Set the eligible voters upon creation'),
+		'#options' => $enabled,
+		'#descripton' => t('If enabled, a list of eligible voters will be created and only that group will be able to vote in the decision.'),
+		'#default_value' => variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
+	);
 
   /* decision-specific elements */
   /* this code is mostly from poll.module */
@@ -233,8 +245,21 @@ function decisions_perm() {
  * Not configurable yet.
  */
 function decisions_settings() {
-  $output = '';
-  return $output;
+	if (!user_access('administer decisions')) {
+		return message_access();
+	}
+
+	$enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
+
+	$form['main']['decisions_default_electoral_list'] = array(
+		'#type' => 'radios',
+		'#title' => t('Use electoral list by default'),
+		'#description' => t('Use an electoral list by default for new decisions.'),
+		'#default_value' => variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
+		'#options' => $enabled,
+	);
+
+	return $form;
 }
 
 /**
@@ -264,21 +289,24 @@ function decisions_update($node) {
  */
 function decisions_insert($node) {
   # just create an empty entry for now
-  db_query("INSERT INTO {decisions} (nid, mode) VALUES (%d, '%s')", $node->nid, $node->mode);
+  db_query("INSERT INTO {decisions} (nid, mode, uselist) VALUES (%d, '%s', %d)", $node->nid, $node->mode, $node->uselist);
 
-  # create the electoral list
+  # create the electoral list if desired
 
-  # check first if authenticated users have the right to vote, because authenticated users are not added to the users_roles permission, probably for performance reasons
-  $result = db_fetch_object(db_query("SELECT count(*) AS hit FROM `permission` JOIN role ON role.rid = permission.rid WHERE FIND_IN_SET(' vote on decisions', perm) AND role.name = 'authenticated user'"));
-  if ($result->hit) {
-    # special case: any authenticated user can vote
-    # add all current users to electoral list
-    db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.uid != 0", $node->nid);
-  }
-  else {
-# all users must not be allowed to vote, add relevant users only
-    db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users_roles u, permission p WHERE FIND_IN_SET(' view decisions', p.perm) AND u.rid = p.rid AND u.uid != 0", $node->nid);
-  }
+	if ($node->uselist) {
+
+  	# check first if authenticated users have the right to vote, because authenticated users are not added to the users_roles permission, probably for performance reasons
+  	$result = db_fetch_object(db_query("SELECT count(*) AS hit FROM `permission` JOIN role ON role.rid = permission.rid WHERE FIND_IN_SET(' vote on decisions', perm) AND role.name = 'authenticated user'"));
+  	if ($result->hit) {
+    	# special case: any authenticated user can vote
+    	# add all current users to electoral list
+    	db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.uid != 0", $node->nid);
+  	}
+  	else {
+			# all users must not be allowed to vote, add relevant users only
+    	db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users_roles u, permission p WHERE FIND_IN_SET(' view decisions', p.perm) AND u.rid = p.rid AND u.uid != 0", $node->nid);
+  	}
+	}
 
   # insert the options, same sequence than update
   decisions_update($node);
@@ -327,14 +355,25 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 
 function decisions_view_electoral_list($node, $teaser = FALSE) {
   $output = '';
-  if ( ! $teaser ) {
-    $result = db_query("SELECT COUNT(*) AS voters FROM {decisions_electoral_list} WHERE nid=%d", $node->nid);
-    $electoral_list = db_fetch_object($result);
+  if (!$teaser) {
+		if ($node->uselist) {
+    	$result = db_query("SELECT COUNT(*) AS voters FROM {decisions_electoral_list} WHERE nid=%d", $node->nid);
+    	$electoral_list = db_fetch_object($result);
+		}
     $result = db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid);
     $votes = db_num_rows($result);
 
     $output = '<div class="decisions-electoral-list">';
-    $output .= t('%d out of %v eligible voters have voted.', array('%d' => $votes, '%v' => $electoral_list->voters));
+		if ($node->uselist) {
+    	$output .= ($votes == 1? t('%d out of %v eligible voters has voted.'
+					, array('%d' => $votes, '%v' => $electoral_list->voters))
+				: t('%d out of %v eligible voters have voted.',
+					array('%d' => $votes, '%v' => $electoral_list->voters)));
+		}
+		else {
+			$output .= ($votes == 1? t('%d voter has voted.', array('%d' => $votes))
+				: t('%d voters have voted.', array('%d' => $votes)));
+		}
     $output .= '</div>';
   }
   return $output;
@@ -449,7 +488,15 @@ function decisions_eligible($node, $uid = NULL) {
     $uid = $user->uid;
   }
 
-  $can_vote = db_fetch_object(db_query("SELECT COUNT(*) AS eligible FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d", $node->nid, $uid));
+	if ($node->uselist) {
+  	$can_vote = db_fetch_object(db_query("SELECT COUNT(*) AS eligible FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d", $node->nid, $uid));
+	}
+	else {
+		// TODO: add other eligibility options
+		global $user;
+		// only allow logged in users to vote
+		return (isset($user) && $user->uid && $user->uid != 0);
+	}
   return $can_vote->eligible;
 }
 

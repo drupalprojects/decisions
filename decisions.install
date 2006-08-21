@@ -9,6 +9,7 @@ function decisions_install() {
           `nid` int(10) NOT NULL,
           `quorum` int(10) NOT NULL,
           `mode` varchar(32) NOT NULL,
+					`uselist` tinyint default '1',
           PRIMARY KEY  (`nid`)
       ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
 
@@ -29,3 +30,14 @@ function decisions_install() {
       break;
   }
 }
+
+
+function decions_update_1() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("ALTER TABLE {decisions} ADD COLUMN uselist TINYINT DEFAULT '1'");
+		break;
+	}
+}
+
