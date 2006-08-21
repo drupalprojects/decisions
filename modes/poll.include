@@ -65,14 +65,19 @@ function decisions_view_results_poll($node, $teaser, $page, $block) {
 
 	if ($node->option) {
 	  // display results for each possible option
+		$output .= '<div class="poll">';
 		foreach ($node->option as $i => $opt) {
 			if (!$votes[$i]) {
 				$votes[$i] = 0;
 			}
-			$output .= $opt . ' - ' . round(100 * $votes[$i] / $totalVotes, 1)
-				. '% (' . $votes[$i] . ' '
-				. ($votes[$i] == 1? t('vote') : t('votes')) . ')<br />';
+			$percentage = round(100 * $votes[$i] / $totalVotes, 0);
+			$output .= '<div class="text">' . $opt . '</div><div class="bar">'
+				. '<div style="width: '
+				. $percentage . '%" class="foreground"></div></div><div class="percent">'
+				. $percentage . '% (' . $votes[$i] . ' '
+				. ($votes[$i] == 1? t('vote') : t('votes')) . ')</div>';
 		}
+		$output .= '</div>';
 	}
 
 	$output .= '<br />';
