@@ -492,10 +492,7 @@ function decisions_eligible($node, $uid = NULL) {
   	$can_vote = db_fetch_object(db_query("SELECT COUNT(*) AS eligible FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d", $node->nid, $uid));
 	}
 	else {
-		// TODO: add other eligibility options
-		global $user;
-		// only allow logged in users to vote
-		return (isset($user) && $user->uid && $user->uid != 0);
+		return user_access('vote on decisions');
 	}
   return $can_vote->eligible;
 }
