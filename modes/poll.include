@@ -39,12 +39,45 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
 }
 
 /**
- * Implemntation of the decisions_view_results() hook for the poll module
+ * Implementation of the decisions_view_results() hook for the poll module
  *
  * TODO: implement (http://drupal.org/node/48249)
  */
 function decisions_view_results_poll($node, $teaser, $page, $block) {
-  return "FIXME: can't show results for poll yet";
+  $content_type = 'decisions';
+	$content_id = $node->nid;
+
+	$results = votingapi_get_voting_results($content_type, $content_id);
+
+	$totalVotes = 0;
+
+  // Count the votes for each option
+	$votes = array();
+	foreach ($results as $result) {
+		if (!$votes[$result->function]) {
+			$votes[$result->function] = 0;
+		}
+		// Not sure if this can just be = rather than +=
+		$votes[$result->function] += $result->value;
+
+		$totalVotes += $result->value;
+	}
+
+	if ($node->option) {
+	  // display results for each possible option
+		foreach ($node->option as $i => $opt) {
+			if (!$votes[$i]) {
+				$votes[$i] = 0;
+			}
+			$output .= $opt . ' - ' . round(100 * $votes[$i] / $totalVotes, 1)
+				. '% (' . $votes[$i] . ' '
+				. ($votes[$i] == 1? t('vote') : t('votes')) . ')<br />';
+		}
+	}
+
+	$output .= '<br />';
+
+	return $output;
 }
 
 /**
@@ -72,4 +105,3 @@ function decisions_vote_validate_poll($node) {
   return $ok;
 }
 
-?>
