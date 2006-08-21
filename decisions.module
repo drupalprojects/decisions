@@ -93,14 +93,17 @@ function decisions_form($node) {
 
   // to pick a reasonable default, configurable
   $modes = _decisions_mode_list();
-
-  $form['mode'] = array(
-    '#type' => 'select',
-    '#title' => t('Decision mode'),
-    '#required' => TRUE,
-    '#options' => _decisions_mode_list(),
-    '#default_value' => (isset($node->mode) ? $node->mode : variable_get('decisions_default_mode', $modes[0])),
-  );
+	
+	// only show for new decisions (not when editing)
+	if (!(isset($node) && $node->nid)) {
+	  $form['mode'] = array(
+			'#type' => 'select',
+			'#title' => t('Decision mode'),
+			'#required' => TRUE,
+			'#options' => _decisions_mode_list(),
+			'#default_value' => variable_get('decisions_default_mode', $modes[0]),
+  	);
+	}
 
   /* decision-specific elements */
   /* this code is mostly from poll.module */
