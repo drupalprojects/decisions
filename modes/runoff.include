@@ -21,17 +21,37 @@ function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
 
   if ($node->option) {
     $list = array();
+
+		$numOptions = count($node->option);
+
+		// Generate the list of possible rankings
+		$options[0] = '--';
+		for ($i = 1; $i <= $numOptions; $i++) {
+			if ($i == 1) {
+				$val = t('1st');
+			}
+			elseif ($i == 2) {
+				$val = t('2nd');
+			}
+			elseif ($i == 3) {
+				$val = t('3rd');
+			}
+			else {
+				$val = t(strval($i) . 'th');
+			}
+			$options[$i] = $val;
+		}
+
     foreach ($node->option as $key => $option) {
       $list[$i] = check_plain($option);
 
       $form['option']['Option_' . $key] = array(
-        '#type' => 'textfield',
+        '#type' => 'select',
         '#title' => check_plain($option),
         '#required' => FALSE,
         /* XXX: that's not the right way, we need to fetch the vote using votingapi */
 /*        '#default_value' => $node->option[$key],*/
-        '#size' => 3,
-        '#maxlength' => 3,
+				'#options' => $options,
         '#weight' => $weight++,
       );
     }
@@ -221,9 +241,13 @@ function _decision_calculate_runoff_nextround($aRound, &$votes, $min) {
 function decisions_vote_runoff($node) {
   foreach ( $node->option as $key => $option ) {
     $vote->value = $_POST['edit']['Option_' . $key];
-    $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
-    $vote->tag = $key;
-    votingapi_set_vote('decisions', $node->nid, $vote);
+
+		// A zero value indicates they didn't rank that option
+		if ($vote->value != 0) {
+    	$vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
+    	$vote->tag = $key;
+    	votingapi_set_vote('decisions', $node->nid, $vote);
+		}
   }
 }
 
@@ -239,6 +263,7 @@ function decisions_vote_validate_runoff($node) {
   $ok = TRUE;
   // array used to check which values are set
   $setvalues = array();
+	// TODO: allowing incomplete rankings should be a configurable option
   foreach ( $node->option as $key => $option ) {
     // check for empty entries
     if (empty($_POST['edit']['Option_' . $key])) {
