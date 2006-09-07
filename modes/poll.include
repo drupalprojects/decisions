@@ -63,7 +63,7 @@ function decisions_view_results_poll($node, $teaser, $page, $block) {
 		$totalVotes += $result->value;
 	}
 
-	if ($node->option) {
+	if ($node->option && $totalVotes > 0) {
 	  // display results for each possible option
 		$output .= '<div class="poll">';
 		foreach ($node->option as $i => $opt) {

@@ -92,15 +92,17 @@ function decisions_view_results_runoff($node, $teaser, $page, $block) {
     	}
     	$output .= "</tr>";
     	$round = 1;
-    	foreach ($runoff->matrix as $aRound) {
-      	$output .= "<tr><td>$round.</td>";
-      	foreach ($node->option as $key => $optionname) {
-        	$output .= "<td>$aRound[$key]</td>";
-      	}
-      	$output .= "</tr>";
-      	$round++;
-    	}
-
+			if (count($runoff->matrix) > 0)
+			{
+    		foreach ($runoff->matrix as $aRound) {
+      		$output .= "<tr><td>$round.</td>";
+      		foreach ($node->option as $key => $optionname) {
+        		$output .= "<td>$aRound[$key]</td>";
+      		}
+      		$output .= "</tr>";
+      		$round++;
+    		}
+			}
 
     	$output .= "</table>";
 		}
@@ -132,7 +134,7 @@ $votes = _votingapi_get_raw_votes('decisions', $node->nid);
    * infinite loops.
    */
   $maxiter = 1000;
-  for ($i = 0; $i < $maxiter; $i++) {
+  for ($i = 0; $i < $maxiter && count($aRound) > 0; $i++) {
 
     //Add the round to the matrix
     $runoff_matrix[] = $aRound;
