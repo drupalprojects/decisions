@@ -98,12 +98,23 @@ function decisions_form($node) {
     '#default_value' => $node->body,
   );
 
-  // to pick a reasonable default, configurable
-  $modes = _decisions_mode_list();
+
+	$form['settings'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Settings'),
+    '#collapsible' => TRUE,
+  );
+
 	
+
 	// only show for new decisions (not when editing)
 	if (!(isset($node) && $node->nid)) {
-	  $form['mode'] = array(
+
+  	// to pick a reasonable default, configurable
+  	$modes = _decisions_mode_list();
+
+	  $form['settings']['mode'] = array(
 			'#type' => 'select',
 			'#title' => t('Decision mode'),
 			'#required' => TRUE,
@@ -111,15 +122,25 @@ function decisions_form($node) {
 			'#default_value' => variable_get('decisions_default_mode', $modes[0]),
   	);
 
-		$form['uselist'] = array(
+		$form['settings']['uselist'] = array(
 			'#type' => 'radios',
 			'#title' => t('Set the eligible voters upon creation'),
 			'#options' => $enabled,
 			'#descripton' => t('If enabled, a list of eligible voters will be created and only that group will be able to vote in the decision.'),
 			'#default_value' => variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
-	);
+		);
 
 	}
+
+	$active = array(1 => t('Active'), 0 => t('Closed'));
+	$form['settings']['active'] = array(
+		'#type' => 'radios',
+		'#title' => t('Decision Status'),
+		'#options' => $active,
+		'#default_value' => (isset($node->active)? $node->active : 1),
+		'#description' => t('When a decision is closed users may no longer vote on it.'),
+	);
+
 
 
   /* decision-specific elements */
@@ -273,7 +294,7 @@ function decisions_settings() {
  * This is called upon node edition.
  */
 function decisions_update($node) {
-  db_query("UPDATE {decisions} SET mode = '%s' WHERE nid = %d", $node->mode, $node->nid);
+  db_query("UPDATE {decisions} SET active=%d WHERE nid = %d", $node->settings['active'], $node->nid);
   # XXX: should update decisions here, when it has some parameters
   # XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
   db_query('DELETE FROM {decisions_options} WHERE nid = %d', $node->nid);
@@ -294,7 +315,7 @@ function decisions_update($node) {
  */
 function decisions_insert($node) {
   # just create an empty entry for now
-  db_query("INSERT INTO {decisions} (nid, mode, uselist) VALUES (%d, '%s', %d)", $node->nid, $node->mode, $node->uselist);
+  db_query("INSERT INTO {decisions} (nid, mode, uselist, active) VALUES (%d, '%s', %d)", $node->nid, $node->mode, $node->uselist, $node->active);
 
   # create the electoral list if desired
 
@@ -332,7 +353,9 @@ function decisions_validate($node) {
 function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
   $node = node_prepare($node, $teaser);
 
-  if (votingapi_get_user_votes('decisions', $node->nid)) { // show results only if the user has voted
+  if (!$node->active
+		|| votingapi_get_user_votes('decisions', $node->nid)) {
+		// show results only if the user has voted or decision is closed
     $output .= decisions_view_results(&$node, $teaser, $page, $block);
   }
   else { // otherwise, show the vote form or record vote
@@ -478,7 +501,7 @@ function decisions_vote($node) {
  */
 function decisions_vote_validate($node) {
   $mode = $node->mode;
-  if ( function_exists("decisions_vote_validate_$mode") ) {
+  if (function_exists("decisions_vote_validate_$mode") ) {
     return call_user_func("decisions_vote_validate_$mode", $node);
   }
   return TRUE;
