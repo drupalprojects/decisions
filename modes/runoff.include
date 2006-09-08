@@ -78,7 +78,10 @@ function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
  * TODO: fix display (http://drupal.org/node/48248)
  */
 function decisions_view_results_runoff($node, $teaser, $page, $block) {
-    $runoff = _decision_calculate_runoff($node);
+  $runoff = _decision_calculate_runoff($node);
+
+	// If no one has voted, $runoff = array() and thus is empty
+	if (!empty($runoff)) {
     $winning_option = $node->option[$runoff->winner];
     $output = '<p>'.t("The winner is option %option", array('%option' => $winning_option)).'</p>';
 
@@ -108,6 +111,7 @@ function decisions_view_results_runoff($node, $teaser, $page, $block) {
 		}
 
     return $output;
+	}
 }
 
 /**
