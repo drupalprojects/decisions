@@ -118,7 +118,12 @@ function _decision_calculate_runoff ($node) {
 // Important here: for now, we do not check the weighting of the votes
 // in the votes array ($vote->value).  $vote->value should
 // be beetween 1 and the max number of options for the runoff.
-$votes = _votingapi_get_raw_votes('decisions', $node->nid);
+	$votes = _votingapi_get_raw_votes('decisions', $node->nid);
+
+	if (count($votes) == 0) {
+		// no votes yet
+		return array();
+	}
 
   //calculate the first round
   foreach ($votes as $vote) {
@@ -134,7 +139,7 @@ $votes = _votingapi_get_raw_votes('decisions', $node->nid);
    * infinite loops.
    */
   $maxiter = 1000;
-  for ($i = 0; $i < $maxiter && count($aRound) > 0; $i++) {
+  for ($i = 0; $i < $maxiter; $i++) {
 
     //Add the round to the matrix
     $runoff_matrix[] = $aRound;

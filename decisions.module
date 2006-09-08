@@ -154,6 +154,15 @@ function decisions_form($node) {
 		'#description' => t('When a decision is closed users may no longer vote on it.'),
 	);
 
+  $_duration = array(0 => t('Unlimited')) + drupal_map_assoc(array(86400, 172800, 345600, 604800, 1209600, 2419200, 4838400, 9676800, 31536000), 'format_interval');
+
+  $form['settings']['runtime'] = array(
+		'#type' => 'select',
+		'#title' => t('Decision duration'),
+		'#default_value' => ($node->runtime? $node->runtime : 0),
+		'#options' => $_duration,
+		'#description' => t('After this period, the decision will be closed automatically.')
+	);
 
 
   /* decision-specific elements */
@@ -307,7 +316,7 @@ function decisions_settings() {
  * This is called upon node edition.
  */
 function decisions_update($node) {
-  db_query("UPDATE {decisions} SET active=%d WHERE nid = %d", $node->settings['active'], $node->nid);
+  db_query("UPDATE {decisions} SET active=%d, runtime=%d WHERE nid = %d", $node->settings['active'], $node->settings['runtime'], $node->nid);
   # XXX: should update decisions here, when it has some parameters
   # XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
   db_query('DELETE FROM {decisions_options} WHERE nid = %d', $node->nid);
@@ -328,14 +337,14 @@ function decisions_update($node) {
  */
 function decisions_insert($node) {
   # just create an empty entry for now
-  db_query("INSERT INTO {decisions} (nid, mode, uselist, active) VALUES (%d, '%s', %d)", $node->nid, $node->mode, $node->uselist, $node->active);
+  db_query("INSERT INTO {decisions} (nid, mode, uselist, active, runtime) VALUES (%d, '%s', %d, %d, %d)", $node->nid, $node->settings['mode'], $node->settings['uselist'], $node->settings['active'], $node->settings['runtime']);
 
   # create the electoral list if desired
 
 	if ($node->uselist) {
 
   	# check first if authenticated users have the right to vote, because authenticated users are not added to the users_roles permission, probably for performance reasons
-  	$result = db_fetch_object(db_query("SELECT count(*) AS hit FROM `permission` JOIN role ON role.rid = permission.rid WHERE FIND_IN_SET(' vote on decisions', perm) AND role.name = 'authenticated user'"));
+  	$result = db_fetch_object(db_query("SELECT COUNT(*) AS hit FROM {permission} JOIN role ON role.rid = permission.rid WHERE FIND_IN_SET(' vote on decisions', perm) AND role.name = 'authenticated user'"));
   	if ($result->hit) {
     	# special case: any authenticated user can vote
     	# add all current users to electoral list
