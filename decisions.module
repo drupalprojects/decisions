@@ -77,8 +77,6 @@ function decisions_cron() {
 /**
  * Implementation of hook_delete().
  *
- * TODO: to test
- * TODO: do we remove the votes themselves?
  */
 function decisions_delete($node) {
   db_query("DELETE FROM {decisions} WHERE nid = %d", $node->nid);
@@ -119,7 +117,7 @@ function decisions_form($node) {
     '#collapsible' => TRUE,
   );
 
-	
+		
 
 	// only show for new decisions (not when editing)
 	if (!(isset($node) && $node->nid)) {
@@ -143,7 +141,20 @@ function decisions_form($node) {
 			'#default_value' => variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
 		);
 
+		$form['settings']['maxchoices'] = array(
+			'#type' => 'textfield',
+			'#required' => TRUE,
+			'#title' => t('Maximum Choices'),
+			'#size' => 5,
+			'#maxlength' => 10,
+			'#description' => t('The number of options voters may select. Set to 0 for no limit.'),
+    	'#default_value' => (isset($node->settings['maxchoices'])?
+				$node->settings['maxchoices'] : 0),
+		);
+
 	}
+
+	
 
 	$active = array(1 => t('Active'), 0 => t('Closed'));
 	$form['settings']['active'] = array(
@@ -337,7 +348,7 @@ function decisions_update($node) {
  */
 function decisions_insert($node) {
   # just create an empty entry for now
-  db_query("INSERT INTO {decisions} (nid, mode, uselist, active, runtime) VALUES (%d, '%s', %d, %d, %d)", $node->nid, $node->settings['mode'], $node->settings['uselist'], $node->settings['active'], $node->settings['runtime']);
+  db_query("INSERT INTO {decisions} (nid, mode, uselist, active, runtime, maxchoices) VALUES (%d, '%s', %d, %d, %d, %d)", $node->nid, $node->settings['mode'], $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices']);
 
   # create the electoral list if desired
 

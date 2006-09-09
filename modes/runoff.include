@@ -274,13 +274,14 @@ function decisions_vote_validate_runoff($node) {
   $ok = TRUE;
   // array used to check which values are set
   $setvalues = array();
-	// TODO: allowing incomplete rankings should be a configurable option
-  foreach ( $node->option as $key => $option ) {
-    // check for empty entries
-    if (empty($_POST['edit']['Option_' . $key])) {
-      form_set_error('Option_'.$key, "option $key cannot be empty");
-      $ok = FALSE;
-    }
+	
+	$numchoices = 0;
+  foreach ($node->option as $key => $option) {
+		
+		// count the number of options that are ranked
+    if (!empty($_POST['edit']['Option_' . $key])) {
+			$numchoices++;
+		}
     $intvalue = intval($_POST['edit']['Option_' . $key]);
     // mark this value as seen
     $setvalues[$intvalue] = 1;
@@ -289,14 +290,23 @@ function decisions_vote_validate_runoff($node) {
       form_set_error('Option_'.$key, "illegal rank for option $key: $intvalue (min: 1, max: " . count($node->option) . ")");
       $ok = FALSE;
     }
+
   }
-  // by the 'pigeon-hole principle', we must have exactly as many
-  // unique answers as we have questions if we don't have repetition.
-  if (count($setvalues) != count($node->option)) {
-    form_set_error("edit", 'You must set a distinct rank to every entry');
-    $ok = FALSE;
-  }
+	
+	// too many choices ranked
+	if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
+			form_set_error('option',
+				t('%d choices were selected but only %d are allowed.',
+				$numchoices, $node->maxchoices));
+			$ok = false;
+		}
+
+	// not enough choices ranked
+	$minchoices = 1;
+	if ($numchoices < $minchoices) {
+		form_set_error('option', t('At least one option must be selected.'));
+		$ok = false;
+	}
+
   return $ok;
 }
-
-?>
