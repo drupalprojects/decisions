@@ -429,7 +429,7 @@ function decisions_vote_validate_runoff($node) {
 		}
     $intvalue = intval($_POST['edit']['Option_' . $key]);
     // mark this value as seen
-    $setvalues[$intvalue] = 1;
+    $setvalues[$intvalue]++;
     // check range
     if ($intvalue > count($node->option) || $intvalue < 0) {
       form_set_error('Option_'.$key, "illegal rank for option $key: $intvalue (min: 1, max: " . count($node->option) . ")");
@@ -440,11 +440,11 @@ function decisions_vote_validate_runoff($node) {
 	
 	// too many choices ranked
 	if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
-			form_set_error('option',
-				t('%d choices were selected but only %d are allowed.',
-				$numchoices, $node->maxchoices));
-			$ok = false;
-		}
+		form_set_error('option',
+			t('%num choices were selected but only %max are allowed.',
+				array('%num' => $numchoices, '%max' => $node->maxchoices)));
+		$ok = false;
+	}
 
 	// not enough choices ranked
 	$minchoices = 1;
@@ -452,6 +452,16 @@ function decisions_vote_validate_runoff($node) {
 		form_set_error('option', t('At least one option must be selected.'));
 		$ok = false;
 	}
+
+	// Check that multiple options are not set to the same value
+	foreach ($setvalues as $val => $count) {
+		if ($val != 0 && $count > 1) {
+			form_set_error('option',
+				t('Multiple options given the rank of %val.', array('%val' => $val)));
+			$ok = false;
+		}
+	}
+
 
   return $ok;
 }

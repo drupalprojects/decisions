@@ -178,8 +178,8 @@ function decisions_vote_validate_poll($node) {
 		// too many choices ranked
 		if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
 			form_set_error('option',
-				t('%d choices were selected but only %d are allowed.',
-				$numchoices, $node->maxchoices));
+				t('%num choices were selected but only %max are allowed.',
+					array('%num' => $numchoices, '%max' => $node->maxchoices)));
 			$ok = false;
 		}
 
