@@ -83,11 +83,35 @@ function decisions_view_results_runoff($node, $teaser, $page, $block) {
 	// If no one has voted, $runoff = array() and thus is empty
 	if (!empty($runoff)) {
     $winning_option = $node->option[$runoff->winner];
-    $output = '<p>'.t("The winner is option %option", array('%option' => $winning_option)).'</p>';
+    //$output = '<p>'.t("The winner is option %option", array('%option' => $winning_option)).'</p>';
+
+		ob_start();
+		//print_r($runoff->ranking);
+		$output .= nl2br(ob_get_contents()) . '<br />';
+		ob_end_clean();
+		$output .= t('Final results: ') . '<ol>';
+
+		for ($i = 0; $i < count($runoff->ranking); $i++) {
+			$output .= '<li> ';
+			$firstOne = true;
+			$roundVotes = 0;
+			foreach ($runoff->ranking[$i] as $opt) {
+				$output .= ($firstOne? '' : ', ') . $node->option[$opt];
+				$firstOne = false;
+				$roundVotes += count($runoff->matrix[count($runoff->matrix) - $i - 1][$opt]);
+			}
+
+			// The winner
+			if ($i == 0) {
+				$output .= ' (' . $runoff->winnerPercent . '%)';
+			}
+			$opt .= '</li>';
+		}
+		$output .= '</ol>';
 
     // XXX: debugging code
 		if (user_access('administer decisions')) {
-    	$output .= "Internal values, for debugging purposes:";
+    	$output .= "<br />Internal values, for debugging purposes:";
     	// output the table of runoff rounds
     	$output .= "<table border=\"1\"><tr><td>Round</td>";
     	foreach ($node->option as $key => $optionname) {
@@ -100,7 +124,7 @@ function decisions_view_results_runoff($node, $teaser, $page, $block) {
     		foreach ($runoff->matrix as $aRound) {
       		$output .= "<tr><td>$round.</td>";
       		foreach ($node->option as $key => $optionname) {
-        		$output .= "<td>$aRound[$key]</td>";
+        		$output .= '<td>' . count($aRound[$key]) . '</td>';
       		}
       		$output .= "</tr>";
       		$round++;
@@ -115,134 +139,255 @@ function decisions_view_results_runoff($node, $teaser, $page, $block) {
 }
 
 /**
- * XXX: what does this do?
+ * Calculate the results (aggregate preference) for an IRV election
+ * 
+ * @param $node
+ *	The node object for the current decision
+ *
+ * @return 
+ * 	Should return an object that include the following attributes
+ *   -results : 2d array listing the aggregate preference, including ties
+ *   -rounds : 2d array listing the per-option vote count for each round and
+ *							a status message indicating who was eliminated
+ *   -totalVoters : the total number of voters who participated
  */
-function _decision_calculate_runoff ($node) {
-
-// Important here: for now, we do not check the weighting of the votes
-// in the votes array ($vote->value).  $vote->value should
-// be beetween 1 and the max number of options for the runoff.
-	$votes = _votingapi_get_raw_votes('decisions', $node->nid);
+function _decision_calculate_runoff($node) {
+ 	$votes = array();
+  // ORDER BY value ASC lets us ensure no gaps
+  $result = db_query("SELECT * FROM {votingapi_vote} v WHERE content_type='%s' AND content_id=%d ORDER BY value ASC", 'decisions', $node->nid);
+  while ($vobj = db_fetch_object($result)) {
+    $votes[] = $vobj;
+  }
 
 	if (count($votes) == 0) {
 		// no votes yet
 		return array();
 	}
 
-  //calculate the first round
+	// aggregate votes by user (uid if logged in, IP if anonymous)
+	// in ascending order of value
+	$userVotes = array();
+
   foreach ($votes as $vote) {
+		if ($vote->uid == 0) {
+			// anonymous user
+			$key = $vote->hostname;
+		}
+		else {
+			// logged-in user
+			$key = $vote->uid;
+		}
+
+		// Note: relies on ORDER BY value ASC in vote-getting SQL query
+		// Otherwise a later vote might have a lower value
+		$userVotes[$key][] = $vote->tag;
+	}
+
+	$totalVotes = count($userVotes);
+
+/*
     if ($vote->value == 1) {
-         $aRound[$vote->tag]++;
-         $totalvotes++;
+    	$curRound[$vote->tag]++;
+			// TODO: This method of counting total votes is inaccurate because users
+			// may vote but not choose a 1st-place vote
+			$totalvotes++;
     }
-  }
+		*/
 
-  /*
-   * XXX: This is an horrible hack to avoid using while(true) which
-   * was the loop setup before. This isn't better design, but avoids
-   * infinite loops.
-   */
-  $maxiter = 1000;
-  for ($i = 0; $i < $maxiter; $i++) {
 
-    //Add the round to the matrix
-    $runoff_matrix[] = $aRound;
 
-    //calculate the min and max number of vote
-    $min = 100000000; // weird min
+	// log of 1st-place votes per option in each round
+	$roundLog = array();
+
+	//
+	$reverseRanking = array();
+
+
+	
+	// If we eliminate one option per round and have n options, we should
+	// not be able to do more than n - 1 rounds
+  $maxRounds = count($node->option); 
+  for ($round = 0; $round < $maxRounds; $round++) {
+
+		// Initialize curRound
+		$curRound = array();
+		$totalOptions = count($node->option);
+		for ($opti = 1; $opti <= $totalOptions; $opti++) {
+			$curRound[$opti] = array();
+		}
+
+		
+		// Loop through each user
+		foreach ($userVotes as $key => $userVote) {
+			// $userVote[0] contains the user's first remaining preference
+			$curRound[$userVote[0]][] = $key;
+		}
+
+		if ($round == 0) {
+			// This is the first round
+			// Any options with no first-place votes are considered eliminated
+  		foreach ($curRound as $opt => $optionVotes) {
+				if (count($optionVotes) == 0) {
+					unset($curRound[$opt]);
+					$reverseRanking[0][] = $opt;
+				}
+			}
+		}
+
+
+    // Add the current round to the matrix
+    $roundLog[] = $curRound;
+
+    //Calculate the min and max number of votes
+    $minVotes = -1;
+		$maxVotes = 0;
+
+		// Number of options that have already been discarded
     $num_discarded = 0;
-    foreach ($aRound as $votevalue) {
 
-      if ($max < $votevalue) {
-       $max = $votevalue;
+		// examine the number of votes each option received this round
+    foreach ($curRound as $opt => $optionVotes) {
+			$numVotes = count($optionVotes);
+
+      if ($numVotes > $maxVotes) {
+        $maxVotes = $numVotes;
+			  $curWinner = $opt; // store current winner in case it has a majority
       }
-      if (($min > $votevalue) && ($votevalue != 0)) {
-       $min = $votevalue;
+
+			// This option has already been eliminated (theoretically)
+			// so don't count it as the minimum
+			if ($numVotes == 0) {
+				$num_discarded++; // probably don't need this variable any more
+			}
+			else if ($numVotes != 0 && ($numVotes < $minVotes || $minVotes == -1)) {
+        $minVotes = $numVotes;
       }
-      if (!$votevalue) {  // si c'est à zéro, on le compte
-       $num_discarded++;
-     }
     }
 
-    // is there only two options left?
-    $twooptionsleft =  ((sizeof($aRound) - $num_discarded) == 2);
+		// If one option has a majority of remaining users it wins
+		// Note: we use count($userVotes) because some users may have incomplete
+		// ballots and may have already had all of their choices eliminated
+    if ($maxVotes > count($userVotes) / 2) {
+		
+			// Prune out the winning option if it's still in there
+			if (isset($curRound[$curWinner])) {
+					unset($curRound[$curWinner]);
+			}
 
+			// Keep computing until we figure out all final rankings
+			while (count($curRound)  > 0) {
+				// Loop through non-winning options
+				$currentPlace = array();
+				$min = -1;
+				foreach ($curRound as $opt => $optionVotes) {
+					// Option has already been eliminated, just unset it
+					if (count($optionVotes) == 0) {
+						unset($curRound[$opt]);
+					}
+					else if ($min == -1
+							|| count($optionVotes) < $min) {
+						// New minimum
+						$currentPlace = array($opt);
+						$min = count($optionVotes);
+						//drupal_set_message('New minimum: '. $opt .'('
+							//. count($optionVotes) . ')');
+					}
+					else if (count($optionVotes) == $min) {
+						// Tied for minimum
+						$currentPlace[] = $opt;
+					}
+				}
 
-    // if max has the majority, it wins
-    // if there is only two options left, choose the best,
-    // or the randomly in case of ties
-    if (($max > $totalvotes/2) or $twooptionsleft) {
-       $runoff->winner = array_search($max, $aRound);
-       $runoff->matrix = $runoff_matrix;
-       return $runoff;
+				// currentPlace will be empty the first iteration if some
+				// options had no first-place votes and were eliminated
+				// at the beginning
+				if (count($currentPlace) > 0) {
+					$reverseRanking[] = $currentPlace;	
+					// Remove all options that had the minimum
+					foreach ($currentPlace as $optKey) {
+						unset($curRound[$optKey]);
+					}
+				}
+			}
+
+			// Save a reversed version of the round log to help compute winnerPercent
+			$revmat = array_reverse($roundLog);
+
+			// The winner finally gets added
+			$reverseRanking[] = array($curWinner);
+
+    	$resultObj->winner = $curWinner;
+			$resultObj->winnerPercent = round(count($revmat[0][$curWinner]) * 100 / count($userVotes), 1);
+      $resultObj->matrix = $roundLog;
+			$resultObj->totalVotes = $totalVotes;
+			$resultObj->ranking = array_reverse($reverseRanking);
+      return $resultObj;
     }
+		
+		// Since we're still here, no one has won, so eliminate one of the
+		// options with the lowest number of votes.
 
-    // get to the next round
-    $aRound = _decision_calculate_runoff_nextround($aRound, $votes, $min);
-   }
+   	// Find all options with the minimum number of votes
+		$minOptions = array();
+		foreach ($curRound as $opt => $optionVotes) {
+			if (count($optionVotes) == $minVotes) {
+				$minOptions[] = $opt;
+			}
+	 	}
+
+		// Randomly select the option to eliminate out of the available options
+		// TODO: due to the randomness, this result must be cached after each vote
+		$roundLoser = array_rand($minOptions);
+		//drupal_set_message('Round ' . ($round + 1) . ' eliminated: '
+			//. strval($minOptions[$roundLoser])
+			//. ' (min = ' . $minVotes . ') ' . count($curRound));
+		$reverseRanking[] = array($minOptions[$roundLoser]);
+		
+		// Loop through the users who voted for the loser and redistribute
+		foreach ($curRound[$minOptions[$roundLoser]] as $userKey) {
+			// Remove their current first preference
+			array_shift($userVotes[$userKey]);
+
+			// Keep eliminating first preference until we run out or find an option
+			// that hasn't been eliminated
+			while ($curRound[$userVotes[$userKey][0]] == array()
+				&& count($userVotes[$userKey]) > 0)
+			{
+				array_shift($userVotes[$userKey]);
+			}
+
+			// If they have no more preferences, remove from list for simplicity
+			if (count($userVotes[$userKey]) == 0) {
+				unset($userVotes[$userKey]);
+			}
+		}
+	}
   // loop detected. signal user and record.
-  watchdog('decisions', "could not reach a decision within $maxiter iterations", WATCHDOG_ERROR);
-  drupal_set_message("could not reach a decision within $maxiter iterations");
-  return array();
+  watchdog('decisions', "Could not reach a decision within $maxiter iterations", WATCHDOG_ERROR);
+  drupal_set_message("Could not reach a decision within $maxiter iterations");
+  $resultObj->matrix = $roundLog;
+	$resultObj->totalVotes = $totalVotes;
+  return $resultObj;
+
 }
 
 /**
- * XXX: what does this do?
+ * Eliminates the candidate with the lowest number of ballots and redistributes
+ * those votes to the voters' next preference.
+ *
+ * @param $aRound
+ *   Array containing the per-option number of first-place votes for this round
+ *
+ * @param $votes
+ *   Array containing each individual ranking for all options
+ *
+ * @param $min
+ *   Integer with the minimum number of votes found out of all candidates
+ *     this round.
  */
 function _decision_calculate_runoff_nextround($aRound, &$votes, $min) {
 
-   // For Tie-breaking rules, lets implement in this first version the
-   // RANDOM: Eliminate one randomly to break the tie.
-   // http://en.wikipedia.org/wiki/Instant-runoff_voting
-
-   // What do we need to do here:
-   // "The votes for Nashville have Chattanooga as a second choice, but      as Chattanooga has been eliminated, they instead transfer to      their third choice, Knoxville."
-   // http://en.wikipedia.org/wiki/Instant-runoff_voting
-   // Autrement dit, si le second choix est éliminé, il faut regardé le troisième choix.
-
-   // step 1: find the loser and put 0 to it
-   $taglooser = array_search($min, $aRound);  // random elimination
-   $aRound[$taglooser] = 0;
-
-
-   // step 2: lets find which users needs their vote to be redistributed
-   $numbervotes_redistributed = 0;
-   $preference_value = 0;
-   // XXX: what is $stop for?
-   while (($numbervotes_redistributed < $min) and $stop < 50){
-      $preference_value++;
-      foreach ($votes as $vote) {
-        // step 2.1: find the users who voted for the loosers
-        if (($vote->tag == $taglooser) and
-            ($vote->value == $preference_value) ) {
-             $voteslosts[] = $vote->uid;
-             $numbervotes_redistributed = $numbervotes_redistributed + 1;
-         }
-       }
-       $stop++;
-    }
-
-   // step 3: lets find what are the other non-eliminated choices for the ones who voted for the loosers.  Not optimised at all
-   foreach ($voteslosts as $voteuid) {
-     $minvalue = 0;
-    foreach ($votes as $vote) {
-       if (($vote->uid == $voteuid) and
-	($aRound[$vote->tag] != 0) and
-	($aRound[$vote->value] > $minvalue) ) {
-             $votesecond[$voteuid] = $vote->tag;
-             $vote->value = 1;
-             $minvalue = $vote->value;
-       	}
-     }
    }
-
-   // step 4: distribute the remaining votes of the users
-   foreach ($voteslosts as $votelost_uid) {
-     $aRound[$votesecond[$votelost_uid]]++;
-   }
-
-   return $aRound;
-}
 
 /**
  * Implementation of the vote hook for the runoff module.
@@ -286,7 +431,7 @@ function decisions_vote_validate_runoff($node) {
     // mark this value as seen
     $setvalues[$intvalue] = 1;
     // check range
-    if ($intvalue > count($node->option) || $intvalue < 1) {
+    if ($intvalue > count($node->option) || $intvalue < 0) {
       form_set_error('Option_'.$key, "illegal rank for option $key: $intvalue (min: 1, max: " . count($node->option) . ")");
       $ok = FALSE;
     }
