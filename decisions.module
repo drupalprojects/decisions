@@ -389,7 +389,7 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
   if (!$node->active
 		|| votingapi_get_user_votes('decisions', $node->nid)) {
 		// show results only if the user has voted or decision is closed
-    $output .= decisions_view_results(&$node, $teaser, $page, $block);
+    $output .= decisions_view_results($node, $teaser, $page, $block);
   }
   else { // otherwise, show the vote form or record vote
     $valid = FALSE;
