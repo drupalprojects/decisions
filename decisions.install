@@ -1,11 +1,15 @@
 <?php
 // $Id$
 
+
+/**
+ * Implementation of hook_install().
+ */
 function decisions_install() {
   switch ($GLOBALS['db_type']) {
     case 'mysql':
     case 'mysqli':
-      db_query("CREATE TABLE `decisions` (
+      db_query("CREATE TABLE {decisions} (
           `nid` int(10) NOT NULL,
           `quorum` int(10) NOT NULL,
           `mode` varchar(32) NOT NULL,
@@ -16,13 +20,13 @@ function decisions_install() {
           PRIMARY KEY  (`nid`)
       ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
 
-      db_query("CREATE TABLE `decisions_electoral_list` (
+      db_query("CREATE TABLE {decisions_electoral_list} (
           `nid` int(10) NOT NULL,
           `uid` int(10) NOT NULL,
           PRIMARY KEY  (`nid`,`uid`)
       ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
 
-      db_query("CREATE TABLE `decisions_options` (
+      db_query("CREATE TABLE {decisions_options} (
           `nid` int(10) NOT NULL,
           `opttext` text NOT NULL,
           `optorder` int(2) default NULL,
@@ -34,6 +38,17 @@ function decisions_install() {
   }
 }
 
+/**
+ * Implementation of hook_uninstall().
+ */
+function decisions_uninstall() {
+	// TODO: delete decisions data in VotingAPI tables
+	db_query('DROP TABLE {decisions}');
+	db_query('DROP TABLE {decisions_electoral_list}');
+	db_query('DROP TABLE {decisions_options}');
+	variable_del('decisions_default_mode');
+	variable_del('decisions_default_electoral_list');
+}
 
 function decisions_update_1() {
   switch ($GLOBALS['db_type']) {
@@ -56,3 +71,4 @@ function decisions_update_2() {
 			break;
 	}
 }
+
