@@ -570,7 +570,7 @@ function _decisions_panic_on_mode($mode) {
 /**
  * internal function to load the available modes.
  *
- * this scans the modes subdirectory to find mode.include files, where
+ * this scans the modes subdirectory to find mode.inc files, where
  * mode is considered to be the mode name. found files are loaded and
  * added to the mode list.
  *
@@ -580,7 +580,7 @@ function _decisions_panic_on_mode($mode) {
 function _decisions_load_modes() {
   global $_decisions_modes;
 
-  foreach (file_scan_directory(dirname(__FILE__) . '/modes/', '^([^\.].*)\.include$', array('.', '..', 'CVS'), 0, FALSE) as $file) {
+  foreach (file_scan_directory(dirname(__FILE__) . '/modes/', '^([^\.].*)\.inc$', array('.', '..', 'CVS'), 0, FALSE) as $file) {
           require_once($file->filename);
           $mode = $file->name;
           if ( function_exists("decisions_${mode}_longname") ) {
