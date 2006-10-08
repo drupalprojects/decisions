@@ -270,6 +270,14 @@ function decisions_menu($may_cache) {
   if ($may_cache) {
     $items[] = array('path' => 'node/add/decisions', 'title' => t('decision'),
       'access' => user_access('create decisions'));
+/*
+    $items[] = array('path' => 'node/add/decisions-poll',
+			'title' => t('decision') . ' - ' . t('poll'),
+      'access' => user_access('create decisions'));
+    $items[] = array('path' => 'node/add/decisions-ranking',
+			'title' => t('decision') . ' - ' . t('ranking'),
+      'access' => user_access('create decisions'));
+			*/
     /*
     $items[] = array('path' => 'decisions', 'title' => t('decisions'),
       'callback' => 'decision_page',
@@ -301,7 +309,6 @@ function decisions_perm() {
 /**
  * Implementation of hook_settings().
  *
- * Not configurable yet.
  */
 function decisions_settings() {
 	if (!user_access('administer decisions')) {
@@ -455,6 +462,20 @@ function theme_decisions_view_voting($form) {
   $output .= '  </div>';
   $output .= form_render($form);
   $output .= '</div>';
+  return $output;
+}
+
+function theme_decisions_bar($title, $percentage, $votes, $block) {
+  if ($block) {
+    $output  = '<div class="text">'. $title .'</div>';
+    $output .= '<div class="bar"><div style="width: '. $percentage .'%;" class="foreground"></div></div>';
+    $output .= '<div class="percent">'. $percentage .'%</div>';
+  }
+  else {
+    $output  = '<div class="text">'. $title .'</div>';
+    $output .= '<div class="bar"><div style="width: '. $percentage .'%;" class="foreground"></div></div>';
+    $output .= '<div class="percent">'. $percentage .'% ('. $votes .')</div>';
+  }
   return $output;
 }
 

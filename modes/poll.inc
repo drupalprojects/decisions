@@ -99,11 +99,7 @@ function decisions_view_results_poll($node, $teaser, $page, $block) {
 				$votes[$i] = 0;
 			}
 			$percentage = round(100 * $votes[$i] / $totalVotes, 0);
-			$output .= '<div class="text">' . $opt . '</div><div class="bar">'
-				. '<div style="width: '
-				. $percentage . '%" class="foreground"></div></div><div class="percent">'
-				. $percentage . '% (' . $votes[$i] . ' '
-				. ($votes[$i] == 1? t('vote') : t('votes')) . ')</div>';
+			$output .= theme('decisions_bar',  check_plain($opt), $percentage, format_plural($votes[$i], '1 vote', '%count votes'), $block);
 		}
 		$output .= '</div>';
 	}
