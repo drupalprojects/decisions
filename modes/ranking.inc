@@ -3,7 +3,7 @@
 /**
  * Implementation of the decisions_longname() hook
  */
-function decisions_runoff_longname() {
+function decisions_ranking_longname() {
   return t("Runoff");
 }
 
@@ -15,7 +15,7 @@ function decisions_runoff_longname() {
  *
  * TODO: make this a nicer UI (http://drupal.org/node/48255)
  */
-function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
+function decisions_view_voting_ranking(&$node, $teaser, $page, $block) {
 
   $weight = 0;
 
@@ -62,11 +62,15 @@ function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
     '#value' => $node->nid,
     '#weight' => $weight++,
   );
-  $form['vote'] = array(
-    '#type' => 'submit',
-    '#value' => t('Vote'),
-    '#weight' => $weight++,
-  );
+
+	if (!$node->in_preview) {
+  	$form['vote'] = array(
+    	'#type' => 'submit',
+    	'#value' => t('Vote'),
+    	'#weight' => $weight++,
+  	);
+	}
+
   $form['#action'] = url('node/'. $node->nid);
   return drupal_get_form('decisions_view_voting', $form);
 }
@@ -77,8 +81,8 @@ function decisions_view_voting_runoff(&$node, $teaser, $page, $block) {
  *
  * TODO: fix display (http://drupal.org/node/48248)
  */
-function decisions_view_results_runoff($node, $teaser, $page, $block) {
-  $runoff = _decision_calculate_runoff($node);
+function decisions_view_results_ranking($node, $teaser, $page, $block) {
+  $runoff = _decision_calculate_ranking($node);
 
 	// If no one has voted, $runoff = array() and thus is empty
 	if (!empty($runoff)) {
@@ -151,7 +155,7 @@ function decisions_view_results_runoff($node, $teaser, $page, $block) {
  *							a status message indicating who was eliminated
  *   -totalVoters : the total number of voters who participated
  */
-function _decision_calculate_runoff($node) {
+function _decision_calculate_ranking($node) {
  	$votes = array();
   // ORDER BY value ASC lets us ensure no gaps
   $result = db_query("SELECT * FROM {votingapi_vote} v WHERE content_type='%s' AND content_id=%d ORDER BY value ASC", 'decisions', $node->nid);
@@ -385,7 +389,7 @@ function _decision_calculate_runoff($node) {
  *   Integer with the minimum number of votes found out of all candidates
  *     this round.
  */
-function _decision_calculate_runoff_nextround($aRound, &$votes, $min) {
+function _decision_calculate_ranking_nextround($aRound, &$votes, $min) {
 
    }
 
@@ -394,7 +398,7 @@ function _decision_calculate_runoff_nextround($aRound, &$votes, $min) {
  *
  * This takes care of registering the vote in runoff nodes.
  */
-function decisions_vote_runoff($node) {
+function decisions_vote_ranking($node) {
   foreach ( $node->option as $key => $option ) {
     $vote->value = $_POST['edit']['Option_' . $key];
 
@@ -415,7 +419,7 @@ function decisions_vote_runoff($node) {
  *
  * @returns boolean false on invalid forms, true otherwise.
  */
-function decisions_vote_validate_runoff($node) {
+function decisions_vote_validate_ranking($node) {
   $ok = TRUE;
   // array used to check which values are set
   $setvalues = array();

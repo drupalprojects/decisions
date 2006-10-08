@@ -94,14 +94,28 @@ function decisions_delete($node) {
  */
 function decisions_form($node) {
 	
+	if (!$node->mode) {
+		$node->mode = (arg(3)? arg(3) : 'poll');
+	}
+
+	/*$form['mode'] = array(
+		'#type' => 'markup',
+		'#title' => t('Mode'),
+		'#value' => '<strong>' . t('Mode') . '</strong>: ' . $node->mode,
+		'#weight' => -1);
+		*/
+
 	$enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
   /* standard node elements */
   $form['title'] = array(
     '#type' => 'textfield',
-    '#title' => t('Title'),
+    '#title' => ucfirst($node->mode) . ' ' . t('Question'),
     '#required' => TRUE,
     '#default_value' => $node->title,
   );
+
+	$form['mode'] = array('#type' => 'value', '#value' => $node->mode);
+
   $form['body'] = array(
     '#type' => 'textarea',
     '#title' => t('Description'),
@@ -110,51 +124,84 @@ function decisions_form($node) {
   );
 
 
+
+ 	/* decision-specific elements */
+  /* this code is mostly from poll.module */
+  if (!isset($node->options)) {
+    $node->options = 5;
+  }
+  // User ticked 'need more choices'.
+  if ($_POST['edit']['OptionGroup']['moreoptions'] || !$node->options) {
+    if (!$node->options)
+        $node->options = 2;
+    else
+    	$node->options *= 2;
+  }
+
+
+
+	 // Options list
+  $form['OptionGroup'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Decision Choices'),
+    '#collapsible' => TRUE,
+  );
+  for ($option_number = 1; $option_number <= $node->options; $option_number++) {
+    $form['OptionGroup']['Option_'.$option_number] = array(
+      '#type' => 'textfield',
+      '#title' => t('Choice %n', array('%n' => $option_number)),
+      '#required' => FALSE,
+      '#default_value' => $node->option[$option_number],
+      '#size' => 50,
+      '#maxlength' => 127,
+    );
+  }
+
+  $form['OptionGroup']['options'] = array(
+    '#type' => 'hidden',
+    '#value' => $node->options,
+  );
+  $form['OptionGroup']['moreoptions'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Need more choices'),
+    '#default_value' => FALSE,
+    '#description' => t("If the amount of boxes above isn't enough, check this box and click the Preview button below to add some more."),
+  );
+
 	$form['settings'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
-    '#title' => t('Settings'),
+    '#title' => t('Decision Settings'),
     '#collapsible' => TRUE,
   );
 
-		
-
-	// only show for new decisions (not when editing)
-	if (!(isset($node) && $node->nid)) {
-
-  	// to pick a reasonable default, configurable
-  	$modes = _decisions_mode_list();
-
-	  $form['settings']['mode'] = array(
-			'#type' => 'select',
-			'#title' => t('Decision mode'),
-			'#required' => TRUE,
-			'#options' => _decisions_mode_list(),
-			'#default_value' => variable_get('decisions_default_mode', $modes[0]),
-  	);
-
-		$form['settings']['uselist'] = array(
-			'#type' => 'radios',
-			'#title' => t('Set the eligible voters upon creation'),
-			'#options' => $enabled,
-			'#description' => t('If enabled, a list of eligible voters will be created and only that group will be able to vote in the decision.'),
-			'#default_value' => variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
-		);
-
-		$form['settings']['maxchoices'] = array(
-			'#type' => 'textfield',
-			'#required' => TRUE,
-			'#title' => t('Maximum Choices'),
-			'#size' => 5,
-			'#maxlength' => 10,
-			'#description' => t('The number of options voters may select. Set to 0 for no limit.'),
-    	'#default_value' => (isset($node->settings['maxchoices'])?
-				$node->settings['maxchoices'] : 0),
-		);
-
+	$maxChoiceList = array();
+	for ($i = 0; $i <= $node->options; $i++) {
+		$maxChoiceList[$i] = ($i == 0? 'No limit' : $i);
 	}
 
-	
+
+  $form['settings']['maxchoices'] = array(
+		'#type' => 'select',
+		'#title' => t('Maximum Choices'),
+		'#default_value' => ($node->maxchoices? $node->maxchoices : 0),
+		'#options' => $maxChoiceList,
+		'#description' => t('Limits the total number of choices voters may select.')
+	);
+
+/*
+	$form['settings']['maxchoices'] = array(
+		'#type' => 'textfield',
+		'#required' => TRUE,
+		'#title' => t('Maximum Choices'),
+		'#size' => 5,
+		'#maxlength' => 10,
+		'#description' => t('The number of choices voters may select. Set to 0 for no limit.'),
+   	'#default_value' => (isset($node->settings['maxchoices'])?
+			$node->settings['maxchoices'] : 0),
+	);
+	*/
 
 	$active = array(1 => t('Active'), 0 => t('Closed'));
 	$form['settings']['active'] = array(
@@ -176,48 +223,31 @@ function decisions_form($node) {
 	);
 
 
-  /* decision-specific elements */
-  /* this code is mostly from poll.module */
-  if (!isset($node->options)) {
-    $node->options = 5;
-  }
-  // User ticked 'need more choices'.
-  if ($_POST['edit']['OptionGroup']['moreoptions'] || !$node->options) {
-    if (!$node->options)
-        $node->options = 2;
-    else
-    	$node->options *= 2;
-  }
+	// only show for new decisions (not when editing)
+	if (!(isset($node) && $node->nid)) {
 
-  // Options list
-  $form['OptionGroup'] = array(
-    '#type' => 'fieldset',
-    '#tree' => TRUE,
-    '#title' => t('Options'),
-    '#collapsible' => TRUE,
-  );
-  for ( $option_number = 1; $option_number <= $node->options; $option_number++ ) {
-    $form['OptionGroup']['Option_'.$option_number] = array(
-      '#type' => 'textfield',
-      '#title' => t('Option %n', array('%n' => $option_number)),
-      '#required' => FALSE,
-      '#default_value' => $node->option[$option_number],
-      '#size' => 50,
-      '#maxlength' => 127,
-    );
-  }
+  	// to pick a reasonable default, configurable
+		/*
+  	$modes = _decisions_mode_list();
 
-  $form['OptionGroup']['options'] = array(
-    '#type' => 'hidden',
-    '#value' => $node->options,
-  );
-  $form['OptionGroup']['moreoptions'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Need more options'),
-    '#default_value' => FALSE,
-    '#description' => t("If the amount of boxes above isn't enough, check this box and click the Preview button below to add some more."),
-  );
+	  $form['settings']['mode'] = array(
+			'#type' => 'select',
+			'#title' => t('Decision mode'),
+			'#required' => TRUE,
+			'#options' => _decisions_mode_list(),
+			'#default_value' => variable_get('decisions_default_mode', $modes[0]),
+  	);
+		// */
 
+		$form['settings']['uselist'] = array(
+			'#type' => 'radios',
+			'#title' => t('Set the eligible voters upon creation'),
+			'#options' => $enabled,
+			'#description' => t('If enabled, a list of eligible voters will be created and only that group will be able to vote in the decision.'),
+			'#default_value' => variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
+		);
+	}
+  
 	$form['format'] = filter_form($node->form);
 	return $form;
 }
@@ -268,16 +298,17 @@ function decisions_menu($may_cache) {
   $items = array();
 
   if ($may_cache) {
-    $items[] = array('path' => 'node/add/decisions', 'title' => t('decision'),
-      'access' => user_access('create decisions'));
-/*
-    $items[] = array('path' => 'node/add/decisions-poll',
-			'title' => t('decision') . ' - ' . t('poll'),
-      'access' => user_access('create decisions'));
-    $items[] = array('path' => 'node/add/decisions-ranking',
-			'title' => t('decision') . ' - ' . t('ranking'),
-      'access' => user_access('create decisions'));
-			*/
+    $items[] = array('path' => 'node/add/decisions',
+			'title' => t('decision'),
+      'access' => user_access('create decisions'),
+			'type' => MENU_CALLBACK);
+
+    $items[] = array('path' => 'node/add/decisions/poll',
+			'title' => t('decision') . ' - ' . t('poll'));
+
+    $items[] = array('path' => 'node/add/decisions/ranking',
+			'title' => t('decision') . ' - ' . t('ranking'));
+			// */
     /*
     $items[] = array('path' => 'decisions', 'title' => t('decisions'),
       'callback' => 'decision_page',
@@ -334,7 +365,7 @@ function decisions_settings() {
  * This is called upon node edition.
  */
 function decisions_update($node) {
-  db_query("UPDATE {decisions} SET active=%d, runtime=%d WHERE nid = %d", $node->settings['active'], $node->settings['runtime'], $node->nid);
+  db_query("UPDATE {decisions} SET active=%d, runtime=%d, maxchoices=%d WHERE nid = %d", $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->nid);
   # XXX: should update decisions here, when it has some parameters
   # XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
   db_query('DELETE FROM {decisions_options} WHERE nid = %d', $node->nid);
@@ -355,7 +386,7 @@ function decisions_update($node) {
  */
 function decisions_insert($node) {
   # just create an empty entry for now
-  db_query("INSERT INTO {decisions} (nid, mode, uselist, active, runtime, maxchoices) VALUES (%d, '%s', %d, %d, %d, %d)", $node->nid, $node->settings['mode'], $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices']);
+  db_query("INSERT INTO {decisions} (nid, mode, uselist, active, runtime, maxchoices) VALUES (%d, '%s', %d, %d, %d, %d)", $node->nid, $node->mode, $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices']);
 
   # create the electoral list if desired
 
@@ -384,7 +415,12 @@ function decisions_insert($node) {
  * XXX: No validation yet.
  */
 function decisions_validate($node) {
-  // faut appeler form_set_error si necessaire
+  // Use form_set_error for any errors
+	/*
+	if (!$node->mode) {
+		form_set_error(t('No mode selected.'));
+	}
+	*/
 }
 
 /**
@@ -392,8 +428,27 @@ function decisions_validate($node) {
  */
 function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
   $node = node_prepare($node, $teaser);
+	if (!$node->mode && arg(3)) {
+		// previewing a decision that hasn't been created yet
+		$node->mode = arg(3);
+	}
 
-  if (!$node->active
+	if ($node->in_preview) {
+		// Copy the form values to the options array
+		$node->option = array();
+		$node->options = 0;
+  	foreach ($node->OptionGroup as $key => $option) {
+  		$order = str_replace('Option_', '', $key);
+			if ($order != $key && $option != '') {
+				$node->options++;
+				$node->option[$node->options] = $option;
+			}
+		}
+
+		// Show the voting form but don't let them vote
+    $output .= decisions_view_voting($node, $teaser, $page, $block);
+	}
+  else if (!$node->active
 		|| votingapi_get_user_votes('decisions', $node->nid)) {
 		// show results only if the user has voted or decision is closed
     $output .= decisions_view_results($node, $teaser, $page, $block);
@@ -491,13 +546,12 @@ function theme_decisions_bar($title, $percentage, $votes, $block) {
  */
 function decisions_view_voting(&$node, $teaser, $page, $block) {
 
-  $mode = $node->mode;
-
+	$mode = $node->mode;
   if ( function_exists("decisions_view_voting_$mode") ) {
     return call_user_func("decisions_view_voting_$mode", $node, $teaser, $page, $block);
   }
   else {
-    _decisions_panic_on_mode($node->mode);
+    _decisions_panic_on_mode($mode);
   }
 }
 
@@ -514,7 +568,7 @@ function decisions_view_results(&$node, $teaser, $page, $block) {
     return call_user_func("decisions_view_results_$mode", $node, $teaser, $page, $block);
   }
   else {
-    _decisions_panic_on_mode($node->mode);
+    _decisions_panic_on_mode($mode);
   }
 }
 
@@ -538,7 +592,7 @@ function decisions_vote($node) {
     }
   }
   else {
-    drupal_set_message(t('You are not eligible to this decision.'));
+    drupal_set_message(t('You are not eligible to vote on this decision.'));
   }
 }
 
