@@ -165,7 +165,7 @@ function decisions_form($node) {
   $form['OptionGroup']['moreoptions'] = array(
     '#type' => 'checkbox',
     '#title' => t('Need more choices'),
-    '#default_value' => FALSE,
+    '#value' => 0,
     '#description' => t("If the amount of boxes above isn't enough, check this box and click the Preview button below to add some more."),
   );
 
