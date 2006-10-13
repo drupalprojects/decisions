@@ -132,10 +132,12 @@ function decisions_form($node) {
   }
   // User ticked 'need more choices'.
   if ($_POST['edit']['OptionGroup']['moreoptions'] || !$node->options) {
-    if (!$node->options)
+    if (!$node->options) {
         $node->options = 2;
-    else
+		}
+    else {
     	$node->options *= 2;
+		}
   }
 
 
@@ -458,7 +460,7 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
   		$order = str_replace('Option_', '', $key);
 			if ($order != $key && $option != '') {
 				$node->options++;
-				$node->option[$node->options] = $option;
+				$node->option[$order] = $option;
 			}
 		}
 

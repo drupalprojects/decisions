@@ -18,6 +18,7 @@ function decisions_ranking_longname() {
 function decisions_view_voting_ranking(&$node, $teaser, $page, $block) {
 
   $weight = 0;
+	$form = array();
 
   if ($node->option) {
     $list = array();
@@ -42,6 +43,7 @@ function decisions_view_voting_ranking(&$node, $teaser, $page, $block) {
 			$options[$i] = $val;
 		}
 
+		$form['option'] = array();
     foreach ($node->option as $key => $option) {
       $list[$i] = check_plain($option);
 

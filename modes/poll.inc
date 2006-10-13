@@ -13,6 +13,7 @@ function decisions_poll_longname() {
  * This creates a list of choices to allow the user to vote on options.
  */
 function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
+	$form = array();
   if ($node->option) {
     $list = array();
 
@@ -31,6 +32,7 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
 		}
 		else {
 			// approval voting
+			$form['option'] = array();
 			foreach ($node->option as $key => $option) {
 				$list[$i] = check_plain($option);
 
