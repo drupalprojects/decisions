@@ -471,15 +471,13 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 		|| (count(votingapi_get_user_votes('decisions', $node->nid)) > 0)) {
 		// show results only if the user has voted or decision is closed
     $output .= decisions_view_results($node, $teaser, $page, $block);
+  	$output .= decisions_view_electoral_list($node, $teaser);
   }
   else { // otherwise, show the vote form
        if (!$valid && decisions_eligible($node)) {
       $output .= decisions_view_voting($node, $teaser, $page, $block);
     }
   }
-
-  // XXX: when and to whom do we show this?
-  $output .= decisions_view_electoral_list($node, $teaser);
 
   $node->body .= $output;
   $node->teaser .= $output;
@@ -497,15 +495,12 @@ function decisions_view_electoral_list($node, $teaser = FALSE) {
     $votes = db_num_rows($result);
 
     $output = '<div class="decisions-electoral-list">';
+
+		$output .= t('Total votes: %d', array('%d' => $votes));
 		if ($node->uselist) {
-    	$output .= ($votes == 1? t('%d out of %v eligible voters has voted.'
-					, array('%d' => $votes, '%v' => $electoral_list->voters))
-				: t('%d out of %v eligible voters have voted.',
-					array('%d' => $votes, '%v' => $electoral_list->voters)));
-		}
-		else {
-			$output .= ($votes == 1? t('%d voter has voted.', array('%d' => $votes))
-				: t('%d voters have voted.', array('%d' => $votes)));
+    	$output .= t('(out of %v eligible voter' . 
+				($electoral_list->voters == 1? '' : 's') . ')',
+					array('%v' => $electoral_list->voters));
 		}
     $output .= '</div>';
   }
