@@ -190,7 +190,7 @@ function decisions_form($node) {
 		'#type' => 'select',
 		'#title' => t('Maximum Choices'),
 		'#default_value' => ($node->maxchoices? $node->maxchoices : 0),
-		'#choices' => $maxChoiceList,
+		'#options' => $maxChoiceList,
 		'#description' => t('Limits the total number of choices voters may select.')
 	);
 
@@ -211,7 +211,7 @@ function decisions_form($node) {
 	$form['settings']['active'] = array(
 		'#type' => 'radios',
 		'#title' => t('Decision Status'),
-		'#choices' => $active,
+		'#options' => $active,
 		'#default_value' => (isset($node->active)? $node->active : 1),
 		'#description' => t('When a decision is closed users may no longer vote on it.'),
 	);
@@ -222,7 +222,7 @@ function decisions_form($node) {
 		'#type' => 'select',
 		'#title' => t('Decision duration'),
 		'#default_value' => ($node->runtime? $node->runtime : 0),
-		'#choices' => $_duration,
+		'#options' => $_duration,
 		'#description' => t('After this period, the decision will be closed automatically.')
 	);
 
@@ -349,7 +349,7 @@ function decisions_menu($may_cache) {
 		if (arg(0) == 'node' && is_numeric(arg(1))) {
 			$nid = arg(1);
 			$node = node_load($nid);
-			if (!$node->voted && _decisions_can_view_results($node)) {
+			if ($node->active && !$node->voted && _decisions_can_view_results($node)) {
 				$items[] = array('path' => 'node/' . $nid . '/results',
 					'title' => t('results'),
 					'callback' => 'decisions_results',
@@ -535,7 +535,7 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 		// Show the voting form but don't let them vote
     $output .= decisions_view_voting($node, $teaser, $page, $block);
 	}
-  else if (!$node->voted && arg(2) != 'results') {
+  else if (!$node->voted && arg(2) != 'results' && $node->active) {
 		// User hasn't voted and we're not on the results tab
 		if (!$valid && decisions_eligible($node)) {
       $output .= decisions_view_voting($node, $teaser, $page, $block);
