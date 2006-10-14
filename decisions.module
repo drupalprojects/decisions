@@ -698,7 +698,7 @@ function decisions_cancel($nid) {
   if ($node = node_load(array('nid' => $nid))) {
     if ($node->voted) {
       if ($user->uid) {
-        db_query('DELETE FROM {votingapi_vote} WHERE content_id=%d and uid=%d', $node->nid, $user->uid);
+				votingapi_unset_vote('decisions', $node->nid, $user->uid);
       }
       else {
         db_query("DELETE FROM {votingapi_votes} WHERE content_id=%d and hostname = '%s'", $node->nid, $_SERVER['REMOTE_ADDR']);
