@@ -50,32 +50,3 @@ function decisions_uninstall() {
 	variable_del('decisions_default_mode');
 	variable_del('decisions_default_electoral_list');
 }
-
-function decisions_update_1() {
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      db_query("ALTER TABLE {decisions} ADD COLUMN uselist TINYINT DEFAULT '1'");
-			break;
-	}
-}
-
-
-function decisions_update_2() {
-	switch ($GLOBALS['db_type']) {
-		case 'mysql':
-		case 'mysqli':
-			db_query("ALTER TABLE {decisions} ADD COLUMN active TINYINT DEFAULT '1'");
-			db_query("ALTER TABLE {decisions} ADD COLUMN runtime INT UNSIGNED DEFAULT '0'");
-			db_query("ALTER TABLE {decisions} ADD COLUMN maxchoices INT UNSIGNED");
-			db_query("ALTER TABLE {decisions} ADD COLUMN algorithm VARCHAR(255)");
-			db_query('UPDATE {decisions} SET maxchoices=1 WHERE mode="poll" AND maxchoices is null');
-			db_query("UPDATE {decisions} SET algorithm='runoff' WHERE mode='runoff'");
-			db_query("UPDATE {decisions} SET mode='ranking' WHERE mode='runoff'");
-			db_query("ALTER TABLE {decisions_options} CHANGE COLUMN opttext chtext text");
-			db_query("ALTER TABLE {decisions_options} CHANGE COLUMN optorder chorder int(2)");
-			db_query("RENAME TABLE {decisions_options} TO {decisions_choices}");
-			break;
-	}
-}
-
