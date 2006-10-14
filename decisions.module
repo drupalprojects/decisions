@@ -272,13 +272,31 @@ function decisions_help($section) {
  * Load the votes and decision-specific data into the node object.
  */
 function decisions_load($node) {
-   $decision = db_fetch_object(db_query("SELECT * FROM {decisions} WHERE nid = %d", $node->nid));
-   $result = db_query("SELECT optorder, opttext FROM {decisions_options} WHERE nid = %d ORDER BY optorder", $node->nid);
-   while ($option = db_fetch_array($result)) {
-   	$decision->option[$option['optorder']] = $option['opttext'];
-   }
-   $decision->options = count($decision->option);
-   return $decision;
+	global $user;
+  $decision = db_fetch_object(db_query("SELECT * FROM {decisions} WHERE nid = %d", $node->nid));
+  $result = db_query("SELECT optorder, opttext FROM {decisions_options} WHERE nid = %d ORDER BY optorder", $node->nid);
+  while ($option = db_fetch_array($result)) {
+  	$decision->option[$option['optorder']] = $option['opttext'];
+  }
+  $decision->options = count($decision->option);
+
+	$poll->vote = -1;
+	// See if user has voted
+	if ($user->uid) {
+		$result = db_fetch_object(db_query('SELECT value FROM {votingapi_vote} '
+			. 'WHERE content_id=%d AND ' . 'uid=%d', $node->nid, $user->uid));
+	}
+	else {
+		$result = db_fetch_object(db_query('SELECT value FROM {votingapi_vote} '
+			. 'WHERE content_id=%d AND ' . 'hostname="%s"',
+			$node->nid, $_SERVER['REMOTE_ADDR']));
+	}
+
+	if ($result->value) {
+		$decision->vote = true;
+	}
+
+  return $decision;
 }
 
 /**
@@ -309,6 +327,12 @@ function decisions_menu($may_cache) {
 
     $items[] = array('path' => 'node/add/decisions/ranking',
 			'title' => t('decision') . ' - ' . t('ranking'));
+
+		$items[] = array('path' => 'decisions/cancel',
+			'title' => t('cancel'),
+			'callback' => 'decisions_cancel',
+			'access' => user_access('cancel own vote'),
+			'type' => MENU_CALLBACK);
 			// */
     /*
     $items[] = array('path' => 'decisions', 'title' => t('decisions'),
@@ -335,7 +359,7 @@ function decisions_node_info() {
  * Implementation of hook_perm().
  */
 function decisions_perm() {
-  return array('create decisions', 'delete decisions', 'view decisions', 'vote on decisions', 'administer decisions');
+  return array('create decisions', 'delete decisions', 'view decisions', 'vote on decisions', 'cancel own vote', 'administer decisions');
 }
 
 /**
@@ -358,6 +382,12 @@ function decisions_settings() {
 	);
 
 	return $form;
+}
+
+function decisions_cancel_form($nid) {
+  $form['#action'] = url("decisions/cancel/$nid");
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Cancel your vote'));
+  return $form;	
 }
 
 /**
@@ -447,6 +477,7 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
     if ($valid) {
       drupal_set_message(t("Your vote was registered."));
       decisions_vote($node);
+			$node->vote = true;
     }
   }
 
@@ -471,6 +502,10 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 		// show results only if the user has voted or decision is closed
     $output .= decisions_view_results($node, $teaser, $page, $block);
   	$output .= decisions_view_electoral_list($node, $teaser);
+		if (isset($node->vote) && $node->vote && user_access('cancel own vote')) {
+			$output .= drupal_get_form('decisions_cancel', decisions_cancel_form($node->nid));
+		}
+		//$output .= $node->vote? 'true' : 'false';
   }
   else { // otherwise, show the vote form
        if (!$valid && decisions_eligible($node)) {
@@ -598,6 +633,32 @@ function decisions_vote($node) {
   else {
     drupal_set_message(t('You are not eligible to vote on this decision.'));
   }
+}
+
+/**
+ * Callback for canceling a vote
+ */
+function decisions_cancel($nid) {
+	global $user;
+	$nid = arg(2);
+  if ($node = node_load(array('nid' => $nid))) {
+    if ($node->vote) {
+      if ($user->uid) {
+        db_query('DELETE FROM {votingapi_vote} WHERE content_id=%d and uid=%d', $node->nid, $user->uid);
+      }
+      else {
+        db_query("DELETE FROM {votingapi_votes} WHERE content_id=%d and hostname = '%s'", $node->nid, $_SERVER['REMOTE_ADDR']);
+      }
+      drupal_set_message(t('Your vote was canceled.'));
+    }
+    else {
+      drupal_set_message(t("You are not allowed to cancel an invalid choice."), 'error');
+    }
+		drupal_goto('node/'. $nid);
+ 	}	
+  else {
+		drupal_not_found();
+	}
 }
 
 /**
