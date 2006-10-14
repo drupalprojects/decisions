@@ -282,20 +282,18 @@ function decisions_load($node) {
   }
   $decision->choices = count($decision->choice);
 
-	$poll->vote = -1;
+	$decision->voted = false;
 	// See if user has voted
 	if ($user->uid) {
-		$result = db_fetch_object(db_query('SELECT value FROM {votingapi_vote} '
-			. 'WHERE content_id=%d AND ' . 'uid=%d', $node->nid, $user->uid));
+		$decision->voted = (count(votingapi_get_user_votes('decisions', $node->nid)) > 0);
 	}
 	else {
 		$result = db_fetch_object(db_query('SELECT value FROM {votingapi_vote} '
 			. 'WHERE content_id=%d AND ' . 'hostname="%s"',
 			$node->nid, $_SERVER['REMOTE_ADDR']));
-	}
-
-	if ($result->value) {
-		$decision->vote = true;
+		if ($result->value) {
+			$decision->voted = true;
+		}
 	}
 
   return $decision;
@@ -346,8 +344,31 @@ function decisions_menu($may_cache) {
       'type' => MENU_DYNAMIC_ITEM);
     */
   }
+	else {
+		// need to be able to extract the nid
+		if (arg(0) == 'node' && is_numeric(arg(1))) {
+			$nid = arg(1);
+			$node = node_load($nid);
+			if (!$node->voted && _decisions_can_view_results($node)) {
+				$items[] = array('path' => 'node/' . $nid . '/results',
+					'title' => t('results'),
+					'callback' => 'decisions_results',
+					'access' => user_access('view decisions'),
+					'weight' => 3,
+					'type' => MENU_LOCAL_TASK);
+			}
+		}
+	}
 
   return $items;
+}
+
+function _decisions_can_view_results($node) {
+	$view_results = variable_get('decisions_view_results'
+		, DECISIONS_DEFAULT_VIEW_RESULTS);
+	return (!$node->active  // node is closed
+				|| ($node->voted && $view_results == 'aftervote') // user voted
+				|| ($view_results == 'always')); // all can view
 }
 
 /**
@@ -391,9 +412,9 @@ function decisions_settings() {
 
 	$form['main']['decisions_view_results'] = array(
 		'#type' => 'radios',
-		'#title' => t('When should results be displayed?'),
+		'#title' => t('When should results be displayed'),
 		'#description' => t('Determines when users may view the results of the decision.'),
-		'#default_value' => variable_get('decisions_default_view_results', DECISIONS_DEFAULT_VIEW_RESULTS),
+		'#default_value' => variable_get('decisions_view_results', DECISIONS_DEFAULT_VIEW_RESULTS),
 		'#options' => $view_results,
 	);
 
@@ -493,11 +514,12 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
     if ($valid) {
       drupal_set_message(t("Your vote was registered."));
       decisions_vote($node);
-			$node->vote = true;
+			// Transferring makes the results tab display correctly
+			drupal_goto('node/' . $node->nid);
     }
   }
 
-
+	// Previewing a node, so don't show results
 	if ($node->in_preview) {
 		// Copy the form values to the choices array
 		$node->choice = array();
@@ -513,21 +535,24 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 		// Show the voting form but don't let them vote
     $output .= decisions_view_voting($node, $teaser, $page, $block);
 	}
-  else if (!$node->active
-		|| (count(votingapi_get_user_votes('decisions', $node->nid)) > 0)) {
+  else if (!$node->voted && arg(2) != 'results') {
+		// User hasn't voted and we're not on the results tab
+		if (!$valid && decisions_eligible($node)) {
+      $output .= decisions_view_voting($node, $teaser, $page, $block);
+    }
+	}
+	else if (_decisions_can_view_results($node)) {
 		// show results only if the user has voted or decision is closed
     $output .= decisions_view_results($node, $teaser, $page, $block);
   	$output .= decisions_view_electoral_list($node, $teaser);
-		if (isset($node->vote) && $node->vote && user_access('cancel own vote')) {
+		if (isset($node->voted) && $node->voted && user_access('cancel own vote')) {
 			$output .= drupal_get_form('decisions_cancel', decisions_cancel_form($node->nid));
 		}
-		//$output .= $node->vote? 'true' : 'false';
   }
-  else { // otherwise, show the vote form
-       if (!$valid && decisions_eligible($node)) {
-      $output .= decisions_view_voting($node, $teaser, $page, $block);
-    }
-  }
+	else {
+		$output .= 'this is bad';
+	}
+
 
   $node->body .= $output;
   $node->teaser .= $output;
@@ -611,6 +636,19 @@ function decisions_view_voting(&$node, $teaser, $page, $block) {
 }
 
 /**
+ * Callback for 'results' tab for decisions you can vote on
+ */
+
+function decisions_results() {
+	if ($node = node_load(arg(1))) {
+		drupal_set_title(check_plain($node->title));
+		return node_show($node, 0);
+	}
+	else {
+		drupal_not_found();
+	}
+}
+/**
  * show results of the vote
  *
  * this calls the appropriate vote results function, depending on the
@@ -658,7 +696,7 @@ function decisions_cancel($nid) {
 	global $user;
 	$nid = arg(2);
   if ($node = node_load(array('nid' => $nid))) {
-    if ($node->vote) {
+    if ($node->voted) {
       if ($user->uid) {
         db_query('DELETE FROM {votingapi_vote} WHERE content_id=%d and uid=%d', $node->nid, $user->uid);
       }
