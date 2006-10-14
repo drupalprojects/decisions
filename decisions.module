@@ -242,9 +242,8 @@ function decisions_form($node) {
 		// */
 
 		$form['settings']['uselist'] = array(
-			'#type' => 'radios',
+			'#type' => 'checkbox',
 			'#title' => t('Set the eligible voters upon creation'),
-			'#options' => $enabled,
 			'#description' => t('If enabled, a list of eligible voters will be created and only that group will be able to vote in the decision.'),
 			'#default_value' => variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
 		);
