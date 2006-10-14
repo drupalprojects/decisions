@@ -11,6 +11,8 @@
 
 
 define('DECISIONS_DEFAULT_ELECTORAL_LIST', 0);
+// always, aftervote, or afterclose
+define('DECISIONS_DEFAULT_VIEW_RESULTS', "aftervote");
 
 /**
  * Implementation of hook_access().
@@ -378,7 +380,21 @@ function decisions_settings() {
 		'#title' => t('Use electoral list by default'),
 		'#description' => t('Use an electoral list by default for new decisions.'),
 		'#default_value' => variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
-		'#choices' => $enabled,
+		'#options' => $enabled,
+	);
+
+	$view_results = array(
+		'always' => t('Always'),
+		'aftervote' => t('After user has voted'),
+		'afterclose' => t('After voting has closed'),
+	);
+
+	$form['main']['decisions_view_results'] = array(
+		'#type' => 'radios',
+		'#title' => t('When should results be displayed?'),
+		'#description' => t('Determines when users may view the results of the decision.'),
+		'#default_value' => variable_get('decisions_default_view_results', DECISIONS_DEFAULT_VIEW_RESULTS),
+		'#options' => $view_results,
 	);
 
 	return $form;
