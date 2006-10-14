@@ -27,12 +27,12 @@ function decisions_install() {
           PRIMARY KEY  (`nid`,`uid`)
       ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
 
-      db_query("CREATE TABLE {decisions_options} (
+      db_query("CREATE TABLE {decisions_choices} (
           `nid` int(10) NOT NULL,
-          `opttext` text NOT NULL,
-          `optorder` int(2) default NULL,
-          PRIMARY KEY  (`nid`, `optorder`),
-          KEY `optorder` (`optorder`)
+          `chtext` text NOT NULL,
+          `chorder` int(2) default NULL,
+          PRIMARY KEY  (`nid`, `chorder`),
+          KEY `chorder` (`chorder`)
         ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
 
       break;
@@ -46,7 +46,7 @@ function decisions_uninstall() {
 	// TODO: delete decisions data in VotingAPI tables
 	db_query('DROP TABLE {decisions}');
 	db_query('DROP TABLE {decisions_electoral_list}');
-	db_query('DROP TABLE {decisions_options}');
+	db_query('DROP TABLE {decisions_choices}');
 	variable_del('decisions_default_mode');
 	variable_del('decisions_default_electoral_list');
 }
@@ -72,6 +72,9 @@ function decisions_update_2() {
 			db_query('UPDATE {decisions} SET maxchoices=1 WHERE mode="poll" AND maxchoices is null');
 			db_query("UPDATE {decisions} SET algorithm='runoff' WHERE mode='runoff'");
 			db_query("UPDATE {decisions} SET mode='ranking' WHERE mode='runoff'");
+			db_query("ALTER TABLE {decisions_options} CHANGE COLUMN opttext chtext text");
+			db_query("ALTER TABLE {decisions_options} CHANGE COLUMN optorder chorder int(2)");
+			db_query("RENAME TABLE {decisions_options} TO {decisions_choices}");
 			break;
 	}
 }

@@ -10,20 +10,20 @@ function decisions_poll_longname() {
 /**
  * Implementation of the view_voting hook for the poll module.
  * 
- * This creates a list of choices to allow the user to vote on options.
+ * This creates a list of choices to allow the user to vote on choices.
  */
 function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
 	$form = array();
-  if ($node->option) {
+  if ($node->choice) {
     $list = array();
 
 		if ($node->maxchoices == 1) {
 			// plurality voting
-    	foreach ($node->option as $i => $option) {
-      	$list[$i] = check_plain($option);
+    	foreach ($node->choice as $i => $choice) {
+      	$list[$i] = check_plain($choice);
     	}
 
-    	$form['option'] = array(
+    	$form['choice'] = array(
       	'#type' => 'radios',
       	'#title' => $page ? '' : check_plain($node->title),
       	'#default_value' => -1,
@@ -32,13 +32,13 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
 		}
 		else {
 			// approval voting
-			$form['option'] = array();
-			foreach ($node->option as $key => $option) {
-				$list[$i] = check_plain($option);
+			$form['choice'] = array();
+			foreach ($node->choice as $key => $choice) {
+				$list[$i] = check_plain($choice);
 
-      	$form['option']['Option_' . $key] = array(
+      	$form['choice']['Option_' . $key] = array(
         	'#type' => 'checkbox',
-        	'#title' => check_plain($option),
+        	'#title' => check_plain($choice),
         	'#required' => FALSE,
         	'#weight' => $weight++,
       	);
@@ -73,7 +73,7 @@ function decisions_view_results_poll($node, $teaser, $page, $block) {
 
 	$results = votingapi_get_voting_results($content_type, $content_id);
 
-  // Count the votes for each option
+  // Count the votes for each choice
 	$votes = array();
 	foreach ($results as $result) {
 
@@ -93,15 +93,15 @@ function decisions_view_results_poll($node, $teaser, $page, $block) {
 		$votes[$voteval] += $result->value;
 	}
 
-	if ($node->option && $totalVotes > 0) {
-	  // display results for each possible option
+	if ($node->choice && $totalVotes > 0) {
+	  // display results for each possible choice
 		$output .= '<div class="poll">';
-		foreach ($node->option as $i => $opt) {
+		foreach ($node->choice as $i => $ch) {
 			if (!$votes[$i]) {
 				$votes[$i] = 0;
 			}
 			$percentage = round(100 * $votes[$i] / $totalVotes, 0);
-			$output .= theme('decisions_bar',  check_plain($opt), $percentage, format_plural($votes[$i], '1 vote', '%count votes'), $block);
+			$output .= theme('decisions_bar',  check_plain($ch), $percentage, format_plural($votes[$i], '1 vote', '%count votes'), $block);
 		}
 		$output .= '</div>';
 	}
@@ -119,16 +119,16 @@ function decisions_view_results_poll($node, $teaser, $page, $block) {
 function decisions_vote_poll($node) {
 	if ($node->maxchoices == 1) {
 		// plurality voting
-		$vote->value = $_POST['edit']['option'];
+		$vote->value = $_POST['edit']['choice'];
 	  $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
 	  votingapi_set_vote('decisions', $node->nid, $vote);
 	}
 	else {
 		// approval voting
-  	foreach ($node->option as $key => $option) {
+  	foreach ($node->choice as $key => $choice) {
     	$vote->value = $_POST['edit']['Option_' . $key];
 
-			// A zero value indicates they didn't rank that option
+			// A zero value indicates they didn't rank that choice
 			if ($vote->value != 0) {
   			$vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
    			$vote->tag = $key;
@@ -149,8 +149,8 @@ function decisions_vote_validate_poll($node) {
 	$ok = true;
 	if ($node->maxchoices == 1) {
 		// plurality voting
-  	if (!($ok = array_key_exists($_POST['edit']['option'], $node->option))) {
-    	form_set_error('option', 'At least one option must be selected.');
+  	if (!($ok = array_key_exists($_POST['edit']['choice'], $node->choice))) {
+    	form_set_error('choice', 'At least one choice must be selected.');
 			$ok = false;
   	}
 	}
@@ -159,11 +159,11 @@ function decisions_vote_validate_poll($node) {
 
   	// array used to check which values are set
   	$setvalues = array();
-  	foreach ($node->option as $key => $option) {
+  	foreach ($node->choice as $key => $choice) {
 
-			// need a minchoices option to do this
+			// need a minchoices choice to do this
     	//if (empty($_POST['edit']['Option_' . $key])) {
-      	//form_set_error('Option_'.$key, "option $key cannot be empty");
+      	//form_set_error('Option_'.$key, "choice $key cannot be empty");
       	//$ok = FALSE;
     	//}
 
@@ -175,7 +175,7 @@ function decisions_vote_validate_poll($node) {
 	
 		// too many choices ranked
 		if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
-			form_set_error('option',
+			form_set_error('choice',
 				t('%num choices were selected but only %max are allowed.',
 					array('%num' => $numchoices, '%max' => $node->maxchoices)));
 			$ok = false;
@@ -184,7 +184,7 @@ function decisions_vote_validate_poll($node) {
 		// not enough choices ranked
 		$minchoices = 1;
 		if ($numchoices < $minchoices) {
-			form_set_error('option', t('At least one option must be selected.'));
+			form_set_error('choice', t('At least one choice must be selected.'));
 			$ok = false;
 		}
 	}

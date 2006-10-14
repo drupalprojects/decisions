@@ -80,7 +80,7 @@ function decisions_cron() {
  */
 function decisions_delete($node) {
   db_query("DELETE FROM {decisions} WHERE nid = %d", $node->nid);
-  db_query("DELETE FROM {decisions_options} WHERE nid = %d", $node->nid);
+  db_query("DELETE FROM {decisions_choices} WHERE nid = %d", $node->nid);
   db_query("DELETE FROM {decisions_electoral_list} WHERE nid = %d", $node->nid);
 
 	// Note: this should be converted to a votingapi method eventually
@@ -127,16 +127,16 @@ function decisions_form($node) {
 
  	/* decision-specific elements */
   /* this code is mostly from poll.module */
-  if (!isset($node->options)) {
-    $node->options = 5;
+  if (!isset($node->choices)) {
+    $node->choices = 5;
   }
   // User ticked 'need more choices'.
-  if ($_POST['edit']['OptionGroup']['moreoptions'] || !$node->options) {
-    if (!$node->options) {
-        $node->options = 2;
+  if ($_POST['edit']['OptionGroup']['morechoices'] || !$node->choices) {
+    if (!$node->choices) {
+        $node->choices = 2;
 		}
     else {
-    	$node->options *= 2;
+    	$node->choices *= 2;
 		}
   }
 
@@ -149,22 +149,22 @@ function decisions_form($node) {
     '#title' => t('Decision Choices'),
     '#collapsible' => TRUE,
   );
-  for ($option_number = 1; $option_number <= $node->options; $option_number++) {
-    $form['OptionGroup']['Option_'.$option_number] = array(
+  for ($choice_number = 1; $choice_number <= $node->choices; $choice_number++) {
+    $form['OptionGroup']['Option_'.$choice_number] = array(
       '#type' => 'textfield',
-      '#title' => t('Choice %n', array('%n' => $option_number)),
+      '#title' => t('Choice %n', array('%n' => $choice_number)),
       '#required' => FALSE,
-      '#default_value' => $node->option[$option_number],
+      '#default_value' => $node->choice[$choice_number],
       '#size' => 50,
       '#maxlength' => 127,
     );
   }
 
-  $form['OptionGroup']['options'] = array(
+  $form['OptionGroup']['choices'] = array(
     '#type' => 'hidden',
-    '#value' => $node->options,
+    '#value' => $node->choices,
   );
-  $form['OptionGroup']['moreoptions'] = array(
+  $form['OptionGroup']['morechoices'] = array(
     '#type' => 'checkbox',
     '#title' => t('Need more choices'),
     '#value' => 0,
@@ -179,7 +179,7 @@ function decisions_form($node) {
   );
 
 	$maxChoiceList = array();
-	for ($i = 0; $i <= $node->options; $i++) {
+	for ($i = 0; $i <= $node->choices; $i++) {
 		$maxChoiceList[$i] = ($i == 0? 'No limit' : $i);
 	}
 
@@ -188,7 +188,7 @@ function decisions_form($node) {
 		'#type' => 'select',
 		'#title' => t('Maximum Choices'),
 		'#default_value' => ($node->maxchoices? $node->maxchoices : 0),
-		'#options' => $maxChoiceList,
+		'#choices' => $maxChoiceList,
 		'#description' => t('Limits the total number of choices voters may select.')
 	);
 
@@ -209,7 +209,7 @@ function decisions_form($node) {
 	$form['settings']['active'] = array(
 		'#type' => 'radios',
 		'#title' => t('Decision Status'),
-		'#options' => $active,
+		'#choices' => $active,
 		'#default_value' => (isset($node->active)? $node->active : 1),
 		'#description' => t('When a decision is closed users may no longer vote on it.'),
 	);
@@ -220,7 +220,7 @@ function decisions_form($node) {
 		'#type' => 'select',
 		'#title' => t('Decision duration'),
 		'#default_value' => ($node->runtime? $node->runtime : 0),
-		'#options' => $_duration,
+		'#choices' => $_duration,
 		'#description' => t('After this period, the decision will be closed automatically.')
 	);
 
@@ -236,7 +236,7 @@ function decisions_form($node) {
 			'#type' => 'select',
 			'#title' => t('Decision mode'),
 			'#required' => TRUE,
-			'#options' => _decisions_mode_list(),
+			'#choices' => _decisions_mode_list(),
 			'#default_value' => variable_get('decisions_default_mode', $modes[0]),
   	);
 		// */
@@ -274,11 +274,11 @@ function decisions_help($section) {
 function decisions_load($node) {
 	global $user;
   $decision = db_fetch_object(db_query("SELECT * FROM {decisions} WHERE nid = %d", $node->nid));
-  $result = db_query("SELECT optorder, opttext FROM {decisions_options} WHERE nid = %d ORDER BY optorder", $node->nid);
-  while ($option = db_fetch_array($result)) {
-  	$decision->option[$option['optorder']] = $option['opttext'];
+  $result = db_query("SELECT chorder, chtext FROM {decisions_choices} WHERE nid = %d ORDER BY chorder", $node->nid);
+  while ($choice = db_fetch_array($result)) {
+  	$decision->choice[$choice['chorder']] = $choice['chtext'];
   }
-  $decision->options = count($decision->option);
+  $decision->choices = count($decision->choice);
 
 	$poll->vote = -1;
 	// See if user has voted
@@ -378,7 +378,7 @@ function decisions_settings() {
 		'#title' => t('Use electoral list by default'),
 		'#description' => t('Use an electoral list by default for new decisions.'),
 		'#default_value' => variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
-		'#options' => $enabled,
+		'#choices' => $enabled,
 	);
 
 	return $form;
@@ -399,14 +399,14 @@ function decisions_update($node) {
   db_query("UPDATE {decisions} SET active=%d, runtime=%d, maxchoices=%d WHERE nid = %d", $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->nid);
   # XXX: should update decisions here, when it has some parameters
   # XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
-  db_query('DELETE FROM {decisions_options} WHERE nid = %d', $node->nid);
+  db_query('DELETE FROM {decisions_choices} WHERE nid = %d', $node->nid);
 
-  foreach ($node->OptionGroup as $key => $option) {
+  foreach ($node->OptionGroup as $key => $choice) {
   	$order = str_replace('Option_', '', $key);
-	if ($order != $key && $option != '') {
-		db_query("INSERT INTO {decisions_options} (nid, opttext, optorder) VALUES (%d, '%s', %d)", $node->nid, $option, intval($order));
+	if ($order != $key && $choice != '') {
+		db_query("INSERT INTO {decisions_choices} (nid, chtext, chorder) VALUES (%d, '%s', %d)", $node->nid, $choice, intval($order));
 	   }
-	# ignore entries other than options
+	# ignore entries other than choices
   }
 }
 
@@ -441,7 +441,7 @@ function decisions_insert($node) {
   	}
 	}
 
-  # insert the options, same sequence than update
+  # insert the choices, same sequence than update
   decisions_update($node);
 }
 
@@ -483,14 +483,14 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 
 
 	if ($node->in_preview) {
-		// Copy the form values to the options array
-		$node->option = array();
-		$node->options = 0;
-  	foreach ($node->OptionGroup as $key => $option) {
+		// Copy the form values to the choices array
+		$node->choice = array();
+		$node->choices = 0;
+  	foreach ($node->OptionGroup as $key => $choice) {
   		$order = str_replace('Option_', '', $key);
-			if ($order != $key && $option != '') {
-				$node->options++;
-				$node->option[$order] = $option;
+			if ($order != $key && $choice != '') {
+				$node->choices++;
+				$node->choice[$order] = $choice;
 			}
 		}
 
@@ -547,9 +547,9 @@ function decisions_view_electoral_list($node, $teaser = FALSE) {
  */
 function theme_decisions_view_voting($form) {
   $output .= '<div class="decisions">';
-  $output .= '  <div class="option-form">';
-  $output .= '    <div class="options">';
-  $output .= form_render($form['option']);
+  $output .= '  <div class="choice-form">';
+  $output .= '    <div class="choices">';
+  $output .= form_render($form['choice']);
   $output .= '    </div>';
   $output .= form_render($form['nid']);
   $output .= form_render($form['vote']);
@@ -738,7 +738,7 @@ function _decisions_load_modes() {
  * list or set the known modes
  *
  * @param string $mode set/change the given mode
- * @param string $longname optional. set a longname different than the mode name
+ * @param string $longname choiceal. set a longname different than the mode name
  *
  * @returns array the module list as a mode => longname associative array
  */
