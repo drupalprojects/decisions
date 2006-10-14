@@ -133,7 +133,7 @@ function decisions_form($node) {
     $node->choices = 5;
   }
   // User ticked 'need more choices'.
-  if ($_POST['edit']['OptionGroup']['morechoices'] || !$node->choices) {
+  if ($_POST['edit']['ChoiceGroup']['morechoices'] || !$node->choices) {
     if (!$node->choices) {
         $node->choices = 2;
 		}
@@ -144,15 +144,15 @@ function decisions_form($node) {
 
 
 
-	 // Options list
-  $form['OptionGroup'] = array(
+	 // Choices list
+  $form['ChoiceGroup'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
     '#title' => t('Decision Choices'),
     '#collapsible' => TRUE,
   );
   for ($choice_number = 1; $choice_number <= $node->choices; $choice_number++) {
-    $form['OptionGroup']['Option_'.$choice_number] = array(
+    $form['ChoiceGroup']['Choice_'.$choice_number] = array(
       '#type' => 'textfield',
       '#title' => t('Choice %n', array('%n' => $choice_number)),
       '#required' => FALSE,
@@ -162,11 +162,11 @@ function decisions_form($node) {
     );
   }
 
-  $form['OptionGroup']['choices'] = array(
+  $form['ChoiceGroup']['choices'] = array(
     '#type' => 'hidden',
     '#value' => $node->choices,
   );
-  $form['OptionGroup']['morechoices'] = array(
+  $form['ChoiceGroup']['morechoices'] = array(
     '#type' => 'checkbox',
     '#title' => t('Need more choices'),
     '#value' => 0,
@@ -438,8 +438,8 @@ function decisions_update($node) {
   # XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
   db_query('DELETE FROM {decisions_choices} WHERE nid = %d', $node->nid);
 
-  foreach ($node->OptionGroup as $key => $choice) {
-  	$order = str_replace('Option_', '', $key);
+  foreach ($node->ChoiceGroup as $key => $choice) {
+  	$order = str_replace('Choice_', '', $key);
 	if ($order != $key && $choice != '') {
 		db_query("INSERT INTO {decisions_choices} (nid, chtext, chorder) VALUES (%d, '%s', %d)", $node->nid, $choice, intval($order));
 	   }
@@ -524,8 +524,8 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 		// Copy the form values to the choices array
 		$node->choice = array();
 		$node->choices = 0;
-  	foreach ($node->OptionGroup as $key => $choice) {
-  		$order = str_replace('Option_', '', $key);
+  	foreach ($node->ChoiceGroup as $key => $choice) {
+  		$order = str_replace('Choice_', '', $key);
 			if ($order != $key && $choice != '') {
 				$node->choices++;
 				$node->choice[$order] = $choice;

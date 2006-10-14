@@ -47,7 +47,7 @@ function decisions_view_voting_ranking(&$node, $teaser, $page, $block) {
     foreach ($node->choice as $key => $choice) {
       $list[$i] = check_plain($choice);
 
-      $form['choice']['Option_' . $key] = array(
+      $form['choice']['Choice_' . $key] = array(
         '#type' => 'select',
         '#title' => check_plain($choice),
         '#required' => FALSE,
@@ -402,7 +402,7 @@ function _decision_calculate_ranking_nextround($aRound, &$votes, $min) {
  */
 function decisions_vote_ranking($node) {
   foreach ( $node->choice as $key => $choice ) {
-    $vote->value = $_POST['edit']['Option_' . $key];
+    $vote->value = $_POST['edit']['Choice_' . $key];
 
 		// A zero value indicates they didn't rank that choice
 		if ($vote->value != 0) {
@@ -430,15 +430,15 @@ function decisions_vote_validate_ranking($node) {
   foreach ($node->choice as $key => $choice) {
 		
 		// count the number of choices that are ranked
-    if (!empty($_POST['edit']['Option_' . $key])) {
+    if (!empty($_POST['edit']['Choice_' . $key])) {
 			$numchoices++;
 		}
-    $intvalue = intval($_POST['edit']['Option_' . $key]);
+    $intvalue = intval($_POST['edit']['Choice_' . $key]);
     // mark this value as seen
     $setvalues[$intvalue]++;
     // check range
     if ($intvalue > count($node->choice) || $intvalue < 0) {
-      form_set_error('Option_'.$key, "illegal rank for choice $key: $intvalue (min: 1, max: " . count($node->choice) . ")");
+      form_set_error('Choice_'.$key, "illegal rank for choice $key: $intvalue (min: 1, max: " . count($node->choice) . ")");
       $ok = FALSE;
     }
 

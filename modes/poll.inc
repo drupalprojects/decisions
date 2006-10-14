@@ -36,7 +36,7 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
 			foreach ($node->choice as $key => $choice) {
 				$list[$i] = check_plain($choice);
 
-      	$form['choice']['Option_' . $key] = array(
+      	$form['choice']['Choice_' . $key] = array(
         	'#type' => 'checkbox',
         	'#title' => check_plain($choice),
         	'#required' => FALSE,
@@ -126,7 +126,7 @@ function decisions_vote_poll($node) {
 	else {
 		// approval voting
   	foreach ($node->choice as $key => $choice) {
-    	$vote->value = $_POST['edit']['Option_' . $key];
+    	$vote->value = $_POST['edit']['Choice_' . $key];
 
 			// A zero value indicates they didn't rank that choice
 			if ($vote->value != 0) {
@@ -162,13 +162,13 @@ function decisions_vote_validate_poll($node) {
   	foreach ($node->choice as $key => $choice) {
 
 			// need a minchoices choice to do this
-    	//if (empty($_POST['edit']['Option_' . $key])) {
-      	//form_set_error('Option_'.$key, "choice $key cannot be empty");
+    	//if (empty($_POST['edit']['Choice_' . $key])) {
+      	//form_set_error('Choice_'.$key, "choice $key cannot be empty");
       	//$ok = FALSE;
     	//}
 
 			// see if the box is checked
-    	if ($_POST['edit']['Option_' . $key]) {
+    	if ($_POST['edit']['Choice_' . $key]) {
 				$numchoices++;
 			}
   	}
