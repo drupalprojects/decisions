@@ -112,14 +112,8 @@ function decisions_form($node) {
 
 	$mode = _decisions_get_mode($node);
 
-	/*$form['mode'] = array(
-		'#type' => 'markup',
-		'#title' => t('Mode'),
-		'#value' => '<strong>' . t('Mode') . '</strong>: ' . $node->mode,
-		'#weight' => -1);
-		*/
-
 	$enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
+
   /* standard node elements */
   $form['title'] = array(
     '#type' => 'textfield',
@@ -253,6 +247,32 @@ function decisions_form($node) {
 		'#default_value' => ($node->maxchoices? $node->maxchoices : 0),
 		'#options' => $maxChoiceList,
 		'#description' => t('Limits the total number of choices voters may select.')
+	);
+
+	$voting_algorithms = array();
+	if ($mode == 'ranking') {
+		$algs = array('instant runoff', 'borda count');
+	}
+	else {
+		// mode == poll
+		$algs = array('plurality');
+	}
+
+	foreach ($algs as $alg) {
+		$voting_algorithms[$alg] = ucwords($alg);
+	}
+
+	$defaultalg = ($_POST['edit']['settings']['algorithm']?
+		$_POST['edit']['settings']['algorithm'] : 
+			$node->algorithm);
+			
+
+	$form['settings']['algorithm'] = array(
+		'#type' => 'select',
+		'#title' => t('Algorithm'),
+		'#options' => $voting_algorithms,
+		'#default_value' => $defaultalg,
+		'#description' => 'Voting algorithm to use to calculate the winner.',
 	);
 
 /*
@@ -498,7 +518,7 @@ function decisions_cancel_form($nid) {
  * This is called upon node edition.
  */
 function decisions_update($node) {
-  db_query("UPDATE {decisions} SET active=%d, runtime=%d, maxchoices=%d WHERE nid = %d", $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->nid);
+  db_query("UPDATE {decisions} SET active=%d, runtime=%d, maxchoices=%d, algorithm='%s' WHERE nid = %d", $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->nid);
   # XXX: should update decisions here, when it has some parameters
   # XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
   db_query('DELETE FROM {decisions_choices} WHERE nid = %d', $node->nid);
