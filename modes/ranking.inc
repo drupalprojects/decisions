@@ -369,12 +369,18 @@ function _decision_calculate_ranking($node) {
 		}
 	}
   // loop detected. signal user and record.
-  watchdog('decisions', "Could not reach a decision within $maxiter iterations", WATCHDOG_ERROR);
-  drupal_set_message("Could not reach a decision within $maxiter iterations");
+  drupal_set_message("Could not reach a decision within $maxRounds iterations.");
   $resultObj->matrix = $roundLog;
 	$resultObj->totalVotes = $totalVotes;
   return $resultObj;
 
+}
+
+/**
+ * Recalculate and cache results after a new vote
+ */
+
+function decisions_votingapi_calculate_ranking($node, $cache, $votes, $content_type, $content_id) {
 }
 
 /**
@@ -393,7 +399,7 @@ function _decision_calculate_ranking($node) {
  */
 function _decision_calculate_ranking_nextround($aRound, &$votes, $min) {
 
-   }
+}
 
 /**
  * Implementation of the vote hook for the runoff module.

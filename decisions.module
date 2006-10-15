@@ -90,11 +90,25 @@ function decisions_delete($node) {
 }
 
 /**
+ * Implementation of votingapi_hook_calculate()
+ */
+function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_id) {
+  $node = node_load($content_id);
+  $mode = $node->mode;
+  if (function_exists("decisions_votingapi_calculate_$mode")) {
+  	//return call_user_func("decisions_votingapi_calculate_$mode", $node, $cache, $votes, $content_type, $content_id);
+  }
+}
+
+
+
+/**
  * Implementation of hook_form().
  *
  * This hook displays the form necessary to edit the *node* (ie. not the votes).
  */
 function decisions_form($node) {
+	$node->in_preview = isset($_POST['edit']);
 	
 	if (!$node->mode) {
 		$node->mode = (arg(3)? arg(3) : 'poll');
@@ -125,38 +139,88 @@ function decisions_form($node) {
     '#default_value' => $node->body,
   );
 
+	if ($node->in_preview) {
+		// Figure out the number of non-blank choices
+		$node->choice = array();
+		$node->choices = 0;
+  	foreach ($_POST['edit']['ChoiceGroup'] as $key => $choice) {
+  		$order = str_replace('Choice_', '', $key);
+			if ($order != $key && $choice != '') {
+				$node->choices++;
+				$node->choice[$order] = $choice;
+			}
+			else {
+				
+			}
+		}
 
+		// If all of them are blank, default to 5 again
+		if ($node->choices == 0) {
+			$node->choices = 5;
+		}
+	}
 
- 	/* decision-specific elements */
-  /* this code is mostly from poll.module */
   if (!isset($node->choices)) {
-    $node->choices = 5;
-  }
-  // User ticked 'need more choices'.
-  if ($_POST['edit']['ChoiceGroup']['morechoices'] || !$node->choices) {
-    if (!$node->choices) {
-        $node->choices = 2;
+		// in the process of creating a new decision
+
+		if ($node->in_preview) {
+			// previewing a decision that hasn't been created yet
+
+			if ($_POST['edit']['ChoiceGroup']['morechoices']) {
+				// morechoices checked
+
+				// double number of previously shown choices (including blanks)
+				$node->choices = 2 * $_POST['edit']['ChoiceGroup']['choices'];
+			}
+			else {
+				// morechoices not checked
+
+				// Only show non-blank previous choices
+
+				// $node->choices should already be set to the correct number
+				// so don't do anything.
+			}
 		}
-    else {
-    	$node->choices *= 2;
+		else {
+			// this is a new decision, so default to 5 choices	
+    	$node->choices = 5;
+		}
+	}
+	else {
+		// Editing an old decision
+
+		if ($node->in_preview) {
+			// previewing a previously edited node
+
+			if ($_POST['edit']['ChoiceGroup']['morechoices']) {
+				// Double number of previously shown choices, including blanks
+				$node->choices = 2 * $_POST['edit']['ChoiceGroup']['choices'];
+			}
+			else {
+				// morechoices not checked
+
+				// Only show non-blank previous choices
+
+				// $node->choices should already be set to the correct number
+				// so don't do anything.
+			}
 		}
   }
 
-
-
-	 // Choices list
+	// Choices list
   $form['ChoiceGroup'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
     '#title' => t('Decision Choices'),
     '#collapsible' => TRUE,
   );
-  for ($choice_number = 1; $choice_number <= $node->choices; $choice_number++) {
-    $form['ChoiceGroup']['Choice_'.$choice_number] = array(
+
+  for ($cnum = 1; $cnum <= $node->choices; $cnum++) {
+    $form['ChoiceGroup']['Choice_' . $cnum] = array(
       '#type' => 'textfield',
-      '#title' => t('Choice %n', array('%n' => $choice_number)),
+      '#title' => t('Choice %n', array('%n' => $cnum)),
       '#required' => FALSE,
-      '#default_value' => $node->choice[$choice_number],
+      '#default_value' => $node->choice[$cnum],
       '#size' => 50,
       '#maxlength' => 127,
     );
@@ -166,6 +230,7 @@ function decisions_form($node) {
     '#type' => 'hidden',
     '#value' => $node->choices,
   );
+
   $form['ChoiceGroup']['morechoices'] = array(
     '#type' => 'checkbox',
     '#title' => t('Need more choices'),
@@ -440,9 +505,9 @@ function decisions_update($node) {
 
   foreach ($node->ChoiceGroup as $key => $choice) {
   	$order = str_replace('Choice_', '', $key);
-	if ($order != $key && $choice != '') {
-		db_query("INSERT INTO {decisions_choices} (nid, chtext, chorder) VALUES (%d, '%s', %d)", $node->nid, $choice, intval($order));
-	   }
+		if ($order != $key && $choice != '') {
+			db_query("INSERT INTO {decisions_choices} (nid, chtext, chorder) VALUES (%d, '%s', %d)", $node->nid, $choice, intval($order));
+	  }
 	# ignore entries other than choices
   }
 }
