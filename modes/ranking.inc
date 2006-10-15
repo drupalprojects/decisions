@@ -4,7 +4,7 @@
  * Implementation of the decisions_longname() hook
  */
 function decisions_ranking_longname() {
-  return t("Runoff");
+  return t("Ranking");
 }
 
 /**
@@ -84,60 +84,61 @@ function decisions_view_voting_ranking(&$node, $teaser, $page, $block) {
  * TODO: fix display (http://drupal.org/node/48248)
  */
 function decisions_view_results_ranking($node, $teaser, $page, $block) {
-  $runoff = _decision_calculate_ranking($node);
+  $results = _decisions_calculate_results_ranking($node);
 
-	// If no one has voted, $runoff = array() and thus is empty
-	if (!empty($runoff)) {
-    $winning_choice = $node->choice[$runoff->winner];
-    //$output = '<p>'.t("The winner is choice %choice", array('%choice' => $winning_choice)).'</p>';
+	// If no one has voted, $results = array() and thus is empty
+	if (!empty($results)) {
+    $winning_choice = $node->choice[$results->winner];
 
+		/*
 		ob_start();
-		//print_r($runoff->ranking);
+		print_r($results->ranking);
 		$output .= nl2br(ob_get_contents()) . '<br />';
 		ob_end_clean();
+		// */
+
 		$output .= t('Final results: ') . '<ol>';
 
-		for ($i = 0; $i < count($runoff->ranking); $i++) {
+		for ($i = 0; $i < count($results->ranking); $i++) {
 			$output .= '<li> ';
 			$firstOne = true;
-			$roundVotes = 0;
-			foreach ($runoff->ranking[$i] as $choice) {
+
+			// Loop through all choices with this ranking
+			foreach ($results->ranking[$i] as $choice) {
 				$output .= ($firstOne? '' : ', ') . $node->choice[$choice];
 				$firstOne = false;
-				$roundVotes += count($runoff->matrix[count($runoff->matrix) - $i - 1][$choice]);
 			}
 
-			// The winner
-			if ($i == 0) {
-				$output .= ' (' . $runoff->winnerPercent . '%)';
+			// Show the winner's percentage if the algorithm can calculate it
+			if ($i == 0 && $results->winnerPercent) {
+				$output .= ' (' . $results->winnerPercent . '%)';
 			}
 			$output .= '</li>';
 		}
 		$output .= '</ol>';
 
     // XXX: debugging code
-		if (user_access('administer decisions')) {
-    	$output .= "<br />Internal values, for debugging purposes:";
-    	// output the table of runoff rounds
-    	$output .= "<table border=\"1\"><tr><td>Round</td>";
+		if (user_access('administer decisions') && $results->matrix) {
+    	$output .= '<br />Internal values, for debugging purposes:';
+    	// output the table of algorithm rounds
+    	$output .= '<table border="1"><tr><td>Round</td>';
     	foreach ($node->choice as $key => $choicename) {
       	$output .= "<td>$choicename</td>";
     	}
-    	$output .= "</tr>";
+    	$output .= '</tr>';
     	$round = 1;
-			if (count($runoff->matrix) > 0)
-			{
-    		foreach ($runoff->matrix as $aRound) {
+			if (count($results->matrix) > 0) {
+    		foreach ($results->matrix as $aRound) {
       		$output .= "<tr><td>$round.</td>";
       		foreach ($node->choice as $key => $choicename) {
         		$output .= '<td>' . count($aRound[$key]) . '</td>';
       		}
-      		$output .= "</tr>";
+      		$output .= '</tr>';
       		$round++;
     		}
 			}
 
-    	$output .= "</table>";
+    	$output .= '</table>';
 		}
 
     return $output;
@@ -145,7 +146,7 @@ function decisions_view_results_ranking($node, $teaser, $page, $block) {
 }
 
 /**
- * Calculate the results (aggregate preference) for an IRV election
+ * Calculate the results for a ranking decision based on the algorithm
  * 
  * @param $node
  *	The node object for the current decision
@@ -157,7 +158,111 @@ function decisions_view_results_ranking($node, $teaser, $page, $block) {
  *							a status message indicating who was eliminated
  *   -totalVoters : the total number of voters who participated
  */
-function _decision_calculate_ranking($node) {
+function _decisions_calculate_results_ranking($node) {
+	if ($node->algorithm == 'borda count') {
+		return _decisions_calculate_bordacount($node);
+	}
+	else {
+		return _decisions_calculate_instantrunoff($node);
+	}
+}
+
+/**
+ * Calculate the results using borda count
+ * 
+ * @param $node
+ *	The node object for the current decision
+ *
+ * @return 
+ * 	Should return an object that include the following attributes
+ *   -results : 2d array listing the aggregate preference, including ties
+ *   -rounds : 2d array listing the per-choice vote count for each round and
+ *							a status message indicating who was eliminated
+ *   -totalVoters : the total number of voters who participated
+ */
+
+function _decisions_calculate_bordacount($node) {
+ 	$votes = array();
+  // ORDER BY value ASC lets us ensure no gaps
+  $result = db_query("SELECT * FROM {votingapi_vote} v WHERE content_type='%s' AND content_id=%d ORDER BY value ASC", 'decisions', $node->nid);
+  while ($vobj = db_fetch_object($result)) {
+    $votes[] = $vobj;
+  }
+
+	if (count($votes) == 0) {
+		// no votes yet
+		return array();
+	}
+
+	// aggregate votes by user (uid if logged in, IP if anonymous)
+	// in ascending order of value
+	$userVotes = array();
+
+  foreach ($votes as $vote) {
+		if ($vote->uid == 0) {
+			// anonymous user
+			$key = $vote->hostname;
+		}
+		else {
+			// logged-in user
+			$key = $vote->uid;
+		}
+
+		$userVotes[$key][$vote->value] = $vote->tag;
+	}
+
+	$choiceVotes = array();
+
+	$totalChoices = count($node->choice);
+
+	// Loop through each user's vote
+	foreach ($userVotes as $uid => $userVote) {
+		foreach ($userVote as $ranking => $choice) {
+			// Negative values are possible if choices were removed after vote
+			$voteValue = max($totalChoices - $ranking, 0);
+			$choiceVotes[$choice] += 	$voteValue;
+		}
+	}
+
+	// sort descending (although there may be ties)
+	arsort($choiceVotes);
+
+	// Figure out the final ranking
+	$ranking = array();
+	$previousTotal = -1;
+	$curResult = -1;
+
+	foreach ($choiceVotes as $choice => $total) {
+		if ($total != $previousTotal) {
+			// Didn't tie with the previous score
+			$curResult++;
+		}
+		$ranking[$curResult][] = $choice;
+	}
+
+	$totalVotes = count($userVotes);
+
+	$resultObj->ranking = $ranking;
+	$resultObj->totalVotes = $totalVotes;
+  return $resultObj;
+}
+
+
+/**
+ * Calculate the results using instant-runoff voting
+ * 
+ * @param $node
+ *	The node object for the current decision
+ *
+ * @return 
+ * 	Should return an object that include the following attributes
+ *   -results : 2d array listing the aggregate preference, including ties
+ *   -rounds : 2d array listing the per-choice vote count for each round and
+ *							a status message indicating who was eliminated
+ *   -totalVoters : the total number of voters who participated
+ */
+
+function _decisions_calculate_instantrunoff($node) {
  	$votes = array();
   // ORDER BY value ASC lets us ensure no gaps
   $result = db_query("SELECT * FROM {votingapi_vote} v WHERE content_type='%s' AND content_id=%d ORDER BY value ASC", 'decisions', $node->nid);

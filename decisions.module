@@ -12,7 +12,7 @@
 
 define('DECISIONS_DEFAULT_ELECTORAL_LIST', 0);
 // always, aftervote, or afterclose
-define('DECISIONS_DEFAULT_VIEW_RESULTS', "aftervote");
+define('DECISIONS_DEFAULT_VIEW_RESULTS', 'aftervote');
 
 /**
  * Implementation of hook_access().
@@ -43,8 +43,8 @@ function decisions_block($op = 'list', $delta = 0, $edit = array()) {
       $blocks[0]['info'] = t('A decisions block');
       return $blocks;
     case 'view' :
-      $blocks["content"] = decisions_block_contents();
-      $blocks["subject"] = "decisions";
+      $blocks['content'] = decisions_block_contents();
+      $blocks['subject'] = 'decisions';
       return $blocks;
   }
 }
