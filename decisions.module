@@ -37,30 +37,43 @@ function decisions_access($op, $node) {
 /**
  * Implementation of hook_block().
  */
-function decisions_block($op = 'list', $delta = 0, $edit = array()) {
+function decisions_block($op = 'list', $delta = 'mostrecent', $edit = array()) {
   switch($op) {
     case 'list' :
-      $blocks[0]['info'] = t('A decisions block');
+      $blocks['mostrecent']['info'] = t('Decisions - Newest');
       return $blocks;
-    case 'view' :
-      $blocks['content'] = decisions_block_contents();
-      $blocks['subject'] = 'decisions';
-      return $blocks;
+    case 'view':
+  		if (user_access('view decisions')) {
+				switch ($delta) {
+					case 'mostrecent': default:
+      			$block['content'] = decisions_block_mostrecent();
+      			$block['subject'] = t('Decisions - Newest');
+				}
+
+				if ($block['content']) {
+      		return $block;
+				}
+			}
+			return array();
   }
 }
 
 /**
  * Content of the block, as returned by decisions_block('view')
  */
-function decisions_block_contents() {
-  $block = '';
-  if ( user_access('view decisions') ) {
-    /* get list of decisions and show them */
-    if ( user_access('vote on decisions') ) {
-      /* add a link to vote on the decision */
-    }
-  }
-  return $block;
+function decisions_block_mostrecent() {
+  $output = '';
+	$result = db_query('SELECT nid FROM {decisions} WHERE active=1 ORDER BY nid DESC LIMIT 1');
+	// Check that there is an active decision
+	if (db_num_rows($result) > 0) {
+  	$decision = db_fetch_object($result);
+		$output = decisions_view(node_load($decision->nid), false, false, true);
+		//$output .= $decision->nid;
+	}
+	else {
+		$output .= t('No active decisions.');
+	}
+  return $output;
 }
 
 /**
@@ -597,7 +610,9 @@ function decisions_validate($node) {
  * Implementation of hook_view().
  */
 function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
-  $node = node_prepare($node, $teaser);
+	if (!$block) {
+  	$node = node_prepare($node, $teaser);
+	}
 	$mode = _decisions_get_mode($node);
 
 	// Record the vote if they voted
@@ -639,17 +654,20 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 		// show results only if the user has voted or decision is closed
     $output .= decisions_view_results($node, $teaser, $page, $block);
   	$output .= decisions_view_electoral_list($node, $teaser);
-		if (isset($node->voted) && $node->voted && user_access('cancel own vote') && $node->active) {
+		if (isset($node->voted) && $node->voted && user_access('cancel own vote') && $node->active && !$block) {
 			$output .= drupal_get_form('decisions_cancel', decisions_cancel_form($node->nid));
 		}
   }
-	else {
-		$output .= 'this is bad';
+
+	if ($block) {
+		$output = '<div class="title">' . $node->title . '</div>' . $output;
+		$output .= l(t('view decision'), 'node/' . $node->nid);
+		return $output;
 	}
-
-
-  $node->body .= $output;
-  $node->teaser .= $output;
+	else {
+  	$node->body .= $output;
+  	$node->teaser .= $output;
+	}
 
 }
 
