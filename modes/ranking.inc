@@ -104,14 +104,14 @@ function decisions_view_results_ranking($node, $teaser, $page, $block) {
 			$firstOne = true;
 
 			// Loop through all choices with this ranking
-			foreach ($results->ranking[$i] as $choice) {
+			foreach ($results->ranking[$i]['choices'] as $choice) {
 				$output .= ($firstOne? '' : ', ') . $node->choice[$choice];
 				$firstOne = false;
 			}
 
-			// Show the winner's percentage if the algorithm can calculate it
-			if ($i == 0 && $results->winnerPercent) {
-				$output .= ' (' . $results->winnerPercent . '%)';
+			// Show the ranking's score if it exists (depends on algorithm)
+			if (isset($results->ranking[$i]['viewscore'])) {
+				$output .= ' (' . $results->ranking[$i]['viewscore'] . ')';
 			}
 			$output .= '</li>';
 		}
@@ -237,7 +237,10 @@ function _decisions_calculate_bordacount($node) {
 			// Didn't tie with the previous score
 			$curResult++;
 		}
-		$ranking[$curResult][] = $choice;
+		$ranking[$curResult]['choices'][] = $choice;
+		$ranking[$curResult]['rawscore'] = $total;
+		$ranking[$curResult]['viewscore'] = $total . ' point'
+			. ($total == 1? '' : 's');
 	}
 
 	$totalVotes = count($userVotes);
@@ -340,7 +343,7 @@ function _decisions_calculate_instantrunoff($node) {
   		foreach ($curRound as $ch => $choiceVotes) {
 				if (count($choiceVotes) == 0) {
 					unset($curRound[$ch]);
-					$reverseRanking[0][] = $ch;
+					$reverseRanking[0]['choices'][] = $ch;
 				}
 			}
 		}
@@ -413,7 +416,7 @@ function _decisions_calculate_instantrunoff($node) {
 				// choices had no first-place votes and were eliminated
 				// at the beginning
 				if (count($currentPlace) > 0) {
-					$reverseRanking[] = $currentPlace;	
+					$reverseRanking[]['choices'] = $currentPlace;	
 					// Remove all choices that had the minimum
 					foreach ($currentPlace as $chKey) {
 						unset($curRound[$chKey]);
@@ -425,10 +428,12 @@ function _decisions_calculate_instantrunoff($node) {
 			$revmat = array_reverse($roundLog);
 
 			// The winner finally gets added
-			$reverseRanking[] = array($curWinner);
+			$reverseRanking[]['choices'] = array($curWinner);
+			$index = count($reverseRanking) - 1;
+			$reverseRanking[$index]['rawscore'] = round(count($revmat[0][$curWinner]) * 100 / count($userVotes), 1);
+			$reverseRanking[$index]['viewscore'] = $reverseRanking[$index]['rawscore'] . '%';
 
     	$resultObj->winner = $curWinner;
-			$resultObj->winnerPercent = round(count($revmat[0][$curWinner]) * 100 / count($userVotes), 1);
       $resultObj->matrix = $roundLog;
 			$resultObj->totalVotes = $totalVotes;
 			$resultObj->ranking = array_reverse($reverseRanking);
