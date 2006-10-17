@@ -449,7 +449,7 @@ function _decisions_calculate_instantrunoff($node) {
 		//drupal_set_message('Round ' . ($round + 1) . ' eliminated: '
 			//. strval($minChoices[$roundLoser])
 			//. ' (min = ' . $minVotes . ') ' . count($curRound));
-		$reverseRanking[] = array($minChoices[$roundLoser]);
+		$reverseRanking[]['choices'] = array($minChoices[$roundLoser]);
 		
 		// Loop through the users who voted for the loser and redistribute
 		foreach ($curRound[$minChoices[$roundLoser]] as $userKey) {
