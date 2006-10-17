@@ -644,9 +644,9 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 		// Show the voting form but don't let them vote
     $output .= decisions_view_voting($node, $teaser, $page, $block);
 	}
-  else if (!$node->voted && arg(2) != 'results' && $node->active) {
+  else if (!$node->voted && arg(2) != 'results' && $node->active && decisions_eligible($node)) {
 		// User hasn't voted and we're not on the results tab
-		if (!$valid && decisions_eligible($node)) {
+		if (!$valid) {
       $output .= decisions_view_voting($node, $teaser, $page, $block);
     }
 	}
