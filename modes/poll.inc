@@ -13,7 +13,6 @@ function decisions_poll_longname() {
  * This creates a list of choices to allow the user to vote on choices.
  */
 function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
-	$form = array();
   if ($node->choice) {
     $list = array();
 
@@ -32,17 +31,15 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
 		}
 		else {
 			// approval voting
-			$form['choice'] = array();
-			foreach ($node->choice as $key => $choice) {
-				$list[$i] = check_plain($choice);
-
-      	$form['choice']['Choice_' . $key] = array(
-        	'#type' => 'checkbox',
-        	'#title' => check_plain($choice),
-        	'#required' => FALSE,
-        	'#weight' => $weight++,
-      	);
+			foreach ($node->choice as $i => $choice) {
+      	$list[$i] = check_plain($choice);
     	}
+			
+    	$form['choice'] = array(
+      	'#type' => 'checkboxes',
+      	'#title' => $page ? '' : check_plain($node->title),
+        '#options' => $list,
+      );
 		}
   }
   $form['nid'] = array(
@@ -119,14 +116,14 @@ function decisions_view_results_poll($node, $teaser, $page, $block) {
 function decisions_vote_poll($node) {
 	if ($node->maxchoices == 1) {
 		// plurality voting
-		$vote->value = $_POST['edit']['choice'];
+    $vote->value = $_POST['edit']['choice'];
 	  $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
 	  votingapi_set_vote('decisions', $node->nid, $vote);
 	}
 	else {
 		// approval voting
-  	foreach ($node->choice as $key => $choice) {
-    	$vote->value = $_POST['edit']['Choice_' . $key];
+    foreach ($node->choice as $key => $choice) {
+    	$vote->value = $_POST['edit']['choice'][$key];
 
 			// A zero value indicates they didn't rank that choice
 			if ($vote->value != 0) {
@@ -168,7 +165,7 @@ function decisions_vote_validate_poll($node) {
     	//}
 
 			// see if the box is checked
-    	if ($_POST['edit']['Choice_' . $key]) {
+    	if ($_POST['edit']['choice']) {
 				$numchoices++;
 			}
   	}

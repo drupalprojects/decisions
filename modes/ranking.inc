@@ -43,16 +43,17 @@ function decisions_view_voting_ranking(&$node, $teaser, $page, $block) {
 			$choices[$i] = $val;
 		}
 
-		$form['choice'] = array();
+		$form['choice'] = array(
+			'#tree' => TRUE,
+		);
+
     foreach ($node->choice as $key => $choice) {
       $list[$i] = check_plain($choice);
 
-      $form['choice']['Choice_' . $key] = array(
+      $form['choice'][$key] = array(
         '#type' => 'select',
         '#title' => check_plain($choice),
         '#required' => FALSE,
-        /* XXX: that's not the right way, we need to fetch the vote using votingapi */
-/*        '#default_value' => $node->choice[$key],*/
 				'#options' => $choices,
         '#weight' => $weight++,
       );
@@ -88,14 +89,6 @@ function decisions_view_results_ranking($node, $teaser, $page, $block) {
 
 	// If no one has voted, $results = array() and thus is empty
 	if (!empty($results)) {
-    $winning_choice = $node->choice[$results->winner];
-
-		/*
-		ob_start();
-		print_r($results->ranking);
-		$output .= nl2br(ob_get_contents()) . '<br />';
-		ob_end_clean();
-		// */
 
 		$output .= t('Final results: ') . '<ol>';
 
@@ -433,7 +426,6 @@ function _decisions_calculate_instantrunoff($node) {
 			$reverseRanking[$index]['rawscore'] = round(count($revmat[0][$curWinner]) * 100 / count($userVotes), 1);
 			$reverseRanking[$index]['viewscore'] = $reverseRanking[$index]['rawscore'] . '%';
 
-    	$resultObj->winner = $curWinner;
       $resultObj->matrix = $roundLog;
 			$resultObj->totalVotes = $totalVotes;
 			$resultObj->ranking = array_reverse($reverseRanking);
@@ -518,7 +510,7 @@ function _decision_calculate_ranking_nextround($aRound, &$votes, $min) {
  */
 function decisions_vote_ranking($node) {
   foreach ( $node->choice as $key => $choice ) {
-    $vote->value = $_POST['edit']['Choice_' . $key];
+    $vote->value = $_POST['edit']['choice'][$key];
 
 		// A zero value indicates they didn't rank that choice
 		if ($vote->value != 0) {
@@ -546,10 +538,10 @@ function decisions_vote_validate_ranking($node) {
   foreach ($node->choice as $key => $choice) {
 		
 		// count the number of choices that are ranked
-    if (!empty($_POST['edit']['Choice_' . $key])) {
+    if (!empty($_POST['edit']['choice'][$key])) {
 			$numchoices++;
 		}
-    $intvalue = intval($_POST['edit']['Choice_' . $key]);
+    $intvalue = intval($_POST['edit']['choice'][$key]);
     // mark this value as seen
     $setvalues[$intvalue]++;
     // check range
