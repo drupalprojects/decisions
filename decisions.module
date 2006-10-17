@@ -216,6 +216,7 @@ function decisions_form($node) {
     '#tree' => TRUE,
     '#title' => t('Decision Choices'),
     '#collapsible' => TRUE,
+		'#weight' => 1,
   );
 
   for ($cnum = 1; $cnum <= $node->choices; $cnum++) {
@@ -246,6 +247,7 @@ function decisions_form($node) {
     '#tree' => TRUE,
     '#title' => t('Decision Settings'),
     '#collapsible' => TRUE,
+		'#weight' => 1,
   );
 
 	$maxChoiceList = array();
