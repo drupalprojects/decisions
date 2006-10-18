@@ -656,9 +656,10 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 		// show results only if the user has voted or decision is closed
     $output .= decisions_view_results($node, $teaser, $page, $block);
   	$output .= decisions_view_electoral_list($node, $teaser);
-		if (isset($node->voted) && $node->voted && user_access('cancel own vote') && $node->active && !$block) {
+	}
+
+	if (isset($node->voted) && $node->voted && user_access('cancel own vote') && $node->active && !$block) {
 			$output .= drupal_get_form('decisions_cancel', decisions_cancel_form($node->nid));
-		}
   }
 
 	if ($block) {
