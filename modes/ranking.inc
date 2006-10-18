@@ -44,18 +44,15 @@ function decisions_view_voting_ranking(&$node, $teaser, $page, $block) {
 		}
 
 		$form['choice'] = array(
-			'#tree' => TRUE,
+			'#type' => 'checkboxes', //XXX: Workaround for FormAPI bug in PHP 4, see http://drupal.org/node/86657
+      '#tree' => TRUE,
 		);
 
     foreach ($node->choice as $key => $choice) {
-      $list[$i] = check_plain($choice);
-
       $form['choice'][$key] = array(
         '#type' => 'select',
         '#title' => check_plain($choice),
-        '#required' => FALSE,
 				'#options' => $choices,
-        '#weight' => $weight++,
       );
     }
   }
