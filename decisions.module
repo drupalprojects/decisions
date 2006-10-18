@@ -815,7 +815,7 @@ function decisions_cancel($nid) {
 				votingapi_unset_vote('decisions', $node->nid, $user->uid);
       }
       else {
-        db_query("DELETE FROM {votingapi_votes} WHERE content_id=%d and hostname = '%s'", $node->nid, $_SERVER['REMOTE_ADDR']);
+        db_query("DELETE FROM {votingapi_vote} WHERE content_id=%d and hostname = '%s'", $node->nid, $_SERVER['REMOTE_ADDR']);
       }
       drupal_set_message(t('Your vote was canceled.'));
     }
