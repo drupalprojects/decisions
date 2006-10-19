@@ -18,6 +18,7 @@ function decisions_install() {
 					`runtime` int NOT NULL default '0',
 					`maxchoices` int unsigned NOT NULL default '0',
 					`algorithm` VARCHAR(100),
+					`showvotes` tinyint,
           PRIMARY KEY  (`nid`)
       ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
 
@@ -37,6 +38,15 @@ function decisions_install() {
 
       break;
   }
+}
+
+function decisions_update_1() {
+	switch ($GLOBALS['db_type']) { 	 
+		case 'mysql': 	 
+		case 'mysqli':
+			db_query("ALTER TABLE {decisions} ADD COLUMN showvotes TINYINT DEFAULT '1'"); 	 
+		break;
+	}
 }
 
 /**

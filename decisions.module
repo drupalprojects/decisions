@@ -346,6 +346,14 @@ function decisions_form($node) {
 			'#default_value' => variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
 		);
 	}
+
+	$form['settings']['showvotes'] = array(
+		'#type' => 'checkbox',
+		'#title' => t('Show individual votes'),
+		'#description' => t('Users with the appropriate permissions will be able to see how each person voted.'),
+		'#default_value' => $node->showvotes,
+	);
+
   
 	$form['format'] = filter_form($node->form);
 	return $form;
@@ -446,19 +454,98 @@ function decisions_menu($may_cache) {
 		if (arg(0) == 'node' && is_numeric(arg(1))) {
 			$nid = arg(1);
 			$node = node_load($nid);
-			if ($node->active && !$node->voted && _decisions_can_view_results($node)) {
-				$items[] = array('path' => 'node/' . $nid . '/results',
-					'title' => t('results'),
-					'callback' => 'decisions_results',
-					'access' => user_access('view decisions'),
-					'weight' => 3,
-					'type' => MENU_LOCAL_TASK);
+			// Make sure we're on the actual decision node's page
+			if (strstr($node->type, 'decisions-') == 0) {
+				// Show the results tab
+				if ($node->active && !$node->voted
+					&& _decisions_can_view_results($node)) {
+					$items[] = array('path' => 'node/' . $nid . '/results',
+						'title' => t('results'),
+						'callback' => 'decisions_results',
+						'access' => user_access('view decisions'),
+						'weight' => 3,
+						'type' => MENU_LOCAL_TASK);
+				}
+
+				// Show the votes tab
+				if ($node->showvotes) {
+					$items[] = array(
+						'path' => 'node/' . $nid . '/votes',
+						'title' => t('votes'),
+						'callback' => 'decisions_tab_votes',
+						'access' => user_access('inspect all votes'),
+						'weight' => 3,
+						'type' => MENU_LOCAL_TASK
+					);
+				}
 			}
 		}
 	}
 
   return $items;
 }
+
+function decisions_tab_votes() {
+	if ($node = node_load(arg(1))) {
+		if (!$node->showvotes) {
+			drupal_not_found();
+			return;
+		}
+		drupal_set_title(check_plain($node->title));
+  	$output = t('This table lists all the recorded votes for this Decision.  If anonymous users are allowed to vote, they will be identified by the IP address of the computer they used when they voted.');
+
+    $header[] = array('data' => t('Visitor'), 'field' => 'u.name');
+    $header[] = array('data' => t('Vote'), '');
+
+    $result = pager_query("SELECT dv.value, dv.uid, dv.hostname, dv.tag, u.name FROM {votingapi_vote} dv LEFT JOIN {users} u ON dv.uid = u.uid WHERE dv.content_id = %d" . tablesort_sql($header), 20, 0, NULL, $node->nid);
+    $rows = array();
+    while ($vote = db_fetch_object($result)) {
+			$key = $vote->uid? $vote->uid : $vote->hostname;
+			$rows[$key]['name'] = $vote->name ? theme('username', $vote) : check_plain($vote->hostname);
+			if ($node->type == 'decisions-ranking') {
+				// Need two dimensional results (if equal rankings are allowed)
+      	$rows[$key]['votes'][$vote->value][] = check_plain($node->choice[$vote->tag]);
+			}
+			else {
+				// Just need one dimensional results
+      	$rows[$key]['votes'][] = check_plain($node->choice[$vote->tag]);
+			}
+    }
+		
+
+		$separators = array('decisions-ranking' => ' > ', 'decisions-poll' => ', ');
+
+		// create strings out of each vote
+		$results = array();
+
+		foreach ($rows as $key => $outerArray) {
+			$ranking = $outerArray['votes'];
+			asort($ranking);
+			$rankings = array();
+			if ($node->type == 'decisions-ranking') {
+				// Include support for multiple choices having the same ranking
+				foreach ($ranking as $vote => $choices) {
+					$rankings[$vote] = implode(' = ', $choices);
+				}
+			}
+			else {
+				// Don't need to do anything
+				$rankings = $ranking;
+			}
+			ksort($rankings);
+			$results[$key]['name'] = $rows[$key]['name'];
+			$results[$key]['vote'] = implode($separators[$node->type], $rankings);
+		}
+
+    $output .= theme('table', $header, $results);
+    $output .= theme('pager', NULL, 20, 0);
+    print theme('page', $output);
+	}
+	else {
+		drupal_not_found();
+	}
+}
+
 
 function _decisions_can_view_results($node) {
 	$view_results = variable_get('decisions_view_results'
@@ -482,7 +569,7 @@ function decisions_node_info() {
  * Implementation of hook_perm().
  */
 function decisions_perm() {
-  return array('create decisions', 'delete decisions', 'view decisions', 'vote on decisions', 'cancel own vote', 'administer decisions');
+  return array('create decisions', 'delete decisions', 'view decisions', 'vote on decisions', 'cancel own vote', 'administer decisions', 'inspect all votes');
 }
 
 /**
@@ -533,7 +620,7 @@ function decisions_cancel_form($nid) {
  * This is called upon node edition.
  */
 function decisions_update($node) {
-  db_query("UPDATE {decisions} SET active=%d, runtime=%d, maxchoices=%d, algorithm='%s' WHERE nid = %d", $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->nid);
+  db_query("UPDATE {decisions} SET active=%d, runtime=%d, maxchoices=%d, algorithm='%s', showvotes=%d WHERE nid = %d", $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['showvotes'], $node->nid);
   # XXX: should update decisions here, when it has some parameters
   # XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
   db_query('DELETE FROM {decisions_choices} WHERE nid = %d', $node->nid);
