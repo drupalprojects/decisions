@@ -247,7 +247,7 @@ function decisions_form($node) {
     '#tree' => TRUE,
     '#title' => t('Decision Settings'),
     '#collapsible' => TRUE,
-		'#weight' => 1,
+		'#weight' => 2,
   );
 
 	$maxChoiceList = array();
