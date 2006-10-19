@@ -478,12 +478,50 @@ function decisions_menu($may_cache) {
 						'type' => MENU_LOCAL_TASK
 					);
 				}
+
+				if ($node->uselist) {
+					$items[] = array(
+						'path' => 'node/' . $nid . '/electoral_list',
+						'title' => t('electoral list'),
+						'callback' => 'decisions_tab_electoral_list',
+						'access' => user_access('view decisions'),
+						'weight' => 3,
+						'type' => MENU_LOCAL_TASK
+					);
+				}
 			}
 		}
 	}
 
   return $items;
 }
+
+function decisions_tab_electoral_list() {
+	if ($node = node_load(arg(1))) {
+		if (!$node->uselist) {
+			drupal_not_found();
+			return;
+		}
+		drupal_set_title(check_plain($node->title));
+  	$output = t('This table lists all the eliglbe voters for this Decision.');
+
+    $header[] = array('data' => t('Voter'), 'field' => 'u.name');
+    //$header[] = array('data' => t('Vote'), '');
+
+    $result = pager_query("SELECT u.uid, u.name FROM {decisions_electoral_list} el LEFT JOIN {users} u ON el.uid = u.uid WHERE el.nid = %d" . tablesort_sql($header), 20, 0, NULL, $node->nid);
+    $eligible_voters = array();
+    while ($voter = db_fetch_object($result)) {
+			$eligible_voters[] = array(theme('username', $voter));
+    }
+    $output .= theme('table', $header, $eligible_voters);
+    $output .= theme('pager', NULL, 20, 0);
+    print theme('page', $output);
+	}
+	else {
+		drupal_not_found();
+	}
+}
+
 
 function decisions_tab_votes() {
 	if ($node = node_load(arg(1))) {
@@ -662,7 +700,7 @@ function decisions_insert($node) {
 
   # create the electoral list if desired
 
-	if ($node->uselist) {
+	if ($node->settings['uselist']) {
 
   	# check first if authenticated users have the right to vote, because authenticated users are not added to the users_roles permission, probably for performance reasons
   	$result = db_fetch_object(db_query("SELECT COUNT(*) AS hit FROM {permission} JOIN role ON role.rid = permission.rid WHERE FIND_IN_SET(' vote on decisions', perm) AND role.name = 'authenticated user'"));
@@ -775,7 +813,7 @@ function decisions_view_electoral_list($node, $teaser = FALSE) {
 
 		$output .= t('Total votes: %d', array('%d' => $votes));
 		if ($node->uselist) {
-    	$output .= t('(out of %v eligible voter' . 
+    	$output .= t(' (out of %v eligible voter' . 
 				($electoral_list->voters == 1? '' : 's') . ')',
 					array('%v' => $electoral_list->voters));
 		}
