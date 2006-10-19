@@ -486,7 +486,7 @@ function decisions_tab_electoral_list() {
 			return;
 		}
 		drupal_set_title(check_plain($node->title));
-  	$output = t('This table lists all the eliglbe voters for this Decision.');
+  	$output = t('This table lists all the eligible voters for this Decision.');
 
     $header[] = array('data' => t('Voter'), 'field' => 'u.name');
     //$header[] = array('data' => t('Vote'), '');
