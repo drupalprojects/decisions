@@ -1,11 +1,11 @@
-A hacker's guide to decisions.module
+The Mode API for Decisions.module
 ====================================
 
 voting modes
 ------------
 
 New voting modes can be defined by creating a file in
-modes/foo.include. The mode must define the hooks defined below.
+modes/foo.inc. The mode must define the hooks defined below.
 
 Mode hooks
 ==========
