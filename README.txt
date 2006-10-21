@@ -58,11 +58,12 @@ Under the GPL. See LICENSE.txt.
 Contributors
 ============
 
-Mathieu Petit-Clair
-Stéphane Couture
 Antoine Beaupré aka anarcat
 Omar Bickell
+Stéphane Couture
 Patrice D'Amours
+Chris Kennedy
+Mathieu Petit-Clair
 [who's missing here?]
 
 Updates
