@@ -19,7 +19,7 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
 		if ($node->maxchoices == 1) {
 			// plurality voting
     	foreach ($node->choice as $i => $choice) {
-      	$list[$i] = check_plain($choice);
+      	$list[$i] = check_plain($choice['chtext']);
     	}
 
     	$form['choice'] = array(
@@ -32,7 +32,7 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
 		else {
 			// approval voting
 			foreach ($node->choice as $i => $choice) {
-      	$list[$i] = check_plain($choice);
+      	$list[$i] = check_plain($choice['chtext']);
     	}
 			
     	$form['choice'] = array(
@@ -98,7 +98,7 @@ function decisions_view_results_poll($node, $teaser, $page, $block) {
 				$votes[$i] = 0;
 			}
 			$percentage = round(100 * $votes[$i] / $totalVotes, 0);
-			$output .= theme('decisions_bar',  check_plain($ch), $percentage, format_plural($votes[$i], '1 vote', '%count votes'), $block);
+			$output .= theme('decisions_bar',  check_plain($ch['chtext']), $percentage, format_plural($votes[$i], '1 vote', '%count votes'), $block);
 		}
 		$output .= '</div>';
 	}
@@ -125,8 +125,7 @@ function decisions_vote_poll($node) {
     foreach ($node->choice as $key => $choice) {
     	$vote->value = $_POST['edit']['choice'][$key];
 
-			// A zero value indicates they didn't rank that choice
-			if ($vote->value != 0) {
+			if (isset($vote->value)) {
   			$vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
    			$vote->tag = $key;
    			votingapi_set_vote('decisions', $node->nid, $vote);

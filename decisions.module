@@ -121,13 +121,8 @@ function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_
  * This hook displays the form necessary to edit the *node* (ie. not the votes).
  */
 function decisions_form($node) {
-	$node->in_preview = isset($_POST['edit']);
-
 	$mode = _decisions_get_mode($node);
 
-	$enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
-
-  /* standard node elements */
   $form['title'] = array(
     '#type' => 'textfield',
     '#title' => ucfirst($mode) . ' ' . t('Question'),
@@ -142,110 +137,51 @@ function decisions_form($node) {
     '#default_value' => $node->body,
   );
 
-	if ($node->in_preview) {
-		// Figure out the number of non-blank choices
-		$node->choice = array();
-		$node->choices = 0;
-  	foreach ($_POST['edit']['ChoiceGroup'] as $key => $choice) {
-  		$order = str_replace('Choice_', '', $key);
-			if ($order != $key && $choice != '') {
-				$node->choices++;
-				$node->choice[$order] = $choice;
-			}
-			else {
-				
-			}
-		}
-
-		// If all of them are blank, default to 5 again
-		if ($node->choices == 0) {
-			$node->choices = 5;
-		}
-	}
-
-  if (!isset($node->choices)) {
-		// in the process of creating a new decision
-
-		if ($node->in_preview) {
-			// previewing a decision that hasn't been created yet
-
-			if ($_POST['edit']['ChoiceGroup']['morechoices']) {
-				// morechoices checked
-
-				// double number of previously shown choices (including blanks)
-				$node->choices = 2 * $_POST['edit']['ChoiceGroup']['choices'];
-			}
-			else {
-				// morechoices not checked
-
-				// Only show non-blank previous choices
-
-				// $node->choices should already be set to the correct number
-				// so don't do anything.
-			}
-		}
-		else {
-			// this is a new decision, so default to 5 choices	
-    	$node->choices = 5;
-		}
-	}
-	else {
-		// Editing an old decision
-
-		if ($node->in_preview) {
-			// previewing a previously edited node
-
-			if ($_POST['edit']['ChoiceGroup']['morechoices']) {
-				// Double number of previously shown choices, including blanks
-				$node->choices = 2 * $_POST['edit']['ChoiceGroup']['choices'];
-			}
-			else {
-				// morechoices not checked
-
-				// Only show non-blank previous choices
-
-				// $node->choices should already be set to the correct number
-				// so don't do anything.
-			}
-		}
-  }
-
-	// Choices list
-  $form['ChoiceGroup'] = array(
-    '#type' => 'fieldset',
-    '#tree' => TRUE,
-    '#title' => t('Decision Choices'),
-    '#collapsible' => TRUE,
-		'#weight' => 1,
-  );
-
-  for ($cnum = 1; $cnum <= $node->choices; $cnum++) {
-    $form['ChoiceGroup']['Choice_' . $cnum] = array(
-      '#type' => 'textfield',
-      '#title' => t('Choice %n', array('%n' => $cnum)),
-      '#required' => FALSE,
-      '#default_value' => $node->choice[$cnum],
-      '#size' => 50,
-      '#maxlength' => 127,
-    );
-  }
-
-  $form['ChoiceGroup']['choices'] = array(
+ $form['choice']['choices'] = array(
     '#type' => 'hidden',
-    '#value' => $node->choices,
+    '#default_value' => max(2, count($node->choice) ? count($node->choice) : 5)
   );
-
-  $form['ChoiceGroup']['morechoices'] = array(
+  
+  $form['choice']['morechoices'] = array(
     '#type' => 'checkbox',
     '#title' => t('Need more choices'),
-    '#value' => 0,
+    '#default_value' => 0,
     '#description' => t("If the amount of boxes above isn't enough, check this box and click the Preview button below to add some more."),
+    '#weight' => 1
   );
+  
+  $form['choice'] = form_builder($node->type . '_node_form', $form['choice']);
+  
+  if ($form['choice']['morechoices']['#value']) {
+    $form['choice']['morechoices']['#value'] = 0;
+    $form['choice']['choices']['#value'] *= 2;
+  }
+
+  // If the value was changed in a previous iteration, retain it.
+  $node->choices = $form['choice']['choices']['#value'];
+
+  // Decisions choices
+  $form['choice'] += array(
+    '#type' => 'fieldset',
+    '#title' => t('Decision choices'),
+    '#collapsible' => TRUE,
+    '#prefix' => '<div class="poll-form">',
+    '#suffix' => '</div>', '#tree' => TRUE,
+    '#weight' => 1,
+  );
+    
+  for ($a = 0; $a < $node->choices; $a++) {
+    $form['choice'][$a]['chtext'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Choice %n', array('%n' => ($a + 1))),
+      '#default_value' => $node->choice[$a]['chtext']
+    );
+  }
 
 	$form['settings'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
-    '#title' => t('Decision Settings'),
+    '#title' => t('Decision settings'),
     '#collapsible' => TRUE,
 		'#weight' => 2,
   );
@@ -367,7 +303,7 @@ function decisions_load($node) {
   $decision = db_fetch_object(db_query("SELECT * FROM {decisions} WHERE nid = %d", $node->nid));
   $result = db_query("SELECT chorder, chtext FROM {decisions_choices} WHERE nid = %d ORDER BY chorder", $node->nid);
   while ($choice = db_fetch_array($result)) {
-  	$decision->choice[$choice['chorder']] = $choice['chtext'];
+  	$decision->choice[$choice['chorder']] = $choice;
   }
   $decision->choices = count($decision->choice);
 
@@ -377,10 +313,10 @@ function decisions_load($node) {
 		$decision->voted = (count(votingapi_get_user_votes('decisions', $node->nid)) > 0);
 	}
 	else {
-		$result = db_fetch_object(db_query('SELECT value FROM {votingapi_vote} '
+		$result = db_query('SELECT value FROM {votingapi_vote} '
 			. 'WHERE content_id=%d AND ' . 'hostname="%s"',
-			$node->nid, $_SERVER['REMOTE_ADDR']));
-		if ($result->value) {
+			$node->nid, $_SERVER['REMOTE_ADDR']);
+		if (db_num_rows($result) > 0) {
 			$decision->voted = true;
 		}
 	}
@@ -525,11 +461,11 @@ function decisions_tab_votes() {
 			$rows[$key]['name'] = $vote->name ? theme('username', $vote) : check_plain($vote->hostname);
 			if ($node->type == 'decisions-ranking') {
 				// Need two dimensional results (if equal rankings are allowed)
-      	$rows[$key]['votes'][$vote->value][] = check_plain($node->choice[$vote->tag]);
+      	$rows[$key]['votes'][$vote->value][] = check_plain($node->choice[$vote->tag]['chtext']);
 			}
 			else {
 				// Just need one dimensional results
-      	$rows[$key]['votes'][] = check_plain($node->choice[$vote->tag]);
+      	$rows[$key]['votes'][] = check_plain($node->choice[$vote->tag]['chtext']);
 			}
     }
 		
@@ -646,12 +582,10 @@ function decisions_update($node) {
   # XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
   db_query('DELETE FROM {decisions_choices} WHERE nid = %d', $node->nid);
 
-  foreach ($node->ChoiceGroup as $key => $choice) {
-  	$order = str_replace('Choice_', '', $key);
-		if ($order != $key && $choice != '') {
-			db_query("INSERT INTO {decisions_choices} (nid, chtext, chorder) VALUES (%d, '%s', %d)", $node->nid, $choice, intval($order));
-	  }
-	# ignore entries other than choices
+  foreach ($node->choice as $choice) {
+  	 if ($choice['chtext'] != '') {
+      db_query("INSERT INTO {decisions_choices} (nid, chtext, chorder) VALUES (%d, '%s', %d)", $node->nid, $choice['chtext'], $i++);
+    }
   }
 }
 
@@ -707,13 +641,25 @@ function decisions_insert($node) {
  *
  * XXX: No validation yet.
  */
-function decisions_validate($node) {
+function decisions_validate(&$node) {
   // Use form_set_error for any errors
-	/*
-	if (!$node->mode) {
-		form_set_error(t('No mode selected.'));
+	$node->choice = array_values($node->choice);
+
+	// Check for at least two choices
+	$realchoices = 0;
+	foreach ($node->choice as $i => $choice) {
+		if ($choice['chtext'] != '') {
+			$realchoices++;
+		}
 	}
-	*/
+
+	if ($realchoices < 2) {
+		form_set_error("choice][$realchoices][chtext", t('You must fill in at least two choices.'));
+	}
+}
+
+function decisions_submit(&$node) {
+	$node->choice = array_values($node->choice);
 }
 
 /**
@@ -740,17 +686,6 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 
 	// Previewing a node, so don't show results
 	if ($node->in_preview) {
-		// Copy the form values to the choices array
-		$node->choice = array();
-		$node->choices = 0;
-  	foreach ($node->ChoiceGroup as $key => $choice) {
-  		$order = str_replace('Choice_', '', $key);
-			if ($order != $key && $choice != '') {
-				$node->choices++;
-				$node->choice[$order] = $choice;
-			}
-		}
-
 		// Show the voting form but don't let them vote
     $output .= decisions_view_voting($node, $teaser, $page, $block);
 	}
