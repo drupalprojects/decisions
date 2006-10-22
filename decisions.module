@@ -68,7 +68,6 @@ function decisions_block_mostrecent() {
 	if (db_num_rows($result) > 0) {
   	$decision = db_fetch_object($result);
 		$output = decisions_view(node_load($decision->nid), false, false, true);
-		//$output .= $decision->nid;
 	}
 	else {
 		$output .= t('No active decisions.');
@@ -191,7 +190,6 @@ function decisions_form($node) {
 		$maxChoiceList[$i] = ($i == 0? 'No limit' : $i);
 	}
 
-
   $form['settings']['maxchoices'] = array(
 		'#type' => 'select',
 		'#title' => t('Maximum Choices'),
@@ -225,19 +223,6 @@ function decisions_form($node) {
 		'#default_value' => $defaultalg,
 		'#description' => 'Voting algorithm to use to calculate the winner.',
 	);
-
-/*
-	$form['settings']['maxchoices'] = array(
-		'#type' => 'textfield',
-		'#required' => TRUE,
-		'#title' => t('Maximum Choices'),
-		'#size' => 5,
-		'#maxlength' => 10,
-		'#description' => t('The number of choices voters may select. Set to 0 for no limit.'),
-   	'#default_value' => (isset($node->settings['maxchoices'])?
-			$node->settings['maxchoices'] : 0),
-	);
-	*/
 
 	$active = array(1 => t('Active'), 0 => t('Closed'));
 	$form['settings']['active'] = array(
@@ -357,16 +342,6 @@ function decisions_menu($may_cache) {
 			'callback' => 'decisions_cancel',
 			'access' => user_access('cancel own vote'),
 			'type' => MENU_CALLBACK);
-			// */
-    /*
-    $items[] = array('path' => 'decisions', 'title' => t('decisions'),
-      'callback' => 'decision_page',
-      'access' => user_access('view decisions'),
-      'type' => MENU_SUGGESTED_ITEM);
-    $items[] = array('path' => 'decisions/'. $user->uid, 'title' => t('my decisions'),
-      'access' => user_access('create decisions'),
-      'type' => MENU_DYNAMIC_ITEM);
-    */
   }
 	else {
 		// need to be able to extract the nid
@@ -425,7 +400,6 @@ function decisions_tab_electoral_list() {
   	$output = t('This table lists all the eligible voters for this Decision.');
 
     $header[] = array('data' => t('Voter'), 'field' => 'u.name');
-    //$header[] = array('data' => t('Vote'), '');
 
     $result = pager_query("SELECT u.uid, u.name FROM {decisions_electoral_list} el LEFT JOIN {users} u ON el.uid = u.uid WHERE el.nid = %d" . tablesort_sql($header), 20, 0, NULL, $node->nid);
     $eligible_voters = array();
@@ -445,16 +419,17 @@ function decisions_tab_electoral_list() {
 function decisions_tab_votes() {
 	if ($node = node_load(arg(1))) {
 		if (!$node->showvotes) {
+			// Decision is set to not allow viewing of votes
 			drupal_not_found();
 			return;
 		}
 		drupal_set_title(check_plain($node->title));
-  	$output = t('This table lists all the recorded votes for this Decision.  If anonymous users are allowed to vote, they will be identified by the IP address of the computer they used when they voted.');
+  	$output = t('This table lists all the recorded votes for this Decision. If anonymous users are allowed to vote, they will be identified by the IP address of the computer they used when they voted.');
 
     $header[] = array('data' => t('Visitor'), 'field' => 'u.name');
     $header[] = array('data' => t('Vote'), '');
 
-    $result = pager_query("SELECT dv.value, dv.uid, dv.hostname, dv.tag, u.name FROM {votingapi_vote} dv LEFT JOIN {users} u ON dv.uid = u.uid WHERE dv.content_id = %d" . tablesort_sql($header), 20, 0, NULL, $node->nid);
+    $result = pager_query('SELECT v.value, v.uid, v.hostname, v.tag, u.name FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_id = %d' . tablesort_sql($header), 20, 0, NULL, $node->nid);
     $rows = array();
     while ($vote = db_fetch_object($result)) {
 			$key = $vote->uid? $vote->uid : $vote->hostname;
@@ -469,14 +444,13 @@ function decisions_tab_votes() {
 			}
     }
 		
-
 		$separators = array('decisions-ranking' => ' > ', 'decisions-poll' => ', ');
 
 		// create strings out of each vote
 		$results = array();
 
-		foreach ($rows as $key => $outerArray) {
-			$ranking = $outerArray['votes'];
+		foreach ($rows as $key => $container) {
+			$ranking = $container['votes'];
 			asort($ranking);
 			$rankings = array();
 			if ($node->type == 'decisions-ranking') {
@@ -486,7 +460,7 @@ function decisions_tab_votes() {
 				}
 			}
 			else {
-				// Don't need to do anything
+				// Just copy the previous array
 				$rankings = $ranking;
 			}
 			ksort($rankings);
@@ -578,8 +552,8 @@ function decisions_cancel_form($nid) {
  */
 function decisions_update($node) {
   db_query("UPDATE {decisions} SET active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d WHERE nid = %d", $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $node->nid);
-  # XXX: should update decisions here, when it has some parameters
-  # XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
+  // XXX: should update decisions here, when it has some parameters
+  // XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
   db_query('DELETE FROM {decisions_choices} WHERE nid = %d', $node->nid);
 
   foreach ($node->choice as $choice) {
@@ -606,7 +580,7 @@ function _decisions_get_mode($node) {
  * This is called upon node creation
  */
 function decisions_insert($node) {
-  # just create an empty entry for now
+  // just create an empty entry for now
 	$mode = _decisions_get_mode($node);
 	if ($mode == 'poll') {
 		$alg = 'poll';
@@ -615,24 +589,23 @@ function decisions_insert($node) {
 	}
   db_query("INSERT INTO {decisions} (nid, mode, uselist, active, runtime, maxchoices, algorithm) VALUES (%d, '%s', %d, %d, %d, %d, '%s')", $node->nid, $mode, $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $alg);
 
-  # create the electoral list if desired
+  // create the electoral list if desired
 
 	if ($node->settings['uselist']) {
-
-  	# check first if authenticated users have the right to vote, because authenticated users are not added to the users_roles permission, probably for performance reasons
+  	// check first if authenticated users have the right to vote, because authenticated users are not added to the users_roles permission, probably for performance reasons
   	$result = db_fetch_object(db_query("SELECT COUNT(*) AS hit FROM {permission} JOIN role ON role.rid = permission.rid WHERE FIND_IN_SET(' vote on decisions', perm) AND role.name = 'authenticated user'"));
   	if ($result->hit) {
-    	# special case: any authenticated user can vote
-    	# add all current users to electoral list
+    	// special case: any authenticated user can vote
+    	// add all current users to electoral list
     	db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.uid != 0", $node->nid);
   	}
   	else {
-			# all users must not be allowed to vote, add relevant users only
+			// all users must not be allowed to vote, add relevant users only
     	db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users_roles u, permission p WHERE FIND_IN_SET(' view decisions', p.perm) AND u.rid = p.rid AND u.uid != 0", $node->nid);
   	}
 	}
 
-  # insert the choices, same sequence than update
+  // insert the choices, same sequence than update
   decisions_update($node);
 }
 
@@ -785,7 +758,7 @@ function theme_decisions_bar($title, $percentage, $votes, $block) {
 function decisions_view_voting(&$node, $teaser, $page, $block) {
 
 	$mode = _decisions_get_mode($node);
-  if ( function_exists("decisions_view_voting_$mode") ) {
+  if (function_exists("decisions_view_voting_$mode")) {
     return call_user_func("decisions_view_voting_$mode", $node, $teaser, $page, $block);
   }
   else {
@@ -796,13 +769,13 @@ function decisions_view_voting(&$node, $teaser, $page, $block) {
 /**
  * Callback for 'results' tab for decisions you can vote on
  */
-
 function decisions_results() {
 	if ($node = node_load(arg(1))) {
 		drupal_set_title(check_plain($node->title));
 		return node_show($node, 0);
 	}
 	else {
+		// The url does not provide the appropriate node id
 		drupal_not_found();
 	}
 }
@@ -815,7 +788,7 @@ function decisions_results() {
  */
 function decisions_view_results(&$node, $teaser, $page, $block) {
 	$mode = _decisions_get_mode($node);
-  if ( function_exists("decisions_view_results_$mode") ) {
+  if (function_exists("decisions_view_results_$mode")) {
     return call_user_func("decisions_view_results_$mode", $node, $teaser, $page, $block);
   }
   else {
@@ -834,8 +807,8 @@ function decisions_vote($node) {
 	$mode = _decisions_get_mode($node);
 
   $ok = FALSE; // error by default
-  if ( decisions_eligible($node) ) {
-    if ( function_exists("decisions_vote_$mode") ) {
+  if (decisions_eligible($node)) {
+    if (function_exists("decisions_vote_$mode")) {
       call_user_func("decisions_vote_$mode", $node);
     }
     else {
@@ -915,8 +888,8 @@ function decisions_eligible($node, $uid = NULL) {
  * we detect an unknown mode
  */
 function _decisions_panic_on_mode($mode) {
-    watchdog('decisions', t('Unknown decision mode : %mode.', array('%mode' => $mode), WATCHDOG_ERROR));
-    drupal_set_message(t('Unknown decision mode : %mode.', array('%mode' => $mode), 'error'));
+	watchdog('decisions', t('Unknown decision mode : %mode.', array('%mode' => $mode), WATCHDOG_ERROR));
+	drupal_set_message(t('Unknown decision mode : %mode.', array('%mode' => $mode), 'error'));
 }
 
 /**
@@ -933,16 +906,15 @@ function _decisions_load_modes() {
   global $_decisions_modes;
 
   foreach (file_scan_directory(dirname(__FILE__) . '/modes/', '^([^\.].*)\.inc$', array('.', '..', 'CVS'), 0, FALSE) as $file) {
-          require_once($file->filename);
-          $mode = $file->name;
-          if ( function_exists("decisions_${mode}_longname") ) {
-            _decisions_mode_list($mode, call_user_func("decisions_${mode}_longname"));
-          }
-          else {
-            drupal_set_message("decisions_${mode}_longname ??");
-            _decisions_mode_list($mode);
-          }
-
+		require_once($file->filename);
+		$mode = $file->name;
+		if (function_exists("decisions_${mode}_longname") ) {
+			_decisions_mode_list($mode, call_user_func("decisions_${mode}_longname"));
+		}
+		else {
+			drupal_set_message("decisions_${mode}_longname ??");
+			_decisions_mode_list($mode);
+		}
   }
 }
 
