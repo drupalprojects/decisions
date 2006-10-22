@@ -1,50 +1,32 @@
-Installation procedures for Decisions.gnuvernment.org
-=====================================================
+// $Id$
 
-Step 0 - Fetch the source code
-------------------------------
+REQUIREMENTS
+------------
 
-Since you're reading this, you probably know how to find the source
-code. I'll tell you anyways. The decisions module is developped in the
-contrib Drupal CVS repository. You can read the general instructions
-on how to access this repository at:
+  * Drupal 4.7 or later
+  * VotingAPI
+ 
 
-http://drupal.org/node/321
+INSTALLATION
+------------
 
-... but the general recipe is something like:
+1. DOWNLOAD AND INSTALL VOTING API 
 
-cd drupal/modules
-cvs -d :pserver:anonymous@cvs.drupal.org:/cvs/drupal-contrib login
-cvs -d :pserver:anonymous@cvs.drupal.org:/cvs/drupal-contrib co -d decisions contributions/modules/decisions
+   VotingAPI can be found at http://drupal.org/project/votingapi/.
+   Follow the installation instructions that comes with the module.
 
-That's all.
+2. INSTALL DECISIONS
+   
+   Unpack the module in your sites module directory. Then browse to 
+   "administer" -> "site building" -> "modules" (or "administer" -> 
+   "modules") and enable the Decisions module.
+   
+3. CONFIGURE DECISIONS
 
-Step 1 - Load the database schema
----------------------------------
-
-Simply load the .mysql file using phpMyAdmin or the commandline mysql
-client, following instructions similar to the original Drupal
-INSTALL.txt file. Something like this should do the trick:
-
-mysql -u drupal -p drupal < decisions.mysql
-
-Step 2 - Install dependencies
------------------------------
-
-You need to download, install and activate the following modules in
-order to have decisions working:
-
- * votingapi
-
-In addition, Drupal's version must be superior or equal to 4.7beta4
-(last version tested) because of the new forms_api.
-
-Step 3 - Activate the module
-----------------------------
-
-By then you generally want to activate the module in the configuration
-to have it do something significative. Head for:
-
-http://localhost/admin/modules
-
-(if you have clean_urls active).
+   You probably want to set the permissions for which users who can 
+   vote, see results etc.: Browse to "administer" -> "user management" ->
+   "access control" (or "administer" -> "access control") and set permissions
+   for the Decisions module.
+   
+   Other settings related to Decisions can be found at "administer" -> 
+   "site configuration" (or "settings") -> "decisions".
