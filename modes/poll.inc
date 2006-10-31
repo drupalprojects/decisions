@@ -176,7 +176,7 @@ function decisions_vote_validate_poll($node) {
       //}
 
       // see if the box is checked
-      if ($_POST['edit']['choice']) {
+      if (!empty($_POST['edit']['choice'][$key])) {
         $numchoices++;
       }
     }
