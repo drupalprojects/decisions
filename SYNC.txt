@@ -1,0 +1,18 @@
+Information of the continuous sync with fixes in advpoll.module.
+
+Last imported patch: #44097
+
+Imported patches:
+
+ * 44027: "Don't show blank choices" - with modifications
+ * 44086: "Add a db field for startdate - no functionality yet" - with
+   an _update hook
+ * 44097: "Show the number of votes cast in the teaser and on the ballot"
+ * 44089: "Better db definition for advpoll_choices: rename chtext to
+   label and chorder to vote_offset" - with update to the current
+   update hook
+
+Skipped patches:
+
+ * 44028: "Always set node->body and node->teaser when viewing"
+ * 44029: "Remove debugging output"

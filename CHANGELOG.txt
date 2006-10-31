@@ -1,0 +1,59 @@
+Decisions 0.2 (DRUPAL-4-7 branch) in development
+------------------------------------------------
+
+Todo before release:
+
+ * use proper update hooks to have a smooth migration path from 0.1
+ * test migration
+ * old decisions might be problematic to migrate because they're
+   different content type now
+
+This patch to the DRUPAL-4-7 branch incorporates changes between 2006-02-08
+00:00 and 2006-10-30 22:00, which roughly means the following features changes.
+
+ * database changes:
+   * startdate field added (but not used yet)
+   * renamed chorder and chtext to votes_offset and label, respectively
+   * the update_ hooks were erratically updated and need to be refreshed (in progress, http://drupal.org/cvs?commit=42572)
+   * renamed options to choices (not in the update hooks: http://drupal.org/cvs?commit=42567)
+   * added algorithm to decisions table (http://drupal.org/cvs?commit=42167)
+   * added active/closed status (http://drupal.org/cvs?commit=40043)
+ * new functionalities:
+   * electoral list can be turned off, per decision, the permission system is used when turned off
+   * votes and electoral lists are now tabs
+   * votes can be canceled when decision is still opened
+   * results can be viewed even if user can't vote
+   * borda count voting algorithm
+   * each voting algorithm (borda vs ivr) is now selectable per decision
+   * each voting method (poll vs ranking) is now a content type (http://drupal.org/cvs?commit=42651)
+   * the results bar is now themable (http://drupal.org/cvs?commit=42136)
+   * maximum number of choices per decision
+   * cron job for closing decisions past their runtime
+   * ranking inputs are now selects instead of text boxes
+   * added "administer decisions" permission
+ * bugfixes
+   * ranking method now gives valid results, random drop on ties
+ * administrativa
+   * runoff is now named "ranking"
+   * module forked into advpoll.module by Chris Kennedy
+   * added a SYNC.txt file to follow the advpoll.module fork
+
+Beginning of this CHANGELOG - 2006-08-11
+----------------------------------------
+
+Major changes prior to this date were not properly documented.
+
+You can still browse the cvs changelog using drupal.org for previous changes at
+http://drupal.org/project/cvs/48244
+
+Decisions 4.7 tagged - 2006-02-14 23:16
+---------------------------------------
+
+No functional change since 0.1.
+
+Decisions 0.1 - 2006-02-07 14:45EST
+-----------------------------------
+
+ * electoral lists
+ * instant-runoff voting
+ * first drupal module release
