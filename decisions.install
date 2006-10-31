@@ -54,6 +54,7 @@ function decisions_update_1() {
     $items[] = update_sql("ALTER TABLE {decisions} ADD COLUMN showvotes TINYINT DEFAULT '1'");
     break;
   }
+  return $items;
 }
 
 function decisions_update_2() {
@@ -61,8 +62,8 @@ function decisions_update_2() {
   case 'mysql':          
   case 'mysqli':
     $items[] = update_sql("ALTER TABLE {decisions} ADD COLUMN startdate INT unsigned");
-    $items[] = update_sql("ALTER TABLE {decisions} CHANGE COLUMN chtext `label` text NOT NULL");
-    $items[] = update_sql("ALTER TABLE {decisions} CHANGE COLUMN chorder `vote_offset` int(2) default NULL");
+    $items[] = update_sql("ALTER TABLE {decisions_choices} CHANGE COLUMN chtext `label` text NOT NULL");
+    $items[] = update_sql("ALTER TABLE {decisions_choices} CHANGE COLUMN chorder `vote_offset` int(2) default NULL");
     break;
   }
   return $items;
