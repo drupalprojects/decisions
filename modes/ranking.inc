@@ -56,10 +56,10 @@ function decisions_view_voting_ranking(&$node, $teaser, $page, $block) {
                             );
 
     foreach ($node->choice as $key => $choice) {
-      if ($choice['chtext']) {
+      if ($choice['label']) {
         $form['choice'][$key] = array(
                                       '#type' => 'select',
-                                      '#title' => check_plain($choice['chtext']),
+                                      '#title' => check_plain($choice['label']),
                                       '#options' => $choices,
                                       );
       }
@@ -102,7 +102,7 @@ function decisions_view_results_ranking($node, $teaser, $page, $block) {
 
       // Loop through all choices with this ranking
       foreach ($results->ranking[$i]['choices'] as $choice) {
-        $output .= ($firstOne? '' : ', ') . check_plain($node->choice[$choice]['chtext']);
+        $output .= ($firstOne? '' : ', ') . check_plain($node->choice[$choice]['label']);
         $firstOne = false;
       }
 
@@ -120,7 +120,7 @@ function decisions_view_results_ranking($node, $teaser, $page, $block) {
       // output the table of algorithm rounds
       $output .= '<table border="1"><tr><td>Round</td>';
       foreach ($node->choice as $choice) {
-        $output .= '<td>' . check_plain($choice['chtext']) . '</td>';
+        $output .= '<td>' . check_plain($choice['label']) . '</td>';
       }
       $output .= '</tr>';
       $round = 1;

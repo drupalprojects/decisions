@@ -27,8 +27,8 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
     if ($node->maxchoices == 1) {
       // plurality voting
       foreach ($node->choice as $i => $choice) {
-        if ($choice['chtext']) {
-          $list[$i] = check_plain($choice['chtext']);
+        if ($choice['label']) {
+          $list[$i] = check_plain($choice['label']);
         }
       }
 
@@ -42,8 +42,8 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
     else {
       // approval voting
       foreach ($node->choice as $i => $choice) {
-        if ($choice['chtext']) {
-          $list[$i] = check_plain($choice['chtext']);
+        if ($choice['label']) {
+          $list[$i] = check_plain($choice['label']);
         }
       }
                         
@@ -110,7 +110,7 @@ function decisions_view_results_poll($node, $teaser, $page, $block) {
         $votes[$i] = 0;
       }
       $percentage = round(100 * $votes[$i] / $totalVotes, 0);
-      $output .= theme('decisions_bar',  check_plain($ch['chtext']), $percentage, format_plural($votes[$i], '1 vote', '%count votes'), $block);
+      $output .= theme('decisions_bar',  check_plain($ch['label']), $percentage, format_plural($votes[$i], '1 vote', '%count votes'), $block);
     }
     $output .= '</div>';
   }

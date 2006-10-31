@@ -37,8 +37,8 @@ function decisions_install() {
 
     db_query("CREATE TABLE {decisions_choices} (
           `nid` int(10) NOT NULL,
-          `chtext` text NOT NULL,
-          `chorder` int(2) default NULL,
+          `label` text NOT NULL,
+          `vote_offset` int(2) default NULL,
           PRIMARY KEY  (`nid`, `chorder`),
           KEY `chorder` (`chorder`)
         ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
@@ -51,7 +51,7 @@ function decisions_update_1() {
   switch ($GLOBALS['db_type']) {         
   case 'mysql':          
   case 'mysqli':
-    $items[] = update_sql("ALTER TABLE {decisions} ADD COLUMN showvotes TINYINT DEFAULT '1'");        
+    $items[] = update_sql("ALTER TABLE {decisions} ADD COLUMN showvotes TINYINT DEFAULT '1'");
     break;
   }
 }
@@ -61,6 +61,8 @@ function decisions_update_2() {
   case 'mysql':          
   case 'mysqli':
     $items[] = update_sql("ALTER TABLE {decisions} ADD COLUMN startdate INT unsigned");
+    $items[] = update_sql("ALTER TABLE {decisions} CHANGE COLUMN chtext `label` text NOT NULL");
+    $items[] = update_sql("ALTER TABLE {decisions} CHANGE COLUMN chorder `vote_offset` int(2) default NULL");
     break;
   }
 }
