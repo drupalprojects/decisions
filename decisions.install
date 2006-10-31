@@ -39,8 +39,8 @@ function decisions_install() {
           `nid` int(10) NOT NULL,
           `label` text NOT NULL,
           `vote_offset` int(2) default NULL,
-          PRIMARY KEY  (`nid`, `chorder`),
-          KEY `chorder` (`chorder`)
+          PRIMARY KEY  (`nid`, `vote_offset`),
+          KEY `vote_offset` (`vote_offset`)
         ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
 
     break;
