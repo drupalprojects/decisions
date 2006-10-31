@@ -8,9 +8,6 @@ Todo before release:
  * old decisions might be problematic to migrate because they're
    different content type now
 
-This patch to the DRUPAL-4-7 branch incorporates changes between 2006-02-08
-00:00 and 2006-10-30 22:00, which roughly means the following features changes.
-
  * database changes:
    * startdate field added (but not used yet)
    * renamed chorder and chtext to votes_offset and label, respectively
@@ -33,6 +30,7 @@ This patch to the DRUPAL-4-7 branch incorporates changes between 2006-02-08
    * added "administer decisions" permission
  * bugfixes
    * ranking method now gives valid results, random drop on ties
+   * multiple votes with limited counts on poll and ranking now works properly
  * administrativa
    * runoff is now named "ranking"
    * module forked into advpoll.module by Chris Kennedy

@@ -323,7 +323,7 @@ function _decisions_calculate_instantrunoff($node) {
     // Initialize curRound
     $curRound = array();
     $totalChoices = count($node->choice);
-    for ($chi = 1; $chi <= $totalChoices; $chi++) {
+    foreach ($node->choice as $chi => $temp) {
       $curRound[$chi] = array();
     }
 

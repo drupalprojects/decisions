@@ -1,9 +1,28 @@
-Information of the continuous sync with fixes in advpoll.module.
+Information of the continuous syncs of this module version with others
+======================================================================
 
-Last imported patch: #44097
+HEAD sync
+---------
+
+The DRUPAL-4-7 branch incorporates changes between 2006-02-08 00:00
+and 2006-10-30 22:00 (#44118).
+
+Last imported patch: #44118
+
+Extra patches applied:
+ * #44170
+ * #44176
+
+Advpoll sync
+------------
+
+Last imported patch: #44167
+
+http://drupal.org/project/cvs/91765
 
 Imported patches:
 
+ * 44167: "#92096 - start checkboxes at 1 rather than 0"
  * 44027: "Don't show blank choices" - with modifications
  * 44086: "Add a db field for startdate - no functionality yet" - with
    an _update hook
@@ -16,3 +35,8 @@ Skipped patches:
 
  * 44028: "Always set node->body and node->teaser when viewing"
  * 44029: "Remove debugging output"
+ * 44125: "Allow votes to be reset"
+ * 44101: "Show borda count results using poll bars"
+ * 44100: "Fix count from 0 bug in IRV algorithm"
+ * 44131: "Unified content-type descriptions between 4.7 and 5.0"
+ * 44129: "Various minor fixes"
