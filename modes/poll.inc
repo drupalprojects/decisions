@@ -27,7 +27,9 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
     if ($node->maxchoices == 1) {
       // plurality voting
       foreach ($node->choice as $i => $choice) {
-        $list[$i] = check_plain($choice['chtext']);
+        if ($choice['chtext']) {
+          $list[$i] = check_plain($choice['chtext']);
+        }
       }
 
       $form['choice'] = array(
@@ -40,7 +42,9 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
     else {
       // approval voting
       foreach ($node->choice as $i => $choice) {
-        $list[$i] = check_plain($choice['chtext']);
+        if ($choice['chtext']) {
+          $list[$i] = check_plain($choice['chtext']);
+        }
       }
                         
       $form['choice'] = array(
