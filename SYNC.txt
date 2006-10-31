@@ -7,11 +7,13 @@ HEAD sync
 The DRUPAL-4-7 branch incorporates changes between 2006-02-08 00:00
 and 2006-10-30 22:00 (#44118).
 
-Last imported patch: #44118
+Last imported patch: #44182
 
-Extra patches applied:
- * #44170
- * #44176
+Skipped patches: those document non-trivial patches on HEAD that are not in 4.7
+
+ * 44123 5.0 update: form_render() is now drupal_render()
+ * 44122 try to fix the module for 5.0, especially the hook_node_info()
+
 
 Advpoll sync
 ------------
