@@ -65,6 +65,7 @@ function decisions_update_2() {
     $items[] = update_sql("ALTER TABLE {decisions} CHANGE COLUMN chorder `vote_offset` int(2) default NULL");
     break;
   }
+  return $items;
 }
 
 /**
