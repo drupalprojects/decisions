@@ -1,5 +1,7 @@
 Information of the continuous sync with fixes in advpoll.module.
 
+Last imported patch: #44097
+
 Imported patches:
 
  * 44027: "Don't show blank choices" - with modifications
