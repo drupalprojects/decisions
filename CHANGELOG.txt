@@ -10,11 +10,9 @@ Todo before release:
 
  * database changes:
    * startdate field added (but not used yet)
-   * renamed chorder and chtext to votes_offset and label, respectively
-   * the update_ hooks were erratically updated and need to be refreshed (in progress, http://drupal.org/cvs?commit=42572)
-   * renamed options to choices (not in the update hooks: http://drupal.org/cvs?commit=42567)
-   * added algorithm to decisions table (http://drupal.org/cvs?commit=42167)
-   * added active/closed status (http://drupal.org/cvs?commit=40043)
+   * renamed opttext and optorder to votes_offset and label, respectively
+   * renamed options to choices
+   * added algorithm active/closed status, runtime, uselist and maxchoices to decisions table
  * new functionalities:
    * electoral list can be turned off, per decision, the permission system is used when turned off
    * votes and electoral lists are now tabs
