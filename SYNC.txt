@@ -5,6 +5,7 @@ Imported patches:
  * 44027: "Don't show blank choices" - with modifications
  * 44086: "Add a db field for startdate - no functionality yet" - with
    an _update hook
+ * 44097: "Show the number of votes cast in the teaser and on the ballot"
 
 Skipped patches:
 

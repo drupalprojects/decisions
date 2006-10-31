@@ -671,6 +671,7 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
     // User hasn't voted and we're not on the results tab
     if (!$valid) {
       $output .= decisions_view_voting($node, $teaser, $page, $block);
+      $output .= advpoll_view_electoral_list($node, $teaser);
     }
   }
   else if (_decisions_can_view_results($node)) {
@@ -697,7 +698,6 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) 
 
 function decisions_view_electoral_list($node, $teaser = FALSE) {
   $output = '';
-  if (!$teaser) {
     if ($node->uselist) {
       $result = db_query("SELECT COUNT(*) AS voters FROM {decisions_electoral_list} WHERE nid=%d", $node->nid);
       $electoral_list = db_fetch_object($result);
@@ -714,7 +714,6 @@ function decisions_view_electoral_list($node, $teaser = FALSE) {
                    array('%v' => $electoral_list->voters));
     }
     $output .= '</div>';
-  }
   return $output;
 }
 
