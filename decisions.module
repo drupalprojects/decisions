@@ -733,12 +733,12 @@ function theme_decisions_view_voting($form) {
   $output .= '<div class="decisions">';
   $output .= '  <div class="choice-form">';
   $output .= '    <div class="choices">';
-  $output .= form_render($form['choice']);
+  $output .= drupal_render($form['choice']);
   $output .= '    </div>';
-  $output .= form_render($form['nid']);
-  $output .= form_render($form['vote']);
+  $output .= drupal_render($form['nid']);
+  $output .= drupal_render($form['vote']);
   $output .= '  </div>';
-  $output .= form_render($form);
+  $output .= drupal_render($form);
   $output .= '</div>';
   return $output;
 }
