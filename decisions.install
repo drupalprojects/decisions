@@ -71,7 +71,11 @@ function decisions_update_2() {
  * Implementation of hook_uninstall().
  */
 function decisions_uninstall() {
-  // TODO: delete decisions data in VotingAPI tables
+  // remove votes from all decisions
+  $result = db_query('SELECT d.nid FROM {decisions} d INNER JOIN {node} n ON d.nid = n.nid');
+  while ($decision = db_fetch_object($result)) {
+    db_query('DELETE FROM {votingapi_vote} WHERE content_id = %d', $decision->nid);
+  }
   db_query('DROP TABLE {decisions}');
   db_query('DROP TABLE {decisions_electoral_list}');
   db_query('DROP TABLE {decisions_choices}');
