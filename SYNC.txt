@@ -4,12 +4,10 @@ Information of the continuous syncs of this module version with others
 HEAD sync
 ---------
 
-The DRUPAL-4-7 branch incorporates changes between 2006-02-08 00:00
-and 2006-10-30 22:00 (#44118).
+Each commit on the branch must document the imported patch number as
+listed on http://drupal.org/project/cvs/48244. 
 
-Last imported patch: #44182
-
-Skipped patches: those document non-trivial patches on HEAD that are not in 4.7
+Non-trivial skipped patches must be documented here.
 
  * 44123 5.0 update: form_render() is now drupal_render()
  * 44122 try to fix the module for 5.0, especially the hook_node_info()
