@@ -21,8 +21,6 @@ function decisions_ranking_longname() {
  *
  * This displays a textfield per choice, that should be filled with a
  * ranking.
- *
- * TODO: make this a nicer UI (http://drupal.org/node/48255)
  */
 function decisions_view_voting_ranking(&$node, $teaser, $page, $block) {
 
@@ -89,8 +87,6 @@ function decisions_view_voting_ranking(&$node, $teaser, $page, $block) {
 /**
  * implementation of the decisions_view_results() hook for the runoff
  * module
- *
- * TODO: fix display (http://drupal.org/node/48248)
  */
 function decisions_view_results_ranking($node, $teaser, $page, $block) {
   $results = _decisions_calculate_results_ranking($node);
@@ -156,7 +152,7 @@ function decisions_view_results_ranking($node, $teaser, $page, $block) {
  *      Should return an object that include the following attributes
  *   -results : 2d array listing the aggregate preference, including ties
  *   -rounds : 2d array listing the per-choice vote count for each round and
- *                                                      a status message indicating who was eliminated
+ *             a status message indicating who was eliminated
  *   -totalVoters : the total number of voters who participated
  */
 function _decisions_calculate_results_ranking($node) {
@@ -178,7 +174,7 @@ function _decisions_calculate_results_ranking($node) {
  *      Should return an object that include the following attributes
  *   -results : 2d array listing the aggregate preference, including ties
  *   -rounds : 2d array listing the per-choice vote count for each round and
- *                                                      a status message indicating who was eliminated
+ *             a status message indicating who was eliminated
  *   -totalVoters : the total number of voters who participated
  */
 
@@ -262,7 +258,7 @@ function _decisions_calculate_bordacount($node) {
  *      Should return an object that include the following attributes
  *   -results : 2d array listing the aggregate preference, including ties
  *   -rounds : 2d array listing the per-choice vote count for each round and
- *                                                      a status message indicating who was eliminated
+ *             a status message indicating who was eliminated
  *   -totalVoters : the total number of voters who participated
  */
 
