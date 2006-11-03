@@ -347,6 +347,15 @@ function decisions_menu($may_cache) {
                      'callback' => 'decisions_cancel',
                      'access' => user_access('cancel own vote'),
                      'type' => MENU_CALLBACK);
+    $items[] = array(
+                     'path' => 'admin/settings/decisions',
+                     'title' => t('Decisions'),
+                     'description' => t('Update settings for Decisions'),
+                     'callback' => 'drupal_get_form',
+                     'callback arguments' => array('decisions_settings_helper'),
+                     'access' => user_access('administer decisions'),
+                     
+                     );
   }
   else {
     // need to be able to extract the nid
@@ -517,7 +526,7 @@ function decisions_perm() {
 }
 
 /**
- * Implementation of hook_settings().
+ * Implementation of hook_settings() for 4.7.
  *
  */
 function decisions_settings() {
@@ -525,6 +534,20 @@ function decisions_settings() {
     return message_access();
   }
 
+  return decisions_settings_helper();
+}
+
+/**
+ * 5.x settings page
+ */
+function decisions_admin_settings() {
+  return system_settings_form(decisions_settings_helper());
+}
+
+/**
+ * Compatibility layer between 4.7 and 5.0 for settings functions
+ */
+function decisions_settings_helper() {
   $enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
 
   $form['main']['decisions_default_electoral_list'] = array(
@@ -739,15 +762,20 @@ function decisions_view_electoral_list($node, $teaser = FALSE) {
  * themes to make this nicer/different
  */
 function theme_decisions_view_voting($form) {
+  
+  $render = 'drupal_render';
+  if (!function_exists($render)) {
+    $render = 'form_render';
+  }
   $output .= '<div class="decisions">';
   $output .= '  <div class="choice-form">';
   $output .= '    <div class="choices">';
-  $output .= drupal_render($form['choice']);
+  $output .= $render($form['choice']);
   $output .= '    </div>';
-  $output .= drupal_render($form['nid']);
-  $output .= drupal_render($form['vote']);
+  $output .= $render($form['nid']);
+  $output .= $render($form['vote']);
   $output .= '  </div>';
-  $output .= drupal_render($form);
+  $output .= $render($form);
   $output .= '</div>';
   return $output;
 }

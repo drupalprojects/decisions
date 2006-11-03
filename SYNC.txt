@@ -14,7 +14,8 @@ Imported patches:
  * 44089: "Better db definition for advpoll_choices: rename chtext to
    label and chorder to vote_offset" - with update to the current
    update hook
- * 44129, partly: delete from voting_api properly
+ * 44129, partly: delete from voting_api properly, 5.0 compatibility
+   fixes on settings page and form generation
 
 Skipped patches:
 
@@ -24,4 +25,4 @@ Skipped patches:
  * 44101: "Show borda count results using poll bars"
  * 44100: "Fix count from 0 bug in IRV algorithm"
  * 44131: "Unified content-type descriptions between 4.7 and 5.0"
- * 44129: "Various minor fixes"
+ * 44129: "Various minor fixes" - relevant stuff merged
