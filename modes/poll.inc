@@ -16,11 +16,11 @@ function decisions_poll_longname() {
 }
 
 /**
- * Implementation of the view_voting hook for the poll module.
+ * Implementation of the decisions_voting_hook_form() hook for the poll module.
  * 
  * This creates a list of choices to allow the user to vote on choices.
  */
-function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
+function decisions_voting_poll_form(&$node, $teaser, $page) {
   if ($node->choice) {
     $list = array();
 
@@ -46,7 +46,6 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
           $list[$i] = check_plain($choice['label']);
         }
       }
-                        
       $form['choice'] = array(
                               '#type' => 'checkboxes',
                               '#title' => $page ? '' : check_plain($node->title),
@@ -63,7 +62,7 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
                         '#value' => t('Vote')
                         );
   $form['#action'] = url('node/'. $node->nid);
-  return drupal_get_form('decisions_view_voting', $form);
+  return $form;
 }
 
 /**
@@ -71,16 +70,11 @@ function decisions_view_voting_poll(&$node, $teaser, $page, $block) {
  *
  * TODO: implement (http://drupal.org/node/48249)
  */
-function decisions_view_results_poll($node, $teaser, $page, $block) {
-  $content_type = 'decisions';
-  $content_id = $node->nid;
-
+function decisions_view_results_poll($node, $teaser, $page) {
   // TODO: use VotingAPI instead of SQL
   $result = db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid);
-  $totalVotes = db_num_rows($result);
-
-
-  $results = votingapi_get_voting_results($content_type, $content_id);
+  $total_votes = db_num_rows($result);
+  $results = votingapi_get_voting_results('decisions', $node->nid);
 
   // Count the votes for each choice
   $votes = array();
@@ -102,15 +96,16 @@ function decisions_view_results_poll($node, $teaser, $page, $block) {
     $votes[$voteval] += $result->value;
   }
 
-  if ($node->choice && $totalVotes > 0) {
+  if ($node->choice && $total_votes > 0) {
+    // TODO: Those <div>s and <br />s should be in a theme function. First collect all the data in a structure, then theme it.
     // display results for each possible choice
     $output .= '<div class="poll">';
     foreach ($node->choice as $i => $ch) {
       if (!$votes[$i]) {
         $votes[$i] = 0;
       }
-      $percentage = round(100 * $votes[$i] / $totalVotes, 0);
-      $output .= theme('decisions_bar',  check_plain($ch['label']), $percentage, format_plural($votes[$i], '1 vote', '%count votes'), $block);
+      $percentage = round(100 * $votes[$i] / $total_votes, 0);
+      $output .= theme('decisions_bar',  check_plain($ch['label']), $percentage, format_plural($votes[$i], '1 vote', '@count votes'));
     }
     $output .= '</div>';
   }
@@ -125,17 +120,17 @@ function decisions_view_results_poll($node, $teaser, $page, $block) {
  *
  * registers the vote as a key for this node using votingapi_set_vote()
  */
-function decisions_vote_poll($node) {
+function decisions_poll_submit($node, $form_values) {
   if ($node->maxchoices == 1) {
     // plurality voting
-    $vote->value = $_POST['edit']['choice'];
+    $vote->value = $form_values['choice'];
     $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
     votingapi_set_vote('decisions', $node->nid, $vote);
   }
   else {
     // approval voting
     foreach ($node->choice as $key => $choice) {
-      $vote->value = $_POST['edit']['choice'][$key];
+      $vote->value = $form_values['choice'][$key];
 
       if (isset($vote->value)) {
         $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
@@ -153,13 +148,12 @@ function decisions_vote_poll($node) {
  *
  * @returns boolean true if the form is valid
  */
-function decisions_vote_validate_poll($node) {
-  $ok = true;
+function decisions_voting_poll_validate($node, $form_id, $form_values) {
   if ($node->maxchoices == 1) {
     // plurality voting
-    if (!($ok = array_key_exists($_POST['edit']['choice'], $node->choice))) {
+    if (!array_key_exists($form_values['choice'], $node->choice)) {
       form_set_error('choice', 'At least one choice must be selected.');
-      $ok = false;
+      return FALSE;
     }
   }
   else {

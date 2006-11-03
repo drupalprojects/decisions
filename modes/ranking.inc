@@ -17,12 +17,12 @@ function decisions_ranking_longname() {
 }
 
 /**
- * Implementation of the view_voting_() hook for the runoff module.
+ * Implementation of the decisions_voting_hook_form() hook for the runoff module.
  *
  * This displays a textfield per choice, that should be filled with a
  * ranking.
  */
-function decisions_view_voting_ranking(&$node, $teaser, $page, $block) {
+function decisions_voting_ranking_form(&$node, $teaser, $page) {
 
   $weight = 0;
   $form = array();
@@ -81,14 +81,14 @@ function decisions_view_voting_ranking(&$node, $teaser, $page, $block) {
   }
 
   $form['#action'] = url('node/'. $node->nid);
-  return drupal_get_form('decisions_view_voting', $form);
+  return $form;
 }
 
 /**
  * implementation of the decisions_view_results() hook for the runoff
  * module
  */
-function decisions_view_results_ranking($node, $teaser, $page, $block) {
+function decisions_view_results_ranking($node, $teaser, $page) {
   $results = _decisions_calculate_results_ranking($node);
 
   // If no one has voted, $results = array() and thus is empty
@@ -512,7 +512,7 @@ function _decision_calculate_ranking_nextround($aRound, &$votes, $min) {
  *
  * This takes care of registering the vote in runoff nodes.
  */
-function decisions_vote_ranking($node) {
+function decisions_ranking_submit($node) {
   foreach ( $node->choice as $key => $choice ) {
     $vote->value = $_POST['edit']['choice'][$key];
 
@@ -533,7 +533,7 @@ function decisions_vote_ranking($node) {
  *
  * @returns boolean false on invalid forms, true otherwise.
  */
-function decisions_vote_validate_ranking($node) {
+function decisions_voting_ranking_validate($node, $form_id, $form_values) {
   $ok = TRUE;
   // array used to check which values are set
   $setvalues = array();
@@ -558,9 +558,7 @@ function decisions_vote_validate_ranking($node) {
         
   // too many choices ranked
   if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
-    form_set_error('choice',
-                   t('%num choices were selected but only %max are allowed.',
-                     array('%num' => $numchoices, '%max' => $node->maxchoices)));
+    form_set_error('choice', t('@num choices were selected but only @max are allowed.', array('@num' => $numchoices, '@max' => $node->maxchoices)));
     $ok = false;
   }
 
@@ -574,8 +572,7 @@ function decisions_vote_validate_ranking($node) {
   // Check that multiple choices are not set to the same value
   foreach ($setvalues as $val => $count) {
     if ($val != 0 && $count > 1) {
-      form_set_error('choice',
-                     t('Multiple choices given the rank of %val.', array('%val' => $val)));
+      form_set_error('choice', t('Multiple choices given the rank of @val.', array('@val' => $val)));
       $ok = false;
     }
   }

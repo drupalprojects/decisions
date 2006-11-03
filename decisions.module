@@ -124,7 +124,7 @@ function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_
  *
  * This hook displays the form necessary to edit the *node* (ie. not the votes).
  */
-function decisions_form($node) {
+function decisions_form(&$node, &$param) {
   $mode = _decisions_get_mode($node);
 
   $form['title'] = array(
@@ -177,7 +177,7 @@ function decisions_form($node) {
   for ($a = 1; $a <= $node->choices; $a++) {
     $form['choice'][$a]['label'] = array(
                                           '#type' => 'textfield',
-                                          '#title' => t('Choice %n', array('%n' => $a)),
+                                          '#title' => t('Choice @n', array('@n' => $a)),
                                           '#default_value' => $node->choice[$a]['label']
                                           );
   }
@@ -679,57 +679,29 @@ function decisions_submit(&$node) {
 /**
  * Implementation of hook_view().
  */
-function decisions_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
-  if (!$block) {
-    $node = node_prepare($node, $teaser);
-  }
+function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
   $mode = _decisions_get_mode($node);
-
-  // Record the vote if they voted
-  $valid = FALSE;
-  if ($_POST['op'] == t('Vote')) {
-    // decision_vote will return FALSE on error
-    $valid = decisions_vote_validate($node);
-    if ($valid) {
-      drupal_set_message(t("Your vote was registered."));
-      decisions_vote($node);
-      // Transferring makes the results tab display correctly
-      drupal_goto('node/' . $node->nid);
-    }
-  }
 
   // Previewing a node, so don't show results
   if ($node->in_preview) {
     // Show the voting form but don't let them vote
-    $output .= decisions_view_voting($node, $teaser, $page, $block);
+    $node->content['decisions']['form']['#value'] = drupal_get_form('decisions_voting_form', $node, $teaser, $page);
   }
   else if (!$node->voted && arg(2) != 'results' && $node->active && decisions_eligible($node)) {
     // User hasn't voted and we're not on the results tab
-    if (!$valid) {
-      $output .= decisions_view_voting($node, $teaser, $page, $block);
-      $output .= decisions_view_electoral_list($node, $teaser);
-    }
+    $node->content['decisions']['form']['#value'] = drupal_get_form('decisions_voting_form', $node, $teaser, $page);
+    $node->content['decisions']['list']['#value'] = decisions_view_electoral_list($node, $teaser);
   }
   else if (_decisions_can_view_results($node)) {
     // show results only if the user has voted or decision is closed
-    $output .= decisions_view_results($node, $teaser, $page, $block);
-    $output .= decisions_view_electoral_list($node, $teaser);
+    $node->content['decisions']['results']['#value'] = decisions_view_results($node, $teaser, $page);
+    $node->content['decisions']['list']['#value'] = decisions_view_electoral_list($node, $teaser);
   }
 
-  if (isset($node->voted) && $node->voted && user_access('cancel own vote') && $node->active && !$block) {
-    $output .= drupal_get_form('decisions_cancel', decisions_cancel_form($node->nid));
+  if (isset($node->voted) && $node->voted && user_access('cancel own vote') && $node->active) {
+    $node->content['decisions']['cancel']['#value'] = drupal_get_form('decisions_cancel_form', $node->nid);
   }
-
-  if ($block) {
-    $output = '<div class="title">' . $node->title . '</div>' . $output;
-    $output .= l(t('view decision'), 'node/' . $node->nid);
-    return $output;
-  }
-  else {
-    $node->body .= $output;
-    $node->teaser .= $output;
-  }
-
+  return $node;
 }
 
 function decisions_view_electoral_list($node, $teaser = FALSE) {
@@ -743,11 +715,11 @@ function decisions_view_electoral_list($node, $teaser = FALSE) {
 
     $output = '<div class="decisions-electoral-list">';
 
-    $output .= t('Total votes: %d', array('%d' => $votes));
+    $output .= t('Total votes: @d', array('@d' => $votes));
     if ($node->uselist) {
-      $output .= t(' (out of %v eligible voter' . 
+      $output .= t(' (out of @v eligible voter' . 
                    ($electoral_list->voters == 1? '' : 's') . ')',
-                   array('%v' => $electoral_list->voters));
+                   array('@v' => $electoral_list->voters));
     }
     $output .= '</div>';
   return $output;
@@ -776,19 +748,12 @@ function theme_decisions_view_voting($form) {
   return $output;
 }
 
-function theme_decisions_bar($title, $percentage, $votes, $block) {
-  if ($block) {
-    $output  = '<div class="text">'. $title .'</div>';
-    $output .= '<div class="bar"><div style="width: '. $percentage .'%;" class="foreground"></div></div>';
-    $output .= '<div class="percent">'. $percentage .'%</div>';
-  }
-  else {
-    $output  = '<div class="text">'. $title .'</div>';
-    $output .= '<div class="bar"><div style="width: '. $percentage .'%;" class="foreground"></div></div>';
-    $output .= '<div class="percent">'. $percentage .'% ('. $votes .')</div>';
-  }
-  return $output;
-}
+function theme_decisions_bar($title, $percentage, $votes) {
+  $output = '<div class="text">'. $title .'</div>';
+  $output .= '<div class="bar"><div style="width: '. $percentage .'%;" class="foreground"></div></div>';
+  $output .= '<div class="percent">'. $percentage .'% ('. $votes .')</div>';
+   return $output;
+ }
 
 /**
  * View the voting form.
@@ -800,11 +765,10 @@ function theme_decisions_bar($title, $percentage, $votes, $block) {
  * This also takes care of registering new votes, if the vote button
  * has been pressed.
  */
-function decisions_view_voting(&$node, $teaser, $page, $block) {
-
+function decisions_voting_form(&$node, $teaser = FALSE, $page = FALSE) {
   $mode = _decisions_get_mode($node);
-  if (function_exists("decisions_view_voting_$mode")) {
-    return call_user_func("decisions_view_voting_$mode", $node, $teaser, $page, $block);
+  if (function_exists("decisions_voting_{$mode}_form")) {
+    return call_user_func("decisions_voting_{$mode}_form", $node, $teaser, $page);
   }
   else {
     _decisions_panic_on_mode($mode);
@@ -828,13 +792,12 @@ function decisions_results() {
  * show results of the vote
  *
  * this calls the appropriate vote results function, depending on the
- * mode. It will call decisions_view_results_$mode, similarly to
- * decisions_view_voting().
+ * mode. It will call the decisions_view_results_$mode hook.
  */
-function decisions_view_results(&$node, $teaser, $page, $block) {
+function decisions_view_results(&$node, $teaser, $page) {
   $mode = _decisions_get_mode($node);
   if (function_exists("decisions_view_results_$mode")) {
-    return call_user_func("decisions_view_results_$mode", $node, $teaser, $page, $block);
+    return call_user_func("decisions_view_results_$mode", $node, $teaser, $page);
   }
   else {
     _decisions_panic_on_mode($mode);
@@ -845,23 +808,25 @@ function decisions_view_results(&$node, $teaser, $page, $block) {
  * record a vote on the node
  *
  * this calls the appropriate vote recording function, depending on
- * the mode. It will call decisions_vote_$mode, similarly to
- * decisions_view_voting().
+ * the mode. It will call the decisions_vote_$mode hook.
  */
-function decisions_vote($node) {
-  $mode = _decisions_get_mode($node);
+function decisions_voting_form_submit($form_id, $form_values) {
+  if ($form_values['nid']) {
+    $node = node_load($form_values['nid']);
+    $mode = _decisions_get_mode($node);
 
-  $ok = FALSE; // error by default
-  if (decisions_eligible($node)) {
-    if (function_exists("decisions_vote_$mode")) {
-      call_user_func("decisions_vote_$mode", $node);
+    $ok = FALSE; // error by default
+    if (decisions_eligible($node)) {
+      if (function_exists("decisions_{$mode}_submit")) {
+        call_user_func("decisions_{$mode}_submit", $node, $form_values);
+      }
+      else {
+        _decisions_panic_on_mode($mode);
+      }
     }
     else {
-      _decisions_panic_on_mode($mode);
+      drupal_set_message(t('You are not eligible to vote on this decision.'));
     }
-  }
-  else {
-    drupal_set_message(t('You are not eligible to vote on this decision.'));
   }
 }
 
@@ -933,8 +898,8 @@ function decisions_eligible($node, $uid = NULL) {
  * we detect an unknown mode
  */
 function _decisions_panic_on_mode($mode) {
-  watchdog('decisions', t('Unknown decision mode : %mode.', array('%mode' => $mode), WATCHDOG_ERROR));
-  drupal_set_message(t('Unknown decision mode : %mode.', array('%mode' => $mode), 'error'));
+  watchdog('decisions', t('Unknown decision mode : @mode.', array('@mode' => $mode), WATCHDOG_ERROR));
+  drupal_set_message(t('Unknown decision mode : @mode.', array('@mode' => $mode), 'error'));
 }
 
 /**
