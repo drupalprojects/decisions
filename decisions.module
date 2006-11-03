@@ -530,10 +530,6 @@ function decisions_perm() {
  *
  */
 function decisions_settings() {
-  if (!user_access('administer decisions')) {
-    return message_access();
-  }
-
   return decisions_settings_helper();
 }
 
