@@ -3,7 +3,6 @@ Decisions 0.2 (DRUPAL-4-7 branch) in development
 
 Todo before release:
 
- * use proper update hooks to have a smooth migration path from 0.1
  * test migration
  * old decisions might be problematic to migrate because they're
    different content type now
