@@ -16,7 +16,7 @@ Non-trivial skipped patches must be documented here.
 Advpoll sync
 ------------
 
-Last imported patch: #44167
+Last imported patch: #44221
 
 http://drupal.org/project/cvs/91765
 
@@ -30,14 +30,21 @@ Imported patches:
  * 44089: "Better db definition for advpoll_choices: rename chtext to
    label and chorder to vote_offset" - with update to the current
    update hook
- * 44129, partly: delete from voting_api properly
+ * 44129, partly: delete from voting_api properly, 5.0 compatibility
+   fixes on settings page and form generation
+ * 44221: "Remove obsolete message_access() per Harry_Slaughter's bug report"
 
-Skipped patches:
+Skipped patches (#id: "Commit log" - status/reason for skipping)
 
- * 44028: "Always set node->body and node->teaser when viewing"
- * 44029: "Remove debugging output"
- * 44125: "Allow votes to be reset"
- * 44101: "Show borda count results using poll bars"
- * 44100: "Fix count from 0 bug in IRV algorithm"
- * 44131: "Unified content-type descriptions between 4.7 and 5.0"
- * 44129: "Various minor fixes"
+ * 44028: "Always set node->body and node->teaser when viewing" - considered
+ * 44029: "Remove debugging output" - considered
+ * 44125: "Allow votes to be reset" - considered for HEAD
+ * 44101: "Show borda count results using poll bars" - considered for HEAD
+ * 44100: "Fix count from 0 bug in IRV algorithm" - considered
+ * 44131: "Unified content-type descriptions between 4.7 and 5.0" - considered?
+ * 44129: "Various minor fixes" - relevant stuff merged
+ * 44174: "Merge the 4.7 branch with HEAD" - we've done it ourselves
+ * 44173: "settings unification between 4.7 and 5.0" - we don't have a
+   DRUPAL-4-7 constant and simply keep incompatible changes from
+   polluting each branch
+
