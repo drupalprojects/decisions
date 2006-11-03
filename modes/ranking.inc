@@ -512,9 +512,9 @@ function _decision_calculate_ranking_nextround($aRound, &$votes, $min) {
  *
  * This takes care of registering the vote in runoff nodes.
  */
-function decisions_ranking_submit($node) {
+function decisions_ranking_submit($node, $form_values) {
   foreach ( $node->choice as $key => $choice ) {
-    $vote->value = $_POST['edit']['choice'][$key];
+    $vote->value = $form_values['choice'][$key];
 
     // A zero value indicates they didn't rank that choice
     if ($vote->value != 0) {
