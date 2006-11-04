@@ -42,25 +42,23 @@ function decisions_access($op, $node) {
 /**
  * Implementation of hook_block().
  */
-function decisions_block($op = 'list', $delta = 'mostrecent', $edit = array()) {
-  switch($op) {
-  case 'list' :
-    $blocks['mostrecent']['info'] = t('Decisions - Newest');
-    return $blocks;
-  case 'view':
+function decisions_block($op = 'list', $delta = 'mostrecent', $edit = array()){
+  if ($op == 'list') {
+    $block = array('mostrecent' => array('info' => t('Decisions - Newest')));
+  }
+  elseif ($op == 'view') {
     if (user_access('view decisions')) {
       switch ($delta) {
-      case 'mostrecent': default:
-        $block['content'] = decisions_block_mostrecent();
-        $block['subject'] = t('Decisions - Newest');
-      }
-
-      if ($block['content']) {
-        return $block;
+      case 'mostrecent':
+        $block = array('subject' => t('Decisions - Newest'), 'content' => decisions_block_mostrecent());
+        break;
+      default:
+        $block = array();
+        break;
       }
     }
-    return array();
   }
+  return $block;
 }
 
 /**
