@@ -124,7 +124,7 @@ function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_
  *
  * This hook displays the form necessary to edit the *node* (ie. not the votes).
  */
-function decisions_form(&$node, &$param) {
+function decisions_form(&$node, &$form_values = NULL) {
   $mode = _decisions_get_mode($node);
 
   $form['title'] = array(
@@ -141,29 +141,32 @@ function decisions_form(&$node, &$param) {
                         '#default_value' => $node->body,
                         );
 
+  if (isset($form_values['choices'])) {
+    $choices = $form_values['choices'];
+    if ($form_values['morechoices']) {
+      $choices *= 2;
+    }    
+  }
+  else {
+    $choices = max(2, count($node->choice) ? count($node->choice) : 5);
+  }
+  
   $form['choice']['choices'] = array(
                                      '#type' => 'hidden',
-                                     '#default_value' => max(2, count($node->choice) ? count($node->choice) : 5)
+                                     '#default_value' => $choices
                                      );
   
   $form['choice']['morechoices'] = array(
                                          '#type' => 'checkbox',
                                          '#title' => t('Need more choices'),
                                          '#default_value' => 0,
+                                         '#return_value' => 1,
                                          '#description' => t("If the amount of boxes above isn't enough, check this box and click the Preview button below to add some more."),
                                          '#weight' => 1
                                          );
   
   $form['choice'] = form_builder($node->type . '_node_form', $form['choice']);
   
-  if ($form['choice']['morechoices']['#value']) {
-    $form['choice']['morechoices']['#value'] = 0;
-    $form['choice']['choices']['#value'] *= 2;
-  }
-
-  // If the value was changed in a previous iteration, retain it.
-  $node->choices = $form['choice']['choices']['#value'];
-
   // Decisions choices
   $form['choice'] += array(
                            '#type' => 'fieldset',
@@ -174,7 +177,7 @@ function decisions_form(&$node, &$param) {
                            '#weight' => 1,
                            );
     
-  for ($a = 1; $a <= $node->choices; $a++) {
+  for ($a = 1; $a <= $choices; $a++) {
     $form['choice'][$a]['label'] = array(
                                           '#type' => 'textfield',
                                           '#title' => t('Choice @n', array('@n' => $a)),
@@ -191,7 +194,7 @@ function decisions_form(&$node, &$param) {
                             );
 
   $maxChoiceList = array();
-  for ($i = 0; $i <= $node->choices; $i++) {
+  for ($i = 0; $i <= $choices; $i++) {
     $maxChoiceList[$i] = ($i == 0? 'No limit' : $i);
   }
 
@@ -216,8 +219,8 @@ function decisions_form(&$node, &$param) {
     $voting_algorithms[$alg] = ucwords($alg);
   }
 
-  $defaultalg = ($_POST['edit']['settings']['algorithm']?
-                 $_POST['edit']['settings']['algorithm'] : 
+  $defaultalg = ($form_values['edit']['settings']['algorithm']?
+                 $form_values['edit']['settings']['algorithm'] : 
                  $node->algorithm);
                         
 
@@ -265,6 +268,7 @@ function decisions_form(&$node, &$param) {
 
   
   $form['format'] = filter_form($node->form);
+  $form['#multistep'] = TRUE;
   return $form;
 }
 
