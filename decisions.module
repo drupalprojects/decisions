@@ -70,10 +70,13 @@ function decisions_block_mostrecent() {
   // Check that there is an active decision
   if (db_num_rows($result) > 0) {
     $decision = db_fetch_object($result);
-    $output = decisions_view(node_load($decision->nid), false, false, true);
+    $n = decisions_view(node_load($decision->nid), false, false, true);
+    /* XXX: we have to do this because somehow the #printed settings lives across multiple node_load */
+    unset($n->content['#printed']);
+    $output .= drupal_render($n->content);
   }
   else {
-    $output .= t('No active decisions.');
+    $output = t('No active decisions.');
   }
   return $output;
 }
