@@ -73,7 +73,7 @@ function decisions_block_mostrecent() {
     $n = decisions_view(node_load($decision->nid), false, false, true);
     /* XXX: we have to do this because somehow the #printed settings lives across multiple node_load */
     unset($n->content['#printed']);
-    $output .= drupal_render($n->content);
+    $output = drupal_render($n->content);
   }
   else {
     $output = t('No active decisions.');
