@@ -207,15 +207,8 @@ function decisions_form(&$node, &$form_values = NULL) {
                                           '#description' => t('Limits the total number of choices voters may select.')
                                           );
 
-  $voting_algorithms = array();
-  if ($mode == 'ranking') {
-    $algs = array('instant runoff', 'borda count');
-  }
-  else {
-    // mode == poll
-    $algs = array('plurality');
-  }
-
+  $algs = _decisions_algorithms($mode);
+  
   foreach ($algs as $alg) {
     $voting_algorithms[$alg] = ucwords($alg);
   }
@@ -952,6 +945,25 @@ function _decisions_mode_list($mode = NULL, $longname = NULL) {
     $_decisions_modes[$mode] = $longname;
   }
   return $_decisions_modes;
+}
+
+/**
+ * View the voting form.
+ *
+ * This calls a function decisions_vote_$mode, where $mode is defined
+ * in the node. If the function does not exist, a watchdog error is
+ * raised and the error is reported using drupal_set_message().
+ *
+ * This also takes care of registering new votes, if the vote button
+ * has been pressed.
+ */
+function _decisions_algorithms($mode) {
+  if (function_exists("decisions_{$mode}_algorithms")) {
+    return call_user_func("decisions_{$mode}_algorithms");
+  }
+  else {
+    _decisions_panic_on_mode($mode);
+  }
 }
 
 ?>

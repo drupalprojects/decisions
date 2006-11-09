@@ -17,6 +17,13 @@ function decisions_ranking_longname() {
 }
 
 /**
+ * Implementation of the decisions_algorithms() hook
+ */
+function decisions_ranking_algorithms() {
+  return array('instant runoff', 'borda count');
+}
+
+/**
  * Implementation of the decisions_voting_hook_form() hook for the runoff module.
  *
  * This displays a textfield per choice, that should be filled with a

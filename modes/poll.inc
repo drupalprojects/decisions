@@ -15,6 +15,15 @@ function decisions_poll_longname() {
   return t("Poll");
 }
 
+
+/**
+ * Implementation of the decisions_algorithms() hook
+ */
+function decisions_poll_algorithms() {
+  return array('plurality');
+}
+
+
 /**
  * Implementation of the decisions_voting_hook_form() hook for the poll module.
  * 
