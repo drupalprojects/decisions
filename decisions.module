@@ -454,45 +454,28 @@ function decisions_tab_votes() {
     $header[] = array('data' => t('Vote'), '');
 
     $result = pager_query('SELECT v.value, v.uid, v.hostname, v.tag, u.name FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_id = %d' . tablesort_sql($header), 20, 0, NULL, $node->nid);
-    $rows = array();
+    $votes = array();
+    $names = array();
     while ($vote = db_fetch_object($result)) {
       $key = $vote->uid? $vote->uid : $vote->hostname;
-      $rows[$key]['name'] = $vote->name ? theme('username', $vote) : check_plain($vote->hostname);
-      if ($node->type == 'decisions-ranking') {
-        // Need two dimensional results (if equal rankings are allowed)
-        $rows[$key]['votes'][$vote->value][] = check_plain($node->choice[$vote->tag]['label']);
-      }
-      else {
-        // Just need one dimensional results
-        $rows[$key]['votes'][] = check_plain($node->choice[$vote->tag]['label']);
-      }
-    }
-                
-    $separators = array('decisions-ranking' => ' > ', 'decisions-poll' => ', ');
-
-    // create strings out of each vote
-    $results = array();
-
-    foreach ($rows as $key => $container) {
-      $ranking = $container['votes'];
-      asort($ranking);
-      $rankings = array();
-      if ($node->type == 'decisions-ranking') {
-        // Include support for multiple choices having the same ranking
-        foreach ($ranking as $vote => $choices) {
-          $rankings[$vote] = implode(' = ', $choices);
-        }
-      }
-      else {
-        // Just copy the previous array
-        $rankings = $ranking;
-      }
-      ksort($rankings);
-      $results[$key]['name'] = $rows[$key]['name'];
-      $results[$key]['vote'] = implode($separators[$node->type], $rankings);
+      $votes[$key][] = $vote;
+      $names[$key] = $vote->name ? theme('username', $vote) : check_plain($vote->hostname);
     }
 
-    $output .= theme('table', $header, $results);
+    $mode = _decisions_get_mode($node);
+    $function_format_votes = "decisions_format_votes_$mode";
+    if (!function_exists($function_format_votes)) {
+      _decisions_panic_on_mode($mode);
+      drupal_not_found();
+    }
+    
+    $rows = array();
+    foreach ($names as $key => $name) {
+      $rows[$key]['name'] = $name;
+      $rows[$key]['vote'] = call_user_func($function_format_votes, $node, $votes[$key]);
+    }
+
+    $output .= theme('table', $header, $rows);
     $output .= theme('pager', NULL, 20, 0);
     print theme('page', $output);
   }

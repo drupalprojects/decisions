@@ -160,6 +160,28 @@ function decisions_view_results_ranking($node, $teaser, $page) {
 }
 
 /**
+ * implementation of the format_votes() hook.
+ * 
+ * formats how a user's votes should be displayed.
+ *
+ * @returns a formatted string
+ */
+function decisions_format_votes_ranking($node, $votes) {
+  $ordered_votes = array();
+  foreach ($votes as $vote) {
+    // Need two dimensional results (if equal rankings are allowed)
+    $ordered_votes[$vote->value][] =  check_plain($node->choice[$vote->tag]['label']);
+  }
+  asort($ordered_votes);
+  $rankings = array();
+  foreach ($ordered_votes as $value => $choices) {
+    $rankings[$value] = implode(' = ', $choices);
+    ksort($rankings);
+  }
+  return implode(' > ', $rankings);
+}
+
+/**
  * Calculate the results for a ranking decision based on the algorithm
  * 
  * @param $node

@@ -134,7 +134,26 @@ function decisions_view_results_poll($node, $teaser, $page) {
 }
 
 /**
- * implementation of the vote() hook
+ * implementation of the format_votes() hook.
+ * 
+ * formats how a user's votes should be displayed.
+ *
+ * @returns a formatted string
+ */
+function decisions_format_votes_poll($node, $votes) {
+  $unordered_votes = array();
+  foreach ($votes as $vote) {
+    // Just need one dimensional results
+    if ($vote->value > 0) {
+      $unordered_votes[] = check_plain($node->choice[$vote->tag]['label']);
+    }
+  }
+  return implode(', ', $unordered_votes);
+}
+
+
+/**
+ * implementation of the submit() hook
  *
  * registers the vote as a key for this node using votingapi_set_vote()
  */

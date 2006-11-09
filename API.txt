@@ -54,3 +54,20 @@ validation. This hook should behave as a normal form validation hook
 (ie. hook_validate() in drupal terminology), that is, amongst other
 things, set errors using form_set_error(). It should return TRUE if
 the form is valid, FALSE otherwise.
+
+decisions_format_votes_$mode()
+------------------------------
+
+Mandatory. Format the votes of a user on a single line. Returns a
+string.
+
+decisions_$mode_node_info()
+---------------------------
+
+Mandatory. Provides an array that is suitable to be returned as a
+hook_node_info() to the decisions module. It is necessary because a
+decision mode is a node type. This will usually return a 2-elements
+array made of:
+
+ * name (e.g. "decisions-poll")
+ * description (e.g. "Creates a poll")

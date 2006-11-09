@@ -5,7 +5,11 @@ Decisions HEAD in development
    * install and deinstall hooks
    * still has major issues
    * branch will be created and 0.2 released when port is functional
- * a decisions_mode_node_info() hook was added to dynamically generate the decisions_node_info()
+ * encapsulation of the modes out of the .module, to ease addition of
+   new modes and allow the deactivation of modes from the module page
+   * added a decisions_hook_node_info() to dynamically generate the decisions_node_info()
+   * added a decisions_format_votes_hook() to format votes from users in
+     the vote tabe
 
 Decisions 0.2 (DRUPAL-4-7 branch) in development
 ------------------------------------------------
