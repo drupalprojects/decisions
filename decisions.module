@@ -330,15 +330,22 @@ function decisions_menu($may_cache) {
   $items = array();
 
   if ($may_cache) {
-    $items[] = array('path' => 'node/add/decisions-ranking',
-                     'title' => t('decisions-ranking'),
-                     'access' => user_access('create decisions'),
-                     );
+    $modes = decisions_modes();
+    foreach ($modes as $mode) {
+      $function = "decisions_${mode}_node_info";
+      if (function_exists($function)) {
+        $mode_node_info = call_user_func($function);
+        $title = $mode_node_info['name'];
+      } else {
+        $title = t('decisions-'.$mode);
+        _decisions_panic_on_mode($mode);
+      }
 
-    $items[] = array('path' => 'node/add/decisions-poll',
-                     'title' => t('decisions-poll'),
-                     'access' => user_access('create decisions'),
-                     );
+      $items[] = array('path' => 'node/add/decisions-'.$mode,
+                       'title' => $title,
+                       'access' => user_access('create decisions'),
+                       );
+    }
 
     $items[] = array('path' => 'decisions/cancel',
                      'title' => t('cancel'),
