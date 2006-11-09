@@ -265,13 +265,17 @@ function decisions_form(&$node, $form_values = NULL) {
                  $node->algorithm);
                         
 
-  $form['settings']['algorithm'] = array(
+  if (count($voting_algorithms) > 1) {
+    $form['settings']['algorithm'] = array(
                                          '#type' => 'select',
                                          '#title' => t('Algorithm'),
                                          '#options' => $voting_algorithms,
                                          '#default_value' => $defaultalg,
                                          '#description' => 'Voting algorithm to use to calculate the winner.',
                                          );
+  } else {
+    $form['settings']['algorithm'] = array('#type' => 'hidden', '#value' => $defaultalg);
+  }
 
   $active = array(1 => t('Active'), 0 => t('Closed'));
   $form['settings']['active'] = array(
