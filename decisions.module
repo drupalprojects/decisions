@@ -325,7 +325,7 @@ function decisions_menu($may_cache) {
   // load the necessary submodules in here instead of _init() to
   // profit from caching, as recommended by
   // http://drupaldocs.org/api/head/function/hook_init
-  _decisions_load_modes();
+  decisions_modes();
 
   $items = array();
 
@@ -908,43 +908,25 @@ function _decisions_panic_on_mode($mode) {
  * mode is considered to be the mode name. found files are loaded and
  * added to the mode list.
  *
- * @uses _decisions_mode_list()
  * @uses file_scan_directory()
  */
-function _decisions_load_modes() {
-  global $_decisions_modes;
+function decisions_modes() {
+  static $decisions_modes;
 
-  foreach (file_scan_directory(dirname(__FILE__) . '/modes/', '^([^\.].*)\.inc$', array('.', '..', 'CVS'), 0, FALSE) as $file) {
-    require_once($file->filename);
-    $mode = $file->name;
-    if (function_exists("decisions_${mode}_longname") ) {
-      _decisions_mode_list($mode, call_user_func("decisions_${mode}_longname"));
-    }
-    else {
-      drupal_set_message("decisions_${mode}_longname ??");
-      _decisions_mode_list($mode);
+  if (!isset($decisions_modes)) {
+    $path = drupal_get_path('module', 'decisions');
+    $files = file_scan_directory($path . '/modes', '^.*\.inc$');
+    foreach ($files as $filename => $file) {
+      require_once($file->filename);
+      $mode = $file->name;
+      if (function_exists("decisions_${mode}_longname") ) {
+        $decisions_modes[] = $modes;
+      } else {
+        drupal_set_message("Function decisions_${mode}_longname is not set, setting a default name.");
+      }
     }
   }
-}
-
-/**
- * list or set the known modes
- *
- * @param string $mode set/change the given mode
- * @param string $longname choiceal. set a longname different than the mode name
- *
- * @returns array the module list as a mode => longname associative array
- */
-function _decisions_mode_list($mode = NULL, $longname = NULL) {
-  static $_decisions_modes = array();
-
-  if (!is_null($mode)) {
-    if (is_null($longname)) {
-      $longname = $mode;
-    }
-    $_decisions_modes[$mode] = $longname;
-  }
-  return $_decisions_modes;
+  return $decisions_modes;
 }
 
 /**
