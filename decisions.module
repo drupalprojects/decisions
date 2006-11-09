@@ -874,7 +874,7 @@ function decisions_vote_validate($node) {
  */
 function decisions_eligible($node, $uid = NULL) {
   global $user;
-  if (!isset($uid)) {
+  if (is_null($uid)) {
     $uid = $user->uid;
   }
 
