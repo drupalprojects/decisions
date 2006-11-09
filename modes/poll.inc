@@ -98,15 +98,9 @@ function decisions_view_results_poll($node, $teaser, $page) {
   $votes = array();
   foreach ($results as $result) {
 
-    if ($node->maxchoices == 1) {
-      // plurality
-      $voteval = $result->function;
-    }
-    else {
-      // approval
-      $voteval = $result->tag;
-    }
-
+    // approval
+    $voteval = $result->tag;
+    
     if (!$votes[$voteval]) {
       $votes[$voteval] = 0;
     }
@@ -161,7 +155,8 @@ function decisions_poll_vote($node, $form_values) {
   $votes = array();
   if ($node->maxchoices == 1) {
     // plurality voting
-    $vote->value = $form_values['choice'];
+    $vote->value = 1;
+    $vote->tag = $form_values['choice'];
     $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
     $votes[] = $vote;
   }

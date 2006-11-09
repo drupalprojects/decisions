@@ -1,6 +1,6 @@
 Information of the continuous sync with fixes in advpoll.module.
 
-Last imported patch: #44470
+Last imported patch: #44471
 
 http://drupal.org/project/cvs/91765
 
@@ -18,6 +18,7 @@ Imported patches:
    fixes on settings page and form generation
  * 44221: "Remove obsolete message_access() per Harry_Slaughter's bug report"
  * 44470: "Only call set_vote() once for approval voting" - relevant parts
+ * 44471: "Store votes the same whether plurality or approval"
 
 Skipped patches (#id: "Commit log" - status/reason for skipping)
 
