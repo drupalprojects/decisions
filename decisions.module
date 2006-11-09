@@ -274,10 +274,15 @@ function decisions_help($section) {
   switch ($section) {
   case 'admin/modules#description':
     return t('Allow people to reproduce and surpass the kinds of decision-making instances that exist in face-to-face meetings.');
-  case 'node/add#decisions-poll':
-    return t('Create a decision using a poll interface.');
-  case 'node/add#decisions-ranking':
-    return t('Create a decision using a ranking interface.');
+  default:
+    {
+      $modes = decisions_modes();
+      foreach ($modes as $mode) {
+        if ($section == 'node/add#decisions-'.$mode) {
+          return t('Create a decision using a %mode interface.', array('%mode' => $mode));
+        }
+      }
+    }
   }
 }
 
