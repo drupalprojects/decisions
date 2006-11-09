@@ -22,6 +22,8 @@ Imported patches:
  * 44482: "Add and remove users from electoral list; clear electoral list"
  * 44483: "Typo in electoral_list status message"
  * 44484: "Error checking for adding usernames to electoral list"
+ * 44491: "Dynamically add poll choices if jQuery is enabled in 4.7"
+ * 44492: "Let's fade in the new form elements while we're at it"
 
 Skipped patches (#id: "Commit log" - status/reason for skipping)
 

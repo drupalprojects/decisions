@@ -131,6 +131,47 @@ function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_
 function decisions_form(&$node, $form_values = NULL) {
   $mode = _decisions_get_mode($node);
 
+  if (function_exists('_drupal_add_js')) {
+    $jQuery = TRUE;
+    // Using 5.0 or 4.7 with the jQuery patch
+    drupal_add_js("$(document).ready(function(){
+  	                 var add_choice = document.createElement('input');
+  	                 add_choice.id = 'addChoice';
+  	                 add_choice.type = 'button';
+  	                 add_choice.value = '" . t('Add choice') . "';
+  	                 $('#morechoices').append(add_choice);
+                         $('#addChoice').fadeIn(1000);
+  	                 $('#addChoice').bind('click', function () {
+  	                         var nextChoice = $('input.choices').length + 1;
+  	                         var div = document.createElement('div');
+  	                         div.className = 'form-item choiceDiv';
+  	 
+  	                         var label = document.createElement('label');
+  	                         label.htmlFor = 'edit-choice-' + nextChoice + '-label';
+  	                         label.appendChild(document.createTextNode('"
+  	                                 // Hack for translating string before we know the specific number
+  	                                 . t('Choice @n', array('@n' => -1)) . ": '.replace('-1', nextChoice)));
+  	 
+  	                         div.appendChild(label);
+  	 
+  	                         var input = document.createElement('input');
+  	                         input.type = 'text';
+  	                         input.maxlength = 128;
+  	                         input.name = 'edit[choice][' + nextChoice + '][label]';
+  	                         input.id = 'edit-choice-' + nextChoice + '-label';
+  	                         input.size = 60;
+  	                         input.className = 'form-text choices';
+  	 
+  	                         div.appendChild(input);
+  	 
+  	                         $('.choices:last').after(div);
+                                 $('.choiceDiv:last').fadeIn(1000);
+  	                         $('#edit-choices').each(function(){this.value=nextChoice});
+  	                 });
+  	         });", 'inline');
+    
+  }
+
   $form['title'] = array(
                          '#type' => 'textfield',
                          '#title' => ucfirst($mode) . ' ' . t('Question'),
@@ -165,6 +206,8 @@ function decisions_form(&$node, $form_values = NULL) {
                                          '#title' => t('Need more choices'),
                                          '#default_value' => 0,
                                          '#return_value' => 1,
+                                         '#prefix' => '<div id="morechoices">',
+                                         '#suffix' => '</div>',
                                          '#description' => t("If the amount of boxes above isn't enough, check this box and click the Preview button below to add some more."),
                                          '#weight' => 1
                                          );
@@ -185,7 +228,8 @@ function decisions_form(&$node, $form_values = NULL) {
     $form['choice'][$a]['label'] = array(
                                           '#type' => 'textfield',
                                           '#title' => t('Choice @n', array('@n' => $a)),
-                                          '#default_value' => $node->choice[$a]['label']
+                                          '#default_value' => $node->choice[$a]['label'],
+                                          '#attributes' => array('class' => 'choices'),
                                           );
   }
 
