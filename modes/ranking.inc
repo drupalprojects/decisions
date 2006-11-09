@@ -24,6 +24,16 @@ function decisions_ranking_algorithms() {
 }
 
 /**
+ * Implementation of the decisions_node_info() hook
+ */
+function decisions_ranking_node_info() {
+  return array(
+      'name' => t('decisions-ranking'),
+      'description' => t('Creates a vote where n options are ranked from 1 to n.')
+    );
+}
+
+/**
  * Implementation of the decisions_voting_hook_form() hook for the runoff module.
  *
  * This displays a textfield per choice, that should be filled with a

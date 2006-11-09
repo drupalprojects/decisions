@@ -23,6 +23,15 @@ function decisions_poll_algorithms() {
   return array('plurality');
 }
 
+/**
+ * Implementation of the decisions_node_info() hook
+ */
+function decisions_poll_node_info() {
+  return array(
+      'name' => t('decisions-poll'),
+      'description' => t('Creates a poll-like vote.')
+    );
+}
 
 /**
  * Implementation of the decisions_voting_hook_form() hook for the poll module.

@@ -5,6 +5,7 @@ Decisions HEAD in development
    * install and deinstall hooks
    * still has major issues
    * branch will be created and 0.2 released when port is functional
+ * a decisions_mode_node_info() hook was added to dynamically generate the decisions_node_info()
 
 Decisions 0.2 (DRUPAL-4-7 branch) in development
 ------------------------------------------------

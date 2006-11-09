@@ -502,18 +502,21 @@ function _decisions_can_view_results($node) {
  * Implementation of hook_node_info().
  */
 function decisions_node_info() {
-  return array(
-    'decisions_ranking' => array(
-      'name' => t('decisions-ranking'),
-      'module' => 'decisions',
-      'description' => t('Creates a vote where n options are ranked from 1 to n.'),
-    ),
-    'decisions_poll' => array(
-      'name' => t('decisions-poll'),
-      'module' => 'decisions',
-      'description' => t('Creates a poll-like vote.'),
-    ),
-  );
+  $modes = decisions_modes();
+  $node_info = array();
+   
+  foreach ($modes as $mode) {
+    $function = "decisions_${mode}_node_info";
+    if (function_exists($function)) {
+      $mode_node_info = call_user_func($function);
+      $node_info["decisions_$mode"] = $mode_node_info;
+      $node_info["decisions_$mode"]['module'] = 'decisions';
+    } else {
+      _decisions_panic_on_mode($mode);
+    }
+  }
+  
+  return $node_info;
 }
 
 /**
@@ -920,7 +923,7 @@ function decisions_modes() {
       require_once($file->filename);
       $mode = $file->name;
       if (function_exists("decisions_${mode}_longname") ) {
-        $decisions_modes[] = $modes;
+        $decisions_modes[] = $mode;
       } else {
         drupal_set_message("Function decisions_${mode}_longname is not set, setting a default name.");
       }
