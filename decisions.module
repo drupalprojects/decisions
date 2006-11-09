@@ -612,12 +612,9 @@ function _decisions_get_mode($node) {
 function decisions_insert($node) {
   // just create an empty entry for now
   $mode = _decisions_get_mode($node);
-  if ($mode == 'poll') {
-    $alg = 'poll';
-  } else if ($mode == 'ranking') {
-    $alg = 'runoff';
-  }
-  db_query("INSERT INTO {decisions} (nid, mode, uselist, active, runtime, maxchoices, algorithm) VALUES (%d, '%s', %d, %d, %d, %d, '%s')", $node->nid, $mode, $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $alg);
+
+  $algs = _decisions_algorithms($mode);
+  db_query("INSERT INTO {decisions} (nid, mode, uselist, active, runtime, maxchoices, algorithm) VALUES (%d, '%s', %d, %d, %d, %d, '%s')", $node->nid, $mode, $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $algs[0]);
 
   // create the electoral list if desired
 
