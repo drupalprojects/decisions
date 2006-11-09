@@ -157,7 +157,7 @@ function decisions_format_votes_poll($node, $votes) {
  *
  * registers the vote as a key for this node using votingapi_set_vote()
  */
-function decisions_poll_submit($node, $form_values) {
+function decisions_poll_vote($node, $form_values) {
   if ($node->maxchoices == 1) {
     // plurality voting
     $vote->value = $form_values['choice'];

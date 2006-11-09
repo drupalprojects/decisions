@@ -798,29 +798,33 @@ function decisions_view_results(&$node, $teaser, $page) {
   }
 }
 
+function decisions_voting_form_submit($form_id, $form_values) {
+  if ($form_values['nid']) {
+    $node = node_load($form_values['nid']);
+  }
+  return decisions_vote($node);
+}
+
 /**
  * record a vote on the node
  *
  * this calls the appropriate vote recording function, depending on
  * the mode. It will call the decisions_vote_$mode hook.
  */
-function decisions_voting_form_submit($form_id, $form_values) {
-  if ($form_values['nid']) {
-    $node = node_load($form_values['nid']);
-    $mode = _decisions_get_mode($node);
-
-    $ok = FALSE; // error by default
-    if (decisions_eligible($node)) {
-      if (function_exists("decisions_{$mode}_submit")) {
-        call_user_func("decisions_{$mode}_submit", $node, $form_values);
-      }
-      else {
-        _decisions_panic_on_mode($mode);
-      }
+function decisions_vote($node) {
+  $mode = _decisions_get_mode($node);
+  
+  $ok = FALSE; // error by default
+  if (decisions_eligible($node)) {
+    if (function_exists("decisions_{$mode}_vote")) {
+      call_user_func("decisions_{$mode}_vote", $node, $form_values);
     }
     else {
-      drupal_set_message(t('You are not eligible to vote on this decision.'));
+      _decisions_panic_on_mode($mode);
     }
+  }
+  else {
+    drupal_set_message(t('You are not eligible to vote on this decision.'));
   }
 }
 

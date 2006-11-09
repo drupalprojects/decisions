@@ -551,7 +551,7 @@ function _decision_calculate_ranking_nextround($aRound, &$votes, $min) {
  *
  * This takes care of registering the vote in runoff nodes.
  */
-function decisions_ranking_submit($node, $form_values) {
+function decisions_ranking_vote($node, $form_values) {
   foreach ( $node->choice as $key => $choice ) {
     $vote->value = $form_values['choice'][$key];
 
