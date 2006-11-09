@@ -679,8 +679,8 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
     // hook_vote_validate will return FALSE on error
     $valid = decisions_vote_validate($node);
     if ($valid) {
-      drupal_set_message(t('Your vote was registered.'));
       decisions_vote($node);
+      drupal_set_message(t('Your vote was registered.'));
       // Transferring makes the results tab display correctly
       drupal_goto('node/' . $node->nid);
     }
