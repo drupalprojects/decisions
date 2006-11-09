@@ -71,3 +71,8 @@ array made of:
 
  * name (e.g. "decisions-poll")
  * description (e.g. "Creates a poll")
+
+decisions_$mode_algorithm()
+---------------------------
+
+Mandatory. Return a list of algorithms provided by this decision mode.

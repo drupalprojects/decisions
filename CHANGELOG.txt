@@ -10,6 +10,8 @@ Decisions HEAD in development
    * added a decisions_hook_node_info() to dynamically generate the decisions_node_info()
    * added a decisions_format_votes_hook() to format votes from users in
      the vote tabe
+   * added a decisions_hook_algorithm() to allow modes to list their
+     provided algorithms
 
 Decisions 0.2 (DRUPAL-4-7 branch) in development
 ------------------------------------------------
