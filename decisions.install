@@ -103,7 +103,10 @@ function decisions_update_4() {
 function decisions_uninstall() {
   // remove votes from all decisions
   db_query("DELETE FROM {votingapi_vote} WHERE content_type='decisions'");
-  db_query("DELETE FROM {node} WHERE type LIKE 'decision_%%'");
+  $result = db_query('SELECT nid FROM {decisions}');
+  while ($obj = db_fetch_object($result)) {
+    node_delete($obj->nid);
+  }
   db_query('DROP TABLE {decisions}');
   db_query('DROP TABLE {decisions_electoral_list}');
   db_query('DROP TABLE {decisions_choices}');
