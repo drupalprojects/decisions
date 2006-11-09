@@ -1,6 +1,6 @@
 Information of the continuous sync with fixes in advpoll.module.
 
-Last imported patch: #44471
+Last imported patch: #44484
 
 http://drupal.org/project/cvs/91765
 
@@ -19,6 +19,9 @@ Imported patches:
  * 44221: "Remove obsolete message_access() per Harry_Slaughter's bug report"
  * 44470: "Only call set_vote() once for approval voting" - relevant parts
  * 44471: "Store votes the same whether plurality or approval"
+ * 44482: "Add and remove users from electoral list; clear electoral list"
+ * 44483: "Typo in electoral_list status message"
+ * 44484: "Error checking for adding usernames to electoral list"
 
 Skipped patches (#id: "Commit log" - status/reason for skipping)
 
@@ -33,4 +36,6 @@ Skipped patches (#id: "Commit log" - status/reason for skipping)
  * 44173: "settings unification between 4.7 and 5.0" - we don't have a
    DRUPAL-4-7 constant and simply keep incompatible changes from
    polluting each branch
-
+ * 44473: "Properly cache binary votes" and,
+ * 44478: "Cache ranking results" - they don't make the module work
+   more in 5.x and don't seem to really cache anything relevant

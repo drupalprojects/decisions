@@ -409,12 +409,54 @@ function decisions_menu($may_cache) {
                            'weight' => 3,
                            'type' => MENU_LOCAL_TASK
                            );
+          // Allow voters to be removed
+          $items[] = array(
+                           'path' => 'node/' . $nid . '/remove',
+                           'callback' => 'decisions_remove_voter',
+                           'access' => user_access('administer '),
+                           'weight' => 3,
+                           'type' => MENU_CALLBACK,
+                           );
         }
       }
     }
   }
 
   return $items;
+}
+
+function decisions_electoral_list_form($nid) {
+  
+  $form['electoral_list'] = array(
+                                  '#type' => 'fieldset',
+                                  '#tree' => TRUE,
+                                  '#title' => t('Administer electoral list'),
+                                  '#collapsible' => TRUE,
+                                  '#weight' => 2,
+                                  '#collapsed' => TRUE,
+                                  );
+
+  $form['electoral_list']['add_user'] = array(
+                                              '#type' => 'textfield',
+                                              '#title' => t('Add user'),
+                                              '#size' => 40,
+                                              '#autocomplete_path' => 'user/autocomplete',
+                                              '#description' => t('Add an individual user to the electoral list'),
+                                              );
+
+  $form['electoral_list']['submit'] = array(
+                                            '#type' => 'submit',
+                                            '#value' => t('Modify electoral list'),
+                                            );
+
+  $form['electoral_list']['reset'] = array(
+                                           '#type' => 'button',
+                                           '#value' => t('Reset electoral list'),
+                                           );
+
+  $form['nid'] = array('#type' => 'hidden', '#value' => $nid);
+  return $form;        
+
 }
 
 function decisions_tab_electoral_list() {
@@ -424,14 +466,52 @@ function decisions_tab_electoral_list() {
       return;
     }
     drupal_set_title(check_plain($node->title));
-    $output = t('This table lists all the eligible voters for this Decision.');
+    if (user_access('administer decisions')) {
+      $form['electoral_list'] = array(
+                                      '#type' => 'fieldset',
+                                      '#tree' => TRUE,
+                                      '#title' => t('Administer electoral list'),
+                                      '#collapsible' => TRUE,
+                                      '#weight' => 2,
+                                      '#collapsed' => TRUE,
+                                      );
+  	 
+      $form['electoral_list']['add_user'] = array(
+                                                  '#type' => 'textfield',
+                                                  '#title' => t('Add user'),
+                                                  '#size' => 40,
+                                                  '#autocomplete_path' => 'user/autocomplete',
+                                                  '#description' => t('Add an individual user to the electoral list'),
+                                                  );
+  	 
+      $form['electoral_list']['submit'] = array(
+                                                '#type' => 'submit',
+                                                '#value' => t('Modify electoral list'),
+                                                );
+  	 
+      $form['electoral_list']['reset'] = array(
+                                               '#type' => 'button',
+                                               '#value' => t('Reset electoral list'),
+                                               );
+  	 
+      $form['nid'] = array('#type' => 'hidden', '#value' => $node->nid);
+      $output .= drupal_get_form('decisions_electoral_list_form', $node->nid);
+    }
+    
+    $output .= t('This table lists all the eligible voters for this Decision.');
 
     $header[] = array('data' => t('Voter'), 'field' => 'u.name');
 
     $result = pager_query("SELECT u.uid, u.name FROM {decisions_electoral_list} el LEFT JOIN {users} u ON el.uid = u.uid WHERE el.nid = %d" . tablesort_sql($header), 20, 0, NULL, $node->nid);
     $eligible_voters = array();
     while ($voter = db_fetch_object($result)) {
-      $eligible_voters[] = array(theme('username', $voter));
+      $temp = array(theme('username', $voter));
+      
+      if (user_access('administer decisions')) {
+        $temp[] = l(t('remove'), 'node/'. $node->nid .'/remove/' . $voter->uid);
+      }
+      
+      $eligible_voters[] = $temp;
     }
     $output .= theme('table', $header, $eligible_voters);
     $output .= theme('pager', NULL, 20, 0);
@@ -442,7 +522,64 @@ function decisions_tab_electoral_list() {
   }
 }
 
-
+/**
+ * Remove an individual voter from the electoral list
+ */
+function decisions_remove_voter() {
+  $nid = arg(1);
+  $uid = arg(3);
+  if ($uid && $node = node_load($nid)) {
+    $result = db_query('SELECT name FROM {users} WHERE uid=%d', $uid);
+    if (db_num_rows($result) > 0) {
+      $user = db_fetch_object($result);
+      db_query('DELETE FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d',
+               $nid, $uid);
+      drupal_set_message(t('%user removed from the electoral list.', array('%user' => $user->name)));
+    }
+    else {
+      drupal_set_message(t('No user found with a uid of %uid.', array('%uid' => $uid)));
+    }
+  	 
+  }
+  drupal_goto('node/' . $node->nid . '/electoral_list');
+}
+  	 
+/**
+ * Validate changes to the electoral list
+ */
+function decisions_electoral_list_validate($form_id, $form_values) {
+  if ($_POST['op'] == t('Reset electoral list')) {
+    if (user_access('administer decisions')) {
+      db_query('DELETE FROM {decisions_electoral_list} WHERE nid=%d', $form_values['nid']);
+      drupal_set_message(t('Electoral list cleared.'));
+      return;
+    }
+  }
+  $add_user = $form_values['electoral_list']['add_user'];
+  if ($add_user) {
+    // Check that the user exists
+    $result = db_query('SELECT uid FROM {users} WHERE name="%s"', $add_user);
+    if (db_num_rows($result) == 0) {
+      form_set_error('electoral_list][add_user', t('User %user does not exist.', array('%user' => $add_user)));
+      return FALSE;
+    }
+  }
+}
+  	 
+/**
+ * Submit changes to the electoral list
+ */
+function decisions_electoral_list_submit($form_id, $form_values) {
+  $add_user = $form_values['electoral_list']['add_user'];
+  if ($add_user) {
+    db_query('REPLACE INTO {decisions_electoral_list} (nid, uid) SELECT "%d", u.uid FROM users u WHERE u.name = "%s"', $form_values['nid'], $add_user);
+    drupal_set_message(t('%user added to electoral list.', array('%user' => $add_user)));
+  }
+}
+  	 
+/**
+ * display the votes tab
+ */
 function decisions_tab_votes() {
   if ($node = node_load(arg(1))) {
     if (!$node->showvotes) {
