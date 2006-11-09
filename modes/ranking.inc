@@ -552,16 +552,18 @@ function _decision_calculate_ranking_nextround($aRound, &$votes, $min) {
  * This takes care of registering the vote in runoff nodes.
  */
 function decisions_ranking_vote($node, $form_values) {
-  foreach ( $node->choice as $key => $choice ) {
-    $vote->value = $form_values['choice'][$key];
+  $votes = array();
+  foreach ( $form_values['choice'] as $choice => $rank ) {
+    $vote->value = $rank;
 
     // A zero value indicates they didn't rank that choice
     if ($vote->value != 0) {
       $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
-      $vote->tag = $key;
-      votingapi_set_vote('decisions', $node->nid, $vote);
+      $vote->tag = $choice;
+      $votes[] = $vote;
     }
   }
+  votingapi_set_vote('decisions', $node->nid, $votes);
 }
 
 /**
