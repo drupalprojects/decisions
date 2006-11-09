@@ -2,3 +2,4 @@
 name = Decisions
 description = An advanced voting module that includes plurarity voting, instant-runoff voting, and electoral lists.
 dependencies = votingapi
+package = "Voting"
