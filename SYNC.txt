@@ -1,6 +1,6 @@
 Information of the continuous sync with fixes in advpoll.module.
 
-Last imported patch: #44484
+Last imported patch: #44786
 
 http://drupal.org/project/cvs/91765
 
@@ -24,6 +24,7 @@ Imported patches:
  * 44484: "Error checking for adding usernames to electoral list"
  * 44491: "Dynamically add poll choices if jQuery is enabled in 4.7"
  * 44492: "Let's fade in the new form elements while we're at it"
+ * 44656: "Only show algorithm select box if there are multiple algorithms for this mode, otherwise use hidden form element"
 
 Skipped patches (#id: "Commit log" - status/reason for skipping)
 
@@ -41,3 +42,11 @@ Skipped patches (#id: "Commit log" - status/reason for skipping)
  * 44473: "Properly cache binary votes" and,
  * 44478: "Cache ranking results" - they don't make the module work
    more in 5.x and don't seem to really cache anything relevant
+ * 44538: "Drupal 5.0 compability! A few UI bugs remain though." - a
+   total mess, includes other changes, and we're already 5.x
+   compatiblet
+ * 44542: "Small code cleanups" - N/A
+ * 44679: "Abstract modes and algorithms" - already done
+ * 44683: "Fix blocks in 5.0" - already done
+ * 44688: "Properly theme poll results" - considered for HEAD
+ * 44786: "Convert tabs to spaces" - already done
