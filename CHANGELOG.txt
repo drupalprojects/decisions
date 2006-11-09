@@ -13,6 +13,7 @@ Decisions HEAD in development
    * added a decisions_hook_algorithm() to allow modes to list their
      provided algorithms
  * changed the hook_submit() to vote_submit() as per documentation and advpoll
+ * changed the decisions_validate_vote_hook() to decisions_hook_validate_vote()
 
 Decisions 0.2 (DRUPAL-4-7 branch) in development
 ------------------------------------------------

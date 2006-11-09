@@ -572,7 +572,7 @@ function decisions_ranking_vote($node, $form_values) {
  *
  * @returns boolean false on invalid forms, true otherwise.
  */
-function decisions_voting_ranking_validate($node, $form_id, $form_values) {
+function decisions_ranking_vote_validate($node, $form_id, $form_values) {
   $ok = TRUE;
   // array used to check which values are set
   $setvalues = array();

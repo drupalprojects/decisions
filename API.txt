@@ -45,8 +45,7 @@ decisions_$mode_longname()
 Optional. The nice long name associated with this mode. Defaults to
 "$mode".
 
-
-decisions_validate_vote_$mode()
+decisions_$mode_validate_vote()
 -------------------------------
 
 Optional. Additional validation of vote submissions. Defaults to no

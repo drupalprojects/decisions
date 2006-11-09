@@ -185,7 +185,7 @@ function decisions_poll_vote($node, $form_values) {
  *
  * @returns boolean true if the form is valid
  */
-function decisions_voting_poll_validate($node, $form_id, $form_values) {
+function decisions_poll_vote_validate($node, $form_id, $form_values) {
   if ($node->maxchoices == 1) {
     // plurality voting
     if (!array_key_exists($form_values['choice'], $node->choice)) {

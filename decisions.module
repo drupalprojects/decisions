@@ -675,6 +675,17 @@ function decisions_submit(&$node) {
 function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
   $mode = _decisions_get_mode($node);
 
+  if ($_POST['op'] == t('Vote')) {
+    // hook_vote_validate will return FALSE on error
+    $valid = decisions_vote_validate($node);
+    if ($valid) {
+      drupal_set_message(t('Your vote was registered.'));
+      decisions_vote($node);
+      // Transferring makes the results tab display correctly
+      drupal_goto('node/' . $node->nid);
+    }
+  }
+
   // Previewing a node, so don't show results
   if ($node->in_preview) {
     // Show the voting form but don't let them vote
@@ -798,13 +809,6 @@ function decisions_view_results(&$node, $teaser, $page) {
   }
 }
 
-function decisions_voting_form_submit($form_id, $form_values) {
-  if ($form_values['nid']) {
-    $node = node_load($form_values['nid']);
-  }
-  return decisions_vote($node);
-}
-
 /**
  * record a vote on the node
  *
@@ -813,7 +817,7 @@ function decisions_voting_form_submit($form_id, $form_values) {
  */
 function decisions_vote($node) {
   $mode = _decisions_get_mode($node);
-  
+  $form_values = $_POST;
   $ok = FALSE; // error by default
   if (decisions_eligible($node)) {
     if (function_exists("decisions_{$mode}_vote")) {
