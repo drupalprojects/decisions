@@ -111,10 +111,13 @@ function decisions_delete($node) {
  * Implementation of votingapi_hook_calculate()
  */
 function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_id) {
-  $node = node_load($content_id);
-  $mode = _decisions_get_mode($node);
-  if (function_exists("decisions_votingapi_calculate_$mode")) {
-    //return call_user_func("decisions_votingapi_calculate_$mode", $node, $cache, $votes, $content_type, $content_id);
+  if ($content_type == 'decisions') {
+    $node = node_load($content_id);
+    $mode = _decisions_get_mode($node);
+    $function = "decisions_votingapi_calculate_$mode";
+    if (function_exists($function)) {
+      return call_user_func($function, $node, $cache, $votes, $content_type, $content_id);
+    }
   }
 }
 
