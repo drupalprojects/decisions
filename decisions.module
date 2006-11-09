@@ -114,7 +114,7 @@ function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_
   if ($content_type == 'decisions') {
     $node = node_load($content_id);
     $mode = _decisions_get_mode($node);
-    $function = "decisions_votingapi_calculate_$mode";
+    $function = "decisions_$mode_votingapi_calculate";
     if (function_exists($function)) {
       return call_user_func($function, $node, $cache, $votes, $content_type, $content_id);
     }
