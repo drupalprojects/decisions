@@ -125,7 +125,7 @@ function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_
  *
  * This hook displays the form necessary to edit the *node* (ie. not the votes).
  */
-function decisions_form(&$node, &$form_values = NULL) {
+function decisions_form(&$node, $form_values = NULL) {
   $mode = _decisions_get_mode($node);
 
   $form['title'] = array(
