@@ -39,7 +39,7 @@ function decisions_ranking_node_info() {
  * This displays a textfield per choice, that should be filled with a
  * ranking.
  */
-function decisions_voting_ranking_form(&$node, $teaser, $page) {
+function decisions_ranking_voting_form(&$node, $teaser, $page) {
 
   $weight = 0;
   $form = array();
@@ -105,7 +105,7 @@ function decisions_voting_ranking_form(&$node, $teaser, $page) {
  * implementation of the decisions_view_results() hook for the runoff
  * module
  */
-function decisions_view_results_ranking($node, $teaser, $page) {
+function decisions_ranking_view_results($node, $teaser, $page) {
   $results = _decisions_calculate_results_ranking($node);
 
   // If no one has voted, $results = array() and thus is empty
@@ -166,7 +166,7 @@ function decisions_view_results_ranking($node, $teaser, $page) {
  *
  * @returns a formatted string
  */
-function decisions_format_votes_ranking($node, $votes) {
+function decisions_ranking_format_votes($node, $votes) {
   $ordered_votes = array();
   foreach ($votes as $vote) {
     // Need two dimensional results (if equal rankings are allowed)

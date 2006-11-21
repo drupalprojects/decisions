@@ -38,7 +38,7 @@ function decisions_poll_node_info() {
  * 
  * This creates a list of choices to allow the user to vote on choices.
  */
-function decisions_voting_poll_form(&$node, $teaser, $page) {
+function decisions_poll_voting_form(&$node, $teaser, $page) {
   if ($node->choice) {
     $list = array();
 
@@ -88,7 +88,7 @@ function decisions_voting_poll_form(&$node, $teaser, $page) {
  *
  * TODO: implement (http://drupal.org/node/48249)
  */
-function decisions_view_results_poll($node, $teaser, $page) {
+function decisions_poll_view_results($node, $teaser, $page) {
 
   $results = votingapi_get_voting_results('decisions', $node->nid);
 
@@ -133,7 +133,7 @@ function decisions_view_results_poll($node, $teaser, $page) {
  *
  * @returns a formatted string
  */
-function decisions_format_votes_poll($node, $votes) {
+function decisions_poll_format_votes($node, $votes) {
   $unordered_votes = array();
   foreach ($votes as $vote) {
     // Just need one dimensional results

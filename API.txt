@@ -14,51 +14,16 @@ In addition to the usual module hooks defined by Drupal,
 decisions.module also has its own hooks. modes that do not define
 mandatory hooks will create warnings and problems.
 
-decisions_view_voting_$mode()
------------------------------
-
-Mandatory. This hook has the duty to return a HTML form suitable for
-submitting new votes in the decision. It can also add arbitrary
-HTML. It is suggested to setup the form using the new form API and
-call drupal_get_form() to allow the theme to override the display.
-
-TODO: right now, there is a common theme hook for all hooks, which
-might be a problem.
-
-decision_$mode_vote()
----------------------
-
-Mandatory. This hook is called when a vote is registered. Form data
-setup in decisions_view_voting_$mode() will be available in the POST,
-normally. This will usually call votingapi_set_vote() or similar.
-
-decision_view_results_$mode()
------------------------------
-
-Mandatory. This hook is called when the user has already voted or when
-the module thinks it's relevant to display a decision's results. This
-will generally call _voting_api_get_raw_votes() or something similar.
-
 decisions_$mode_longname()
 --------------------------
 
 Optional. The nice long name associated with this mode. Defaults to
 "$mode".
 
-decisions_$mode_validate_vote()
--------------------------------
+decisions_$mode_algorithms()
+----------------------------
 
-Optional. Additional validation of vote submissions. Defaults to no
-validation. This hook should behave as a normal form validation hook
-(ie. hook_validate() in drupal terminology), that is, amongst other
-things, set errors using form_set_error(). It should return TRUE if
-the form is valid, FALSE otherwise.
-
-decisions_format_votes_$mode()
-------------------------------
-
-Mandatory. Format the votes of a user on a single line. Returns a
-string.
+Mandatory. Return a list of algorithms provided by this decision mode.
 
 decisions_$mode_node_info()
 ---------------------------
@@ -71,7 +36,42 @@ array made of:
  * name (e.g. "decisions-poll")
  * description (e.g. "Creates a poll")
 
-decisions_$mode_algorithm()
----------------------------
+decisions_$mode_voting_form()
+-----------------------------
 
-Mandatory. Return a list of algorithms provided by this decision mode.
+Mandatory. This hook has the duty to return a HTML form suitable for
+submitting new votes in the decision. It can also add arbitrary
+HTML. It is suggested to setup the form using the new form API and
+call drupal_get_form() to allow the theme to override the display.
+
+TODO: right now, there is a common theme hook for all hooks, which
+might be a problem.
+
+decision_$mode_view_results()
+-----------------------------
+
+Mandatory. This hook is called when the user has already voted or when
+the module thinks it's relevant to display a decision's results. This
+will generally call _voting_api_get_raw_votes() or something similar.
+
+decisions_format_votes_$mode()
+------------------------------
+
+Mandatory. Format the votes of a user on a single line. Returns a
+string.
+
+decision_$mode_vote()
+---------------------
+
+Mandatory. This hook is called when a vote is registered. Form data
+setup in decisions_view_voting_$mode() will be available in the POST,
+normally. This will usually call votingapi_set_vote() or similar.
+
+decisions_$mode_vote_validate()
+-------------------------------
+
+Optional. Additional validation of vote submissions. Defaults to no
+validation. This hook should behave as a normal form validation hook
+(ie. hook_validate() in drupal terminology), that is, amongst other
+things, set errors using form_set_error(). It should return TRUE if
+the form is valid, FALSE otherwise.

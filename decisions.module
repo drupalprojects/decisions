@@ -666,7 +666,7 @@ function decisions_tab_votes() {
     }
 
     $mode = _decisions_get_mode($node);
-    $function_format_votes = "decisions_format_votes_$mode";
+    $function_format_votes = "decisions_$mode_format_votes";
     if (!function_exists($function_format_votes)) {
       _decisions_panic_on_mode($mode);
       drupal_not_found();
@@ -961,8 +961,8 @@ function theme_decisions_bar($title, $percentage, $votes) {
  */
 function decisions_voting_form(&$node, $teaser = FALSE, $page = FALSE) {
   $mode = _decisions_get_mode($node);
-  if (function_exists("decisions_voting_{$mode}_form")) {
-    return call_user_func("decisions_voting_{$mode}_form", $node, $teaser, $page);
+  if (function_exists("decisions_{$mode}_voting_form")) {
+    return call_user_func("decisions_{$mode}_voting_form", $node, $teaser, $page);
   }
   else {
     _decisions_panic_on_mode($mode);
@@ -993,8 +993,8 @@ function decisions_view_results(&$node, $teaser, $page) {
   if (!decisions_meets_quorum($node)) {
     return '<div class="error">' . t("This decision is not valid. You will not be able to see it until the quorum is met. The quorum is set at %quorum.", array('%quorum' => _decisions_get_quorum($node))) . '</div>';
   } else {
-    if (function_exists("decisions_view_results_$mode")) {
-      return call_user_func("decisions_view_results_$mode", $node, $teaser, $page);
+    if (function_exists("decisions_$mode_view_results")) {
+      return call_user_func("decisions_$mode_view_results", $node, $teaser, $page);
     }
     else {
       _decisions_panic_on_mode($mode);
