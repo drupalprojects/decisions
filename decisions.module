@@ -114,7 +114,7 @@ function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_
   if ($content_type == 'decisions') {
     $node = node_load($content_id);
     $mode = _decisions_get_mode($node);
-    $function = "decisions_$mode_votingapi_calculate";
+    $function = "decisions_{$mode}_votingapi_calculate";
     if (function_exists($function)) {
       return call_user_func($function, $node, $cache, $votes, $content_type, $content_id);
     }
@@ -666,7 +666,7 @@ function decisions_tab_votes() {
     }
 
     $mode = _decisions_get_mode($node);
-    $function_format_votes = "decisions_$mode_format_votes";
+    $function_format_votes = "decisions_{$mode}_format_votes";
     if (!function_exists($function_format_votes)) {
       _decisions_panic_on_mode($mode, __FUNCTION__);
       drupal_not_found();
@@ -707,8 +707,8 @@ function decisions_node_info() {
     $function = "decisions_${mode}_node_info";
     if (function_exists($function)) {
       $mode_node_info = call_user_func($function);
-      $node_info["decisions_$mode"] = $mode_node_info;
-      $node_info["decisions_$mode"]['module'] = 'decisions';
+      $node_info["decisions_{$mode}"] = $mode_node_info;
+      $node_info["decisions_{$mode}"]['module'] = 'decisions';
     } else {
       _decisions_panic_on_mode($mode, __FUNCTION__);
     }
@@ -1076,8 +1076,8 @@ function decisions_cancel($nid) {
  */
 function decisions_vote_validate($node) {
   $mode = _decisions_get_mode($node);
-  if (function_exists("decisions_vote_validate_$mode") ) {
-    return call_user_func("decisions_vote_validate_$mode", $node);
+  if (function_exists("decisions_{$mode}_vote_validate") ) {
+    return call_user_func("decisions_{$mode}_vote_validate", $node);
   }
   return TRUE;
 }
