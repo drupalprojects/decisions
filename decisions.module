@@ -1077,7 +1077,7 @@ function decisions_cancel($nid) {
 function decisions_vote_validate($node) {
   $mode = _decisions_get_mode($node);
   if (function_exists("decisions_{$mode}_vote_validate") ) {
-    return call_user_func("decisions_{$mode}_vote_validate", $node);
+    return call_user_func("decisions_{$mode}_vote_validate", $node, $_POST);
   }
   return TRUE;
 }

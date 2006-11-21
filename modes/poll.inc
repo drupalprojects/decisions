@@ -182,12 +182,13 @@ function decisions_poll_vote($node, $form_values) {
  *
  * @returns boolean true if the form is valid
  */
-function decisions_poll_vote_validate($node, $form_id, $form_values) {
+function decisions_poll_vote_validate($node, $form_values) {
+  $ok = TRUE;
   if ($node->maxchoices == 1) {
     // plurality voting
     if (!array_key_exists($form_values['choice'], $node->choice)) {
       form_set_error('choice', 'At least one choice must be selected.');
-      return FALSE;
+      $ok = FALSE;
     }
   }
   else {
@@ -204,7 +205,7 @@ function decisions_poll_vote_validate($node, $form_id, $form_values) {
       //}
 
       // see if the box is checked
-      if (!empty($_POST['edit']['choice'][$key])) {
+      if (!empty($form_values['choice'][$key])) {
         $numchoices++;
       }
     }

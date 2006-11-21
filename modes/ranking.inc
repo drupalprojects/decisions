@@ -210,7 +210,7 @@ function decisions_ranking_vote($node, $form_values) {
  *
  * @returns boolean false on invalid forms, true otherwise.
  */
-function decisions_ranking_vote_validate($node, $form_id, $form_values) {
+function decisions_ranking_vote_validate($node, $form_values) {
   $ok = TRUE;
   // array used to check which values are set
   $setvalues = array();
@@ -219,10 +219,10 @@ function decisions_ranking_vote_validate($node, $form_id, $form_values) {
   foreach ($node->choice as $key => $choice) {
                 
     // count the number of choices that are ranked
-    if (!empty($_POST['edit']['choice'][$key])) {
+    if (!empty($form_values['choice'][$key])) {
       $numchoices++;
     }
-    $intvalue = intval($_POST['edit']['choice'][$key]);
+    $intvalue = intval($form_values['choice'][$key]);
     // mark this value as seen
     $setvalues[$intvalue]++;
     // check range
