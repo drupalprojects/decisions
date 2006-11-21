@@ -1094,11 +1094,12 @@ function decisions_eligible($node, $uid = NULL) {
 
   if ($node->uselist) {
     $can_vote = db_fetch_object(db_query("SELECT COUNT(*) AS eligible FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d", $node->nid, $uid));
+    $eligible = $can_vote->eligible;
   }
   else {
-    return user_access('vote on decisions');
+    $eligible = user_access('vote on decisions');
   }
-  return $can_vote->eligible;
+  return $eligible;
 }
 
 /**
