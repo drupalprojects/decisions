@@ -409,7 +409,7 @@ function decisions_menu($may_cache) {
         $title = $mode_node_info['name'];
       } else {
         $title = t('decisions-'.$mode);
-        _decisions_panic_on_mode($mode);
+        _decisions_panic_on_mode($mode, __FUNCTION__);
       }
 
       $items[] = array('path' => 'node/add/decisions-'.$mode,
@@ -668,7 +668,7 @@ function decisions_tab_votes() {
     $mode = _decisions_get_mode($node);
     $function_format_votes = "decisions_$mode_format_votes";
     if (!function_exists($function_format_votes)) {
-      _decisions_panic_on_mode($mode);
+      _decisions_panic_on_mode($mode, __FUNCTION__);
       drupal_not_found();
     }
     
@@ -710,7 +710,7 @@ function decisions_node_info() {
       $node_info["decisions_$mode"] = $mode_node_info;
       $node_info["decisions_$mode"]['module'] = 'decisions';
     } else {
-      _decisions_panic_on_mode($mode);
+      _decisions_panic_on_mode($mode, __FUNCTION__);
     }
   }
   
@@ -965,7 +965,7 @@ function decisions_voting_form(&$node, $teaser = FALSE, $page = FALSE) {
     return call_user_func("decisions_{$mode}_voting_form", $node, $teaser, $page);
   }
   else {
-    _decisions_panic_on_mode($mode);
+    _decisions_panic_on_mode($mode, __FUNCTION__);
   }
 }
 
@@ -993,11 +993,12 @@ function decisions_view_results(&$node, $teaser, $page) {
   if (!decisions_meets_quorum($node)) {
     return '<div class="error">' . t("This decision is not valid. You will not be able to see it until the quorum is met. The quorum is set at %quorum.", array('%quorum' => _decisions_get_quorum($node))) . '</div>';
   } else {
-    if (function_exists("decisions_$mode_view_results")) {
-      return call_user_func("decisions_$mode_view_results", $node, $teaser, $page);
+    $function = "decisions_{$mode}_view_results";
+    if (function_exists($function)) {
+      return call_user_func($function, $node, $teaser, $page);
     }
     else {
-      _decisions_panic_on_mode($mode);
+      _decisions_panic_on_mode($mode, __FUNCTION__);
     }
   }
 }
@@ -1017,7 +1018,7 @@ function decisions_vote($node) {
       call_user_func("decisions_{$mode}_vote", $node, $form_values);
     }
     else {
-      _decisions_panic_on_mode($mode);
+      _decisions_panic_on_mode($mode, __FUNCTION__);
     }
   }
   else {
@@ -1104,9 +1105,9 @@ function decisions_eligible($node, $uid = NULL) {
  * internal function factored out that just rings lots of bells when
  * we detect an unknown mode
  */
-function _decisions_panic_on_mode($mode) {
-  watchdog('decisions', t('Unknown decision mode : @mode.', array('@mode' => $mode), WATCHDOG_ERROR));
-  drupal_set_message(t('Unknown decision mode : @mode.', array('@mode' => $mode), 'error'));
+function _decisions_panic_on_mode($mode, $function = '') {
+  watchdog('decisions', t('Unknown decision mode : @mode in "@function".', array('@mode' => $mode, '@function' => $function), WATCHDOG_ERROR));
+  drupal_set_message(t('Unknown decision mode : @mode in "@function".', array('@mode' => $mode, '@function' => $function), 'error'));
 }
 
 /**
@@ -1202,21 +1203,14 @@ function _decisions_user_votes($node) {
 }
 
 /**
- * View the voting form.
- *
- * This calls a function decisions_vote_$mode, where $mode is defined
- * in the node. If the function does not exist, a watchdog error is
- * raised and the error is reported using drupal_set_message().
- *
- * This also takes care of registering new votes, if the vote button
- * has been pressed.
+ * Helper function to list algorithms for a given mode
  */
 function _decisions_algorithms($mode) {
   if (function_exists("decisions_{$mode}_algorithms")) {
     return call_user_func("decisions_{$mode}_algorithms");
   }
   else {
-    _decisions_panic_on_mode($mode);
+    _decisions_panic_on_mode($mode, __FUNCTION__);
   }
 }
 
