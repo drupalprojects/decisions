@@ -182,6 +182,87 @@ function decisions_ranking_format_votes($node, $votes) {
 }
 
 /**
+ * Implementation of the vote hook for the runoff module.
+ *
+ * This takes care of registering the vote in runoff nodes.
+ */
+function decisions_ranking_vote($node, $form_values) {
+  $votes = array();
+  foreach ( $form_values['choice'] as $choice => $rank ) {
+    $vote = new stdClass();
+    $vote->value = $rank;
+
+    // A zero value indicates they didn't rank that choice
+    if ($vote->value != 0) {
+      $vote->value_type = 'option';
+      $vote->tag = $choice;
+      $votes[] = $vote;
+    }
+  }
+  votingapi_set_vote('decisions', $node->nid, $votes);
+}
+
+/**
+ * implementation of the vote validation hook for the runoff module.
+ *
+ * This checks if the submitted values are within range, if they are
+ * not empty, and if they are not repeated.
+ *
+ * @returns boolean false on invalid forms, true otherwise.
+ */
+function decisions_ranking_vote_validate($node, $form_id, $form_values) {
+  $ok = TRUE;
+  // array used to check which values are set
+  $setvalues = array();
+        
+  $numchoices = 0;
+  foreach ($node->choice as $key => $choice) {
+                
+    // count the number of choices that are ranked
+    if (!empty($_POST['edit']['choice'][$key])) {
+      $numchoices++;
+    }
+    $intvalue = intval($_POST['edit']['choice'][$key]);
+    // mark this value as seen
+    $setvalues[$intvalue]++;
+    // check range
+    if ($intvalue > count($node->choice) || $intvalue < 0) {
+      form_set_error('Choice_'.$key, "illegal rank for choice $key: $intvalue (min: 1, max: " . count($node->choice) . ")");
+      $ok = FALSE;
+    }
+
+  }
+        
+  // too many choices ranked
+  if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
+    form_set_error('choice', t('@num choices were selected but only @max are allowed.', array('@num' => $numchoices, '@max' => $node->maxchoices)));
+    $ok = false;
+  }
+
+  // not enough choices ranked
+  $minchoices = 1;
+  if ($numchoices < $minchoices) {
+    form_set_error('choice', t('At least one choice must be selected.'));
+    $ok = false;
+  }
+
+  // Check that multiple choices are not set to the same value
+  foreach ($setvalues as $val => $count) {
+    if ($val != 0 && $count > 1) {
+      form_set_error('choice', t('Multiple choices given the rank of @val.', array('@val' => $val)));
+      $ok = false;
+    }
+  }
+
+
+  return $ok;
+}
+
+/***********************************************************************
+ * INTERNAL FUNCTIONS
+ **********************************************************************/
+
+/**
  * Calculate the results for a ranking decision based on the algorithm
  * 
  * @param $node
@@ -514,106 +595,4 @@ function _decisions_calculate_instantrunoff($node) {
   $resultObj->totalVotes = $totalVotes;
   return $resultObj;
 
-}
-
-/**
- * Recalculate and cache results after a new vote
- */
-
-function decisions_votingapi_calculate_ranking($node, $cache, $votes, $content_type, $content_id) {
-}
-
-/**
- * Eliminates the candidate with the lowest number of ballots and redistributes
- * those votes to the voters' next preference.
- *
- * @param $aRound
- *   Array containing the per-choice number of first-place votes for this round
- *
- * @param $votes
- *   Array containing each individual ranking for all choices
- *
- * @param $min
- *   Integer with the minimum number of votes found out of all candidates
- *     this round.
- */
-function _decision_calculate_ranking_nextround($aRound, &$votes, $min) {
-
-}
-
-/**
- * Implementation of the vote hook for the runoff module.
- *
- * This takes care of registering the vote in runoff nodes.
- */
-function decisions_ranking_vote($node, $form_values) {
-  $votes = array();
-  foreach ( $form_values['choice'] as $choice => $rank ) {
-    $vote = new stdClass();
-    $vote->value = $rank;
-
-    // A zero value indicates they didn't rank that choice
-    if ($vote->value != 0) {
-      $vote->value_type = 'option';
-      $vote->tag = $choice;
-      $votes[] = $vote;
-    }
-  }
-  votingapi_set_vote('decisions', $node->nid, $votes);
-}
-
-/**
- * implementation of the vote validation hook for the runoff module.
- *
- * This checks if the submitted values are within range, if they are
- * not empty, and if they are not repeated.
- *
- * @returns boolean false on invalid forms, true otherwise.
- */
-function decisions_ranking_vote_validate($node, $form_id, $form_values) {
-  $ok = TRUE;
-  // array used to check which values are set
-  $setvalues = array();
-        
-  $numchoices = 0;
-  foreach ($node->choice as $key => $choice) {
-                
-    // count the number of choices that are ranked
-    if (!empty($_POST['edit']['choice'][$key])) {
-      $numchoices++;
-    }
-    $intvalue = intval($_POST['edit']['choice'][$key]);
-    // mark this value as seen
-    $setvalues[$intvalue]++;
-    // check range
-    if ($intvalue > count($node->choice) || $intvalue < 0) {
-      form_set_error('Choice_'.$key, "illegal rank for choice $key: $intvalue (min: 1, max: " . count($node->choice) . ")");
-      $ok = FALSE;
-    }
-
-  }
-        
-  // too many choices ranked
-  if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
-    form_set_error('choice', t('@num choices were selected but only @max are allowed.', array('@num' => $numchoices, '@max' => $node->maxchoices)));
-    $ok = false;
-  }
-
-  // not enough choices ranked
-  $minchoices = 1;
-  if ($numchoices < $minchoices) {
-    form_set_error('choice', t('At least one choice must be selected.'));
-    $ok = false;
-  }
-
-  // Check that multiple choices are not set to the same value
-  foreach ($setvalues as $val => $count) {
-    if ($val != 0 && $count > 1) {
-      form_set_error('choice', t('Multiple choices given the rank of @val.', array('@val' => $val)));
-      $ok = false;
-    }
-  }
-
-
-  return $ok;
 }
