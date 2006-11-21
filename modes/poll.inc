@@ -155,24 +155,25 @@ function decisions_poll_vote($node, $form_values) {
   $votes = array();
   if ($node->maxchoices == 1) {
     // plurality voting
+    $vote = new stdClass();
     $vote->value = 1;
     $vote->tag = $form_values['choice'];
-    $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
+    $vote->value_type = 'option';
     $votes[] = $vote;
   }
   else {
     // approval voting
     foreach ($node->choice as $key => $choice) {
-      $vote->value = $form_values['choice'][$key];
-
-      if (isset($vote->value)) {
-        $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
+      if (isset($form_values['choice'][$key])) {
+        $vote = new stdClass();
+        $vote->value = $form_values['choice'][$key];
+        $vote->value_type = 'option';
         $vote->tag = $key;
         $votes[] = $vote;
       }
     }
   }
-  votingapi_set_vote('decisions', $node->nid, $vote);
+  votingapi_set_vote('decisions', $node->nid, $votes);
 }
 
 /**
