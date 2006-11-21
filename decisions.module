@@ -774,8 +774,12 @@ function decisions_update($node) {
 
   // Start at one rather than 0 due to Drupal FormAPI
   $i = 1;
-  foreach ($node->choice as $choice) {
-    if ($choice['label'] != '') {
+  foreach ($node->choice as $key => $choice) {
+    // XXX: this is ugly. For some reason, formapi was passing a value
+    // at the end of the array in which $choice = 0 *and*
+    // isset($choice['label']) returns true. so we use this whole ugly
+    // string.
+    if (is_array($choice) && array_key_exists('label', $choice) && $choice['label'] != '') {
       db_query("INSERT INTO {decisions_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $node->nid, $choice['label'], $i++);
     }
   }
