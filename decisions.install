@@ -97,6 +97,18 @@ function decisions_update_4() {
   return $items;
 }
 
+function decisions_update_5() {
+  switch ($GLOBALS['db_type']) {
+  case 'mysql':
+  case 'mysqli':
+    $items[] = update_sql("ALTER TABLE {decisions} MODIFY `quorum` int(10) NOT NULL AFTER mode");
+    $items[] = update_sql("ALTER TABLE {decisions} CHANGE COLUMN quorum `quorum_abs` int(10) unsigned NOT NULL default '0'");
+    $items[] = update_sql("ALTER TABLE {decisions} ADD COLUMN quorum_percent float unsigned NOT NULL default '0' AFTER quorum_abs");
+    break;
+  }
+  return $items;
+}
+
 /**
  * Implementation of hook_uninstall().
  */
