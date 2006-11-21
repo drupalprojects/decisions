@@ -134,41 +134,25 @@ function decisions_form(&$node, $form_values = NULL) {
   if (function_exists('_drupal_add_js')) {
     $jQuery = TRUE;
     // Using 5.0 or 4.7 with the jQuery patch
-    drupal_add_js("$(document).ready(function(){
-  	                 var add_choice = document.createElement('input');
-  	                 add_choice.id = 'addChoice';
-  	                 add_choice.type = 'button';
-  	                 add_choice.value = '" . t('Add choice') . "';
-  	                 $('#morechoices').append(add_choice);
-                         $('#addChoice').fadeIn(1000);
-  	                 $('#addChoice').bind('click', function () {
-  	                         var nextChoice = $('input.choices').length + 1;
-  	                         var div = document.createElement('div');
-  	                         div.className = 'form-item choiceDiv';
-  	 
-  	                         var label = document.createElement('label');
-  	                         label.htmlFor = 'edit-choice-' + nextChoice + '-label';
-  	                         label.appendChild(document.createTextNode('"
-  	                                 // Hack for translating string before we know the specific number
-  	                                 . t('Choice @n', array('@n' => -1)) . ": '.replace('-1', nextChoice)));
-  	 
-  	                         div.appendChild(label);
-  	 
-  	                         var input = document.createElement('input');
-  	                         input.type = 'text';
-  	                         input.maxlength = 128;
-  	                         input.name = 'edit[choice][' + nextChoice + '][label]';
-  	                         input.id = 'edit-choice-' + nextChoice + '-label';
-  	                         input.size = 60;
-  	                         input.className = 'form-text choices';
-  	 
-  	                         div.appendChild(input);
-  	 
-  	                         $('.choices:last').after(div);
-                                 $('.choiceDiv:last').fadeIn(1000);
-  	                         $('#edit-choices').each(function(){this.value=nextChoice});
-  	                 });
-  	         });", 'inline');
+        $js = '$(document).ready(function(){
+  $("#morechoices").hide();
+  $(\'<input type="button" id="add-choice" value="'. t('Add choice') .'"/>\').insertAfter("#morechoices");
+  $("#add-choice").click(function(){
+    var nextChoiceN = $("input.choices").length + 1;
+    var html = \'<div class="form-item">\' +
+      \'<label for="edit-choice-\' + nextChoiceN + \'-label">\' + \''. 
+    // Hack for translating string before we know the specific number
+    t('Choice @n', array('@n' => 'n'))
+    .':\'.replace(\'n\', nextChoiceN) + \'<\/label>\' +
+     \'<input type="text" maxlength="128" name="choice[\' + nextChoiceN + \'][label]"" id="edit-choice-\' + nextChoiceN + \'-label" size="60" class="form-text choices" />\' +
+     \'<\/div>\';
+      
+    $(html).insertBefore("#morechoices").fadeIn();
+    $("#edit-choices").val(nextChoiceN);
+    $("#edit-changed").val($("#edit-changed").val() + 1);
+  });
+});';
+    drupal_add_js($js, 'inline');
     
   }
 
@@ -233,26 +217,28 @@ function decisions_form(&$node, $form_values = NULL) {
                                           );
   }
 
-  $form['settings'] = array(
-                            '#type' => 'fieldset',
-                            '#tree' => TRUE,
-                            '#title' => t('Decision settings'),
-                            '#collapsible' => TRUE,
-                            '#weight' => 2,
-                            );
-
   $maxChoiceList = array();
   for ($i = 0; $i <= $choices; $i++) {
     $maxChoiceList[$i] = ($i == 0? 'No limit' : $i);
   }
 
-  $form['settings']['maxchoices'] = array(
+  $form['choice']['maxchoices'] = array(
                                           '#type' => 'select',
                                           '#title' => t('Maximum Choices'),
                                           '#default_value' => ($node->maxchoices? $node->maxchoices : 0),
                                           '#options' => $maxChoiceList,
-                                          '#description' => t('Limits the total number of choices voters may select.')
+                                          '#description' => t('Limits the total number of choices voters may select.'),
+                                          '#weight' => 5,
                                           );
+
+  $form['settings'] = array(
+                            '#type' => 'fieldset',
+                            '#tree' => TRUE,
+                            '#title' => t('Decision settings'),
+                            '#collapsible' => TRUE,
+                            '#collapsed' => TRUE,
+                            '#weight' => 2,
+                            );
 
   $algs = _decisions_algorithms($mode);
   
@@ -296,24 +282,6 @@ function decisions_form(&$node, $form_values = NULL) {
                                        '#description' => t('After this period, the decision will be closed automatically.')
                                        );
 
-  $form['settings']['quorum_abs'] = array(
-                                       '#type' => 'textfield',
-                                       '#size' => 10,
-                                       '#title' => t('Minimum number of votes'),
-                                       '#default_value' => ($node->quorum_abs? $node->quorum_abs : 0),
-                                       '#required' => TRUE,
-                                       '#description' => t('Minimum number of people required for this decision to be valid.')
-                                       );
-
-  $form['settings']['quorum_percent'] = array(
-                                       '#type' => 'textfield',
-                                       '#size' => 10,
-                                       '#title' => t('Minimum percentage of votes (%)'),
-                                       '#default_value' => ($node->quorum_percent? $node->quorum_percent : 0),
-                                       '#required' => TRUE,
-                                       '#description' => t('Minimum number of people required for this decision to be valid, expressed as a percentage of the elligible voters (rounded up).')
-                                       );
-
   $form['settings']['uselist'] = array(
                                        '#type' => 'checkbox',
                                        '#title' => t('Restrict voting to electoral list'),
@@ -329,6 +297,36 @@ function decisions_form(&$node, $form_values = NULL) {
                                          );
 
   
+  $form['settings']['quorum'] = array(
+                            '#type' => 'fieldset',
+                            '#tree' => TRUE,
+                            '#title' => t('Quorum'),
+                            '#collapsible' => TRUE,
+                            '#collapsed' => TRUE,
+                            '#weight' => 2,
+                            '#description' => t('These settings allow for a decision to be valid only if a certain number of eligible voters have cast their ballot. It can be configured both with an absolute number and a percentage of eligible voters. For example, a common setting is "50% + 1", which would be expressed as "@percent: 50" and "@number: 1".', array('@percent' => t('Percentage (%)'), '@number' => t('Number'))),
+                            );
+
+  $form['settings']['quorum']['quorum_abs'] = array(
+                                       '#type' => 'textfield',
+                                       '#size' => 10,
+                                       '#title' => t('Number'),
+                                       '#default_value' => ($node->quorum_abs? $node->quorum_abs : 0),
+                                       '#required' => TRUE,
+                                       '#description' => t('Minimum number of voters required to cast their ballot for this decision to be valid.')
+                                       );
+
+  $form['settings']['quorum']['quorum_percent'] = array(
+                                       '#type' => 'textfield',
+                                       '#size' => 10,
+                                       '#title' => t('Percentage (%)'),
+                                       '#default_value' => ($node->quorum_percent? $node->quorum_percent : 0),
+                                       '#required' => TRUE,
+                                       '#description' => t('Minimum numbers of voters required for this decision to be valid, expressed as a percentage of the eligible voters (rounded up).'),
+                                       '#weight' => -1,
+                                       );
+
+
   $form['format'] = filter_form($node->form);
   $form['#multistep'] = TRUE;
   return $form;
