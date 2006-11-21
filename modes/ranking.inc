@@ -218,13 +218,8 @@ function _decisions_calculate_results_ranking($node) {
  */
 
 function _decisions_calculate_bordacount($node) {
-  $votes = array();
-  // ORDER BY value ASC lets us ensure no gaps
-  $result = db_query("SELECT * FROM {votingapi_vote} v WHERE content_type='%s' AND content_id=%d ORDER BY value ASC", 'decisions', $node->nid);
-  while ($vobj = db_fetch_object($result)) {
-    $votes[] = $vobj;
-  }
-
+  $votes = _decisions_votes($node);
+  
   if (count($votes) == 0) {
     // no votes yet
     return array();
@@ -304,7 +299,7 @@ function _decisions_calculate_bordacount($node) {
 function _decisions_calculate_instantrunoff($node) {
   $votes = array();
   // ORDER BY value ASC lets us ensure no gaps
-  $result = db_query("SELECT * FROM {votingapi_vote} v WHERE content_type='%s' AND content_id=%d ORDER BY value ASC", 'decisions', $node->nid);
+  $result = db_query("SELECT * FROM {votingapi_vote} v WHERE content_type='%s' AND content_id='%d' ORDER BY value ASC", 'decisions', $node->nid);
   while ($vobj = db_fetch_object($result)) {
     $votes[] = $vobj;
   }
@@ -554,11 +549,12 @@ function _decision_calculate_ranking_nextround($aRound, &$votes, $min) {
 function decisions_ranking_vote($node, $form_values) {
   $votes = array();
   foreach ( $form_values['choice'] as $choice => $rank ) {
+    $vote = new stdClass();
     $vote->value = $rank;
 
     // A zero value indicates they didn't rank that choice
     if ($vote->value != 0) {
-      $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
+      $vote->value_type = 'option';
       $vote->tag = $choice;
       $votes[] = $vote;
     }
