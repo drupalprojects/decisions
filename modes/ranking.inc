@@ -132,7 +132,7 @@ function decisions_ranking_view_results($node, $teaser, $page) {
     $output .= '</ol>';
   }
 
-  if (user_access('administer decisions') && $results->matrix) {
+  if (user_access('inspect all votes') && $results->matrix) {
     $header[0] = "Rounds";
     $round = 1;
     if (count($results->matrix) > 0) {
