@@ -130,30 +130,32 @@ function decisions_ranking_view_results($node, $teaser, $page) {
       $output .= '</li>';
     }
     $output .= '</ol>';
+  }
 
-    // XXX: debugging code
-    if (user_access('administer decisions') && $results->matrix) {
-      $output .= '<br />Internal values, for debugging purposes:';
-      // output the table of algorithm rounds
-      $output .= '<table border="1"><tr><td>Round</td>';
-      foreach ($node->choice as $choice) {
-        $output .= '<td>' . check_plain($choice['label']) . '</td>';
+  if (user_access('administer decisions') && $results->matrix) {
+    $header[0] = "Rounds";
+    $round = 1;
+    if (count($results->matrix) > 0) {
+      foreach ($results->matrix as $aRound) {
+        $header[$round] = $round;
+        $round++;
       }
-      $output .= '</tr>';
-      $round = 1;
-      if (count($results->matrix) > 0) {
-        foreach ($results->matrix as $aRound) {
-          $output .= "<tr><td>$round.</td>";
-          foreach ($node->choice as $key => $choicename) {
-            $output .= '<td>' . count($aRound[$key]) . '</td>';
-          }
-          $output .= '</tr>';
-          $round++;
-        }
-      }
-
-      $output .= '</table>';
     }
+    
+    $round = 1;
+    $i = 0;
+    if (count($results->matrix) > 0) {
+      foreach ($results->matrix as $aRound) {
+        foreach ($node->choice as $key => $choicename) {
+          $rows[$i][0] = $choicename['label'];
+          $rows[$i][$round] = count($aRound[$key]);
+          $i++;
+        }
+        $i=0;
+        $round++;
+      }
+    }
+    $output .= theme_table($header, $rows);
 
     return $output;
   }
