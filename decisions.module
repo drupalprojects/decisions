@@ -246,10 +246,10 @@ function decisions_form(&$node, $form_values = NULL) {
     $voting_algorithms[$alg] = ucwords($alg);
   }
 
-  $defaultalg = ($form_values['edit']['settings']['algorithm']?
-                 $form_values['edit']['settings']['algorithm'] : 
-                 $node->algorithm);
-                        
+  $defaultalg = ($form_values['edit']['settings']['algorithm'] ?
+                   $form_values['edit']['settings']['algorithm'] : 
+                   ($node->algorithm ? $node->algorithm : 
+                     (isset($algs[0]) ? $algs[0] : '')));
 
   if (count($voting_algorithms) > 1) {
     $form['settings']['algorithm'] = array(
