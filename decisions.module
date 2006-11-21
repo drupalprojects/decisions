@@ -476,7 +476,7 @@ function decisions_menu($may_cache) {
           $items[] = array(
                            'path' => 'node/' . $nid . '/remove',
                            'callback' => 'decisions_remove_voter',
-                           'access' => user_access('administer '),
+                           'access' => user_access('administer decisions'),
                            'weight' => 3,
                            'type' => MENU_CALLBACK,
                            );
