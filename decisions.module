@@ -217,20 +217,6 @@ function decisions_form(&$node, $form_values = NULL) {
                                           );
   }
 
-  $maxChoiceList = array();
-  for ($i = 0; $i <= $choices; $i++) {
-    $maxChoiceList[$i] = ($i == 0? 'No limit' : $i);
-  }
-
-  $form['choice']['maxchoices'] = array(
-                                          '#type' => 'select',
-                                          '#title' => t('Maximum Choices'),
-                                          '#default_value' => ($node->maxchoices? $node->maxchoices : 0),
-                                          '#options' => $maxChoiceList,
-                                          '#description' => t('Limits the total number of choices voters may select.'),
-                                          '#weight' => 5,
-                                          );
-
   $form['settings'] = array(
                             '#type' => 'fieldset',
                             '#tree' => TRUE,
@@ -239,6 +225,19 @@ function decisions_form(&$node, $form_values = NULL) {
                             '#collapsed' => TRUE,
                             '#weight' => 2,
                             );
+
+  $maxChoiceList = array();
+  for ($i = 0; $i <= $choices; $i++) {
+    $maxChoiceList[$i] = ($i == 0? 'No limit' : $i);
+  }
+
+  $form['settings']['maxchoices'] = array(
+                                          '#type' => 'select',
+                                          '#title' => t('Maximum Choices'),
+                                          '#default_value' => ($node->maxchoices? $node->maxchoices : 0),
+                                          '#options' => $maxChoiceList,
+                                          '#description' => t('Limits the total number of choices voters may select.'),
+                                          );
 
   $algs = _decisions_algorithms($mode);
   
