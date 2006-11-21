@@ -89,9 +89,7 @@ function decisions_voting_poll_form(&$node, $teaser, $page) {
  * TODO: implement (http://drupal.org/node/48249)
  */
 function decisions_view_results_poll($node, $teaser, $page) {
-  // TODO: use VotingAPI instead of SQL
-  $result = db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid);
-  $total_votes = db_num_rows($result);
+
   $results = votingapi_get_voting_results('decisions', $node->nid);
 
   // Count the votes for each choice
@@ -108,6 +106,7 @@ function decisions_view_results_poll($node, $teaser, $page) {
     $votes[$voteval] += $result->value;
   }
 
+  $total_votes = count($votes);
   if ($node->choice && $total_votes > 0) {
     // TODO: Those <div>s and <br />s should be in a theme function. First collect all the data in a structure, then theme it.
     // display results for each possible choice
