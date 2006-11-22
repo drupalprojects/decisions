@@ -19,6 +19,7 @@ include_once(drupal_get_path('module', 'decisions').'/decisions_datetime.inc');
 define('DECISIONS_DEFAULT_ELECTORAL_LIST', 0);
 // always, aftervote, or afterclose
 define('DECISIONS_DEFAULT_VIEW_RESULTS', 'aftervote');
+define('DECISIONS_RUNTIME_INFINITY', 1000000000); // equals 10 ** 9 seconds
 
 /**
  * Implementation of hook_access().
@@ -121,8 +122,6 @@ function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_
     }
   }
 }
-
-
 
 /**
  * Implementation of hook_form().
@@ -298,7 +297,11 @@ function decisions_form(&$node, $form_values = NULL) {
   
   $startdate = !is_null($node->startdate) ? $node->startdate : time();
   $runtime = !is_null($node->runtime) ? $node->runtime : variable_get('decisions_default_runtime', 24 * 60 * 60);
-  $enddate = $startdate + $runtime;
+  if ($runtime == DECISIONS_RUNTIME_INFINITY) {
+    $enddate = $startdate; // by default
+  } else {
+    $enddate = $startdate + $runtime;
+  }
   
   $form['settings']['date']['startdate'] = array(
     '#type' => 'fieldset',
@@ -307,12 +310,20 @@ function decisions_form(&$node, $form_values = NULL) {
   );  
   $form['settings']['date']['startdate']['date'] = decisions_form_date($startdate);
   
+  $form['settings']['date']['noenddate'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('No closing date'),
+    '#default_value' => ($runtime == DECISIONS_RUNTIME_INFINITY),
+    '#description' => t('Check this box if you do not want the vote to close on a specific date.'),
+  );
+
   $form['settings']['date']['enddate'] = array(
     '#type' => 'fieldset',
     '#collapsed' => FALSE,
     '#description' => t('Closing date')
   );  
   $form['settings']['date']['enddate']['date'] = decisions_form_date($enddate);
+
   
   $form['settings']['quorum'] = array(
                             '#type' => 'fieldset',
@@ -787,14 +798,22 @@ function decisions_cancel_form($nid) {
  */
 function decisions_update($node) {
   // Compute startdate and runtime.
+  drupal_set_message("noeendate: " . $node->settings['date']['noenddate']);
   $startdate = decisions_translate_form_date($node->settings['date']['startdate']['date']);
-  $enddate =  decisions_translate_form_date($node->settings['date']['enddate']['date']);
-  if ($enddate < $startdate) {
-    form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
-    $enddate = $startdate;
+  if ($node->settings['date']['noenddate']) {
+    drupal_set_message("noeendate: true");
+    $runtime = DECISIONS_RUNTIME_INFINITY;
+  } else {
+    drupal_set_message("noeendate:false");
+    $enddate =  decisions_translate_form_date($node->settings['date']['enddate']['date']);
+    if ($enddate < $startdate) {
+      form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
+      $enddate = $startdate;
+    }
+    $runtime = $enddate - $startdate;
   }
-  $runtime = $enddate - $startdate;
-  
+  drupal_set_message("runtime = " . $runtime);
+    
   db_query("UPDATE {decisions} SET quorum_abs=%d, quorum_percent=%f, active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d, startdate=%d WHERE nid = %d", $node->settings['quorum_abs'], $node->settings['quorum_percent'], $node->settings['active'], $runtime, $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $startdate, $node->nid);
   // XXX: should update decisions here, when it has some parameters
   // XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
@@ -832,13 +851,17 @@ function _decisions_get_mode($node) {
 function decisions_insert($node) {
   // Compute startdate and runtime.
   $startdate = decisions_translate_form_date($node->settings['date']['startdate']['date']);
-  $enddate =  decisions_translate_form_date($node->settings['date']['enddate']['date']);
-  if ($enddate < $startdate) {
-    form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
-    $enddate = $startdate;
+  if ($node->settings['date']['noenddate']) {
+    $runtime = DECISIONS_RUNTIME_INFINITY;
+  } else {
+    $enddate =  decisions_translate_form_date($node->settings['date']['enddate']['date']);
+    if ($enddate < $startdate) {
+      form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
+      $enddate = $startdate;
+    }
+    $runtime = $enddate - $startdate;
   }
-  $runtime = $enddate - $startdate;
-
+  
   // just create an empty entry for now
   $mode = _decisions_get_mode($node);
 
