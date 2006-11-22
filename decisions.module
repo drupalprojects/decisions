@@ -1,5 +1,4 @@
 <?php
-include_once(drupal_get_path('module', 'decisions').'/decisions_datetime.inc');
 
 /**
  * @file
@@ -426,6 +425,9 @@ function decisions_menu($may_cache) {
   // http://drupaldocs.org/api/head/function/hook_init
   decisions_modes();
 
+  // extension files are included here in order to lighten Drupal bootstrap
+  include_once(drupal_get_path('module', 'decisions').'/decisions_datetime.inc');
+  
   $items = array();
 
   if ($may_cache) {
@@ -447,7 +449,6 @@ function decisions_menu($may_cache) {
                        );
     }
     
-
     $items[] = array('path' => 'decisions/cancel',
                      'title' => t('cancel'),
                      'callback' => 'decisions_cancel',
