@@ -1,4 +1,5 @@
 <?php
+include_once(drupal_get_path('module', 'decisions').'/decisions_datetime.inc');
 
 /**
  * @file
@@ -271,16 +272,6 @@ function decisions_form(&$node, $form_values = NULL) {
                                       '#description' => t('When a decision is closed users may no longer vote on it.'),
                                       );
 
-  $_duration = array(0 => t('Unlimited')) + drupal_map_assoc(array(86400, 172800, 345600, 604800, 1209600, 2419200, 4838400, 9676800, 31536000), 'format_interval');
-
-  $form['settings']['runtime'] = array(
-                                       '#type' => 'select',
-                                       '#title' => t('Decision duration'),
-                                       '#default_value' => ($node->runtime? $node->runtime : 0),
-                                       '#options' => $_duration,
-                                       '#description' => t('After this period, the decision will be closed automatically.')
-                                       );
-
   $form['settings']['uselist'] = array(
                                        '#type' => 'checkbox',
                                        '#title' => t('Restrict voting to electoral list'),
@@ -295,6 +286,33 @@ function decisions_form(&$node, $form_values = NULL) {
                                          '#default_value' => isset($node->showvotes)? $node->showvotes : 1,
                                          );
 
+  
+//  $_duration = array(0 => t('Unlimited')) + drupal_map_assoc(array(86400, 172800, 345600, 604800, 1209600, 2419200, 4838400, 9676800, 31536000), 'format_interval');
+
+  $form['settings']['date'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Date options'),
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE,
+  );
+  
+  $startdate = !is_null($node->startdate) ? $node->startdate : time();
+  $runtime = !is_null($node->runtime) ? $node->runtime : variable_get('decisions_default_runtime', 24 * 60 * 60);
+  $enddate = $startdate + $runtime;
+  
+  $form['settings']['date']['startdate'] = array(
+    '#type' => 'fieldset',
+    '#collapsed' => FALSE,
+    '#description' => t('Opening date')
+  );  
+  $form['settings']['date']['startdate']['date'] = decisions_form_date($startdate);
+  
+  $form['settings']['date']['enddate'] = array(
+    '#type' => 'fieldset',
+    '#collapsed' => FALSE,
+    '#description' => t('Closing date')
+  );  
+  $form['settings']['date']['enddate']['date'] = decisions_form_date($enddate);
   
   $form['settings']['quorum'] = array(
                             '#type' => 'fieldset',
@@ -400,6 +418,7 @@ function decisions_menu($may_cache) {
   $items = array();
 
   if ($may_cache) {
+  
     $modes = decisions_modes();
     foreach ($modes as $mode) {
       $function = "decisions_${mode}_node_info";
@@ -416,6 +435,7 @@ function decisions_menu($may_cache) {
                        'access' => user_access('create decisions'),
                        );
     }
+    
 
     $items[] = array('path' => 'decisions/cancel',
                      'title' => t('cancel'),
@@ -766,7 +786,16 @@ function decisions_cancel_form($nid) {
  * This is called upon node edition.
  */
 function decisions_update($node) {
-  db_query("UPDATE {decisions} SET quorum_abs=%d, quorum_percent=%f, active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d WHERE nid = %d", $node->settings['quorum_abs'], $node->settings['quorum_percent'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $node->nid);
+  // Compute startdate and runtime.
+  $startdate = decisions_translate_form_date($node->settings['date']['startdate']['date']);
+  $enddate =  decisions_translate_form_date($node->settings['date']['enddate']['date']);
+  if ($enddate < $startdate) {
+    form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
+    $enddate = $startdate;
+  }
+  $runtime = $enddate - $startdate;
+  
+  db_query("UPDATE {decisions} SET quorum_abs=%d, quorum_percent=%f, active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d, startdate=%d WHERE nid = %d", $node->settings['quorum_abs'], $node->settings['quorum_percent'], $node->settings['active'], $runtime, $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $startdate, $node->nid);
   // XXX: should update decisions here, when it has some parameters
   // XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
   db_query('DELETE FROM {decisions_choices} WHERE nid = %d', $node->nid);
@@ -801,11 +830,20 @@ function _decisions_get_mode($node) {
  * This is called upon node creation
  */
 function decisions_insert($node) {
+  // Compute startdate and runtime.
+  $startdate = decisions_translate_form_date($node->settings['date']['startdate']['date']);
+  $enddate =  decisions_translate_form_date($node->settings['date']['enddate']['date']);
+  if ($enddate < $startdate) {
+    form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
+    $enddate = $startdate;
+  }
+  $runtime = $enddate - $startdate;
+
   // just create an empty entry for now
   $mode = _decisions_get_mode($node);
 
   $algs = _decisions_algorithms($mode);
-  db_query("INSERT INTO {decisions} (nid, mode, quorum_abs, quorum_percent, uselist, active, runtime, maxchoices, algorithm) VALUES (%d, '%s', %d, %f, %d, %d, %d, %d, '%s')", $node->nid, $mode, $node->settings['quorum_abs'], $node->settings['quorum_percent'], $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $algs[0]);
+  db_query("INSERT INTO {decisions} (nid, mode, quorum_abs, quorum_percent, uselist, active, runtime, maxchoices, algorithm, startdate) VALUES (%d, '%s', %d, %f, %d, %d, %d, %d, '%s', %d)", $node->nid, $mode, $node->settings['quorum_abs'], $node->settings['quorum_percent'], $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $algs[0], $startdate);
 
   // create the electoral list if desired
 
@@ -1215,6 +1253,114 @@ function _decisions_algorithms($mode) {
   else {
     _decisions_panic_on_mode($mode, __FUNCTION__);
   }
+}
+
+/**
+ * Constructs the time select boxes.
+ * 
+ * @ingroup event_support
+ * @param $timestamp The time GMT timestamp of the event to use as the default
+ *   value.
+ * @return An array of form elements for month, day, year, hour, and minute
+ */
+function decisions_form_date($timestamp) {
+  // populate drop down values...
+  // ...months
+  $months = array(1 => t('January'), t('February'), t('March'), t('April'), t('May'), t('June'), t('July'), t('August'), t('September'), t('October'), t('November'), t('December'));
+  // ...hours
+  if (variable_get('event_ampm', '0')) {
+    $hour_format = t('g');
+    $hours = drupal_map_assoc(range(1, 12));
+    $am_pms = array('am' => t('am'), 'pm' => t('pm'));
+  }
+  else {
+    $hour_format = t('H');
+    $hours = drupal_map_assoc(range(0, 23));
+  }
+  // ...minutes (with leading 0s)
+  for ($i = 0; $i <= 59; $i++) $minutes[$i] = $i < 10 ? "0$i" : $i;
+
+  // This is a GMT timestamp, so the _event_date() wrapper to display local times.
+  $form['day'] = array(
+    '#prefix' => '<div class="container-inline"><div class="day">',
+    '#type' => 'textfield',
+    '#default_value' => _decisions_date('d', $timestamp, $offset),
+    '#maxlength' => 2,
+    '#size' => 2,
+    '#required' => TRUE);
+  $form['month'] = array(
+    '#type' => 'select',
+    '#default_value' => _decisions_date('m', $timestamp, $offset),
+    '#options' => $months,
+    '#required' => TRUE);
+  $form['year'] = array(
+    '#type' => 'textfield',
+    '#default_value' => _decisions_date('Y', $timestamp, $offset),
+    '#maxlength' => 4,
+    '#size' => 4,
+    '#required' => TRUE);
+  $form['hour'] = array(
+    '#prefix' => '</div>&#8212;<div class="time">',
+    '#type' => 'select',
+    '#default_value' => _decisions_date($hour_format, $timestamp, $offset),
+    '#options' => $hours,
+    '#required' => TRUE);
+  $form['minute'] = array(
+    '#prefix' => ':',
+    '#type' => 'select',
+    '#default_value' => _decisions_date('i', $timestamp, $offset),
+    '#options' => $minutes,
+    '#required' => TRUE);
+  if (isset($am_pms)) {
+    $form['ampm'] = array(
+      '#type' => 'radios',
+      '#default_value' => _decisions_date('a', $timestamp, $offset),
+      '#options' => $am_pms,
+      '#required' => TRUE);
+  }
+  $form['close'] = array(
+    '#type' => 'markup',
+    '#value' => '</div></div>');
+
+  return $form;
+}
+
+
+/**
+ * Takes a time element and prepares to send it to form_date()
+ * 
+ * @param $time
+ *   The time to be turned into an array. This can be:
+ *   - a timestamp when from the database
+ *   - an array (day, month, year) when previewing
+ *   - null for new nodes
+ * @returnn
+ *   an array for form_date (day, month, year)
+ */
+function _decisions_form_prepare_datetime($time = '', $offset = 0){
+  // if this is empty, get the current time
+  if($time == ''){
+    $time = time();
+    $time = strtotime("+$offset days", $time);
+  }
+  // If we are previewing, $time will be an array so just pass it through
+  $time_array = array();
+  if(is_array($time)){
+  	$time_array = $time;
+  } 
+  // otherwise build the array from the timestamp
+  elseif(is_numeric($time)){
+    $time_array = array(
+      'day' => _decisions_date('j', $time),
+      'month' => _decisions_date('n', $time),
+      'year' => _decisions_date('Y', $time),
+      'hour' => _decisions_date('H', $time),
+      'min' => _decisions_date('i', $time),
+      'sec' => _decisions_date('s', $time),
+    );
+  }
+  // return the array
+  return $time_array;
 }
 
 ?>
