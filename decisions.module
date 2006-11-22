@@ -798,13 +798,10 @@ function decisions_cancel_form($nid) {
  */
 function decisions_update($node) {
   // Compute startdate and runtime.
-  drupal_set_message("noeendate: " . $node->settings['date']['noenddate']);
   $startdate = decisions_translate_form_date($node->settings['date']['startdate']['date']);
   if ($node->settings['date']['noenddate']) {
-    drupal_set_message("noeendate: true");
     $runtime = DECISIONS_RUNTIME_INFINITY;
   } else {
-    drupal_set_message("noeendate:false");
     $enddate =  decisions_translate_form_date($node->settings['date']['enddate']['date']);
     if ($enddate < $startdate) {
       form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
@@ -812,7 +809,6 @@ function decisions_update($node) {
     }
     $runtime = $enddate - $startdate;
   }
-  drupal_set_message("runtime = " . $runtime);
     
   db_query("UPDATE {decisions} SET quorum_abs=%d, quorum_percent=%f, active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d, startdate=%d WHERE nid = %d", $node->settings['quorum_abs'], $node->settings['quorum_percent'], $node->settings['active'], $runtime, $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $startdate, $node->nid);
   // XXX: should update decisions here, when it has some parameters
