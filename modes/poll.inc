@@ -90,6 +90,7 @@ function decisions_poll_voting_form(&$node, $teaser, $page) {
  */
 function decisions_poll_view_results($node, $teaser, $page) {
 
+  $output = "";
   $results = votingapi_get_voting_results('decisions', $node->nid);
 
   // Count the votes for each choice
@@ -122,7 +123,6 @@ function decisions_poll_view_results($node, $teaser, $page) {
   }
 
   $output .= '<br />';
-
   return $output;
 }
 
