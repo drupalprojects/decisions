@@ -1330,7 +1330,22 @@ function _decisions_user_votes($node) {
  */
 function _decisions_algorithms($mode) {
   if (function_exists("decisions_{$mode}_algorithms")) {
-    return call_user_func("decisions_{$mode}_algorithms");
+    $algs = call_user_func("decisions_{$mode}_algorithms");
+    $error = false;
+    if (!is_array($algs)) {
+      $error = t('Element returned by the call to function @function is not an array, returning dummy value.', 
+                    array('@function' => "decisions_{$mode}_algorithms"));
+    } else if (count($algs) == 0) {
+      $error = t('Array returned by the call to function @function is empty, returning dummy value.', 
+                    array('@function' => "decisions_{$mode}_algorithms"));      
+    }
+    if ($error) {
+      watchdog('decisions', $error, WATCHDOG_WARNING);
+      drupal_set_message($error, 'warning');
+      return array(NULL);
+    } else {
+      return $algs;
+    }
   }
   else {
     _decisions_panic_on_mode($mode, __FUNCTION__);
