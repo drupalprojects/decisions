@@ -18,7 +18,7 @@
 define('DECISIONS_DEFAULT_ELECTORAL_LIST', 0);
 // always, aftervote, or afterclose
 define('DECISIONS_DEFAULT_VIEW_RESULTS', 'aftervote');
-define('DECISIONS_RUNTIME_INFINITY', 0); // equals 10 ** 9 seconds
+define('DECISIONS_RUNTIME_INFINITY', 0);
 
 /**
  * Implementation of hook_access().
