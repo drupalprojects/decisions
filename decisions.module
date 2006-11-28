@@ -99,7 +99,7 @@ function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_
   if ($content_type == 'decisions') {
     $node = node_load($content_id);
     $mode = _decisions_get_mode($node);
-    $function = "decisions_{$mode}_votingapi_calculate";
+    $function = "{$mode}_decisions_votingapi_calculate";
     if (function_exists($function)) {
       return call_user_func($function, $node, $cache, $votes, $content_type, $content_id);
     }
@@ -951,34 +951,6 @@ function decisions_electoral_list_submit($form_id, $form_values) {
 /***********************************/
 
 /**
- * internal function to load the available modes.
- *
- * this scans the modes subdirectory to find mode.inc files, where
- * mode is considered to be the mode name. found files are loaded and
- * added to the mode list.
- *
- * @uses file_scan_directory()
- */
-function decisions_modes() {
-  static $decisions_modes;
-
-  if (!isset($decisions_modes)) {
-    $path = drupal_get_path('module', 'decisions');
-    $files = file_scan_directory($path . '/modes', '^.*\.inc$');
-    foreach ($files as $filename => $file) {
-      require_once($file->filename);
-      $mode = $file->name;
-      if (function_exists("decisions_${mode}_longname") ) {
-        $decisions_modes[] = $mode;
-      } else {
-        drupal_set_message("Function decisions_${mode}_longname is not set, setting a default name.");
-      }
-    }
-  }
-  return $decisions_modes;
-}
- 
-/**
  * Show results of the vote.
  *
  * This calls the appropriate vote results function, depending on the
@@ -986,7 +958,7 @@ function decisions_modes() {
  */
 function decisions_view_results(&$node, $teaser, $page) {
   $mode = _decisions_get_mode($node);
-  $function = "decisions_{$mode}_view_results";
+  $function = "{$mode}_decisions_view_results";
   if (function_exists($function)) {
     return call_user_func($function, $node, $teaser, $page);
   }
@@ -1007,8 +979,8 @@ function decisions_view_results(&$node, $teaser, $page) {
  */
 function decisions_voting_form(&$node, $teaser = FALSE, $page = FALSE) {
   $mode = _decisions_get_mode($node);
-  if (function_exists("decisions_{$mode}_voting_form")) {
-    return call_user_func("decisions_{$mode}_voting_form", $node, $teaser, $page);
+  if (function_exists("{$mode}_decisions_voting_form")) {
+    return call_user_func("{$mode}_decisions_voting_form", $node, $teaser, $page);
   }
   else {
     _decisions_panic_on_mode($mode, __FUNCTION__);
@@ -1026,8 +998,8 @@ function decisions_vote($node) {
   $form_values = $_POST;
   $ok = FALSE; // error by default
   if (_decisions_eligible($node)) {
-    if (function_exists("decisions_{$mode}_vote")) {
-      call_user_func("decisions_{$mode}_vote", $node, $form_values);
+    if (function_exists("{$mode}_decisions_vote")) {
+      call_user_func("{$mode}_decisions_vote", $node, $form_values);
     }
     else {
       _decisions_panic_on_mode($mode, __FUNCTION__);
@@ -1042,8 +1014,8 @@ function decisions_vote($node) {
  * Helper function to list algorithms for a given mode
  */
 function decisions_algorithms($mode) {
-  if (function_exists("decisions_{$mode}_algorithms")) {
-    $algs = call_user_func("decisions_{$mode}_algorithms");
+  if (function_exists("{$mode}_decisions_algorithms")) {
+    $algs = call_user_func("{$mode}_decisions_algorithms");
     $error = false;
     if (!is_array($algs)) {
       $error = t('Element returned by the call to function @function is not an array, returning dummy value.', 
@@ -1136,7 +1108,7 @@ function decisions_votes_tab() {
     }
 
     $mode = _decisions_get_mode($node);
-    $function_format_votes = "decisions_{$mode}_format_votes";
+    $function_format_votes = "{$mode}_decisions_format_votes";
     if (!function_exists($function_format_votes)) {
       _decisions_panic_on_mode($mode, __FUNCTION__);
       drupal_not_found();
@@ -1207,8 +1179,8 @@ function _decisions_meets_quorum($node) {
  */
 function _decisions_vote_validate($node) {
   $mode = _decisions_get_mode($node);
-  if (function_exists("decisions_{$mode}_vote_validate") ) {
-    return call_user_func("decisions_{$mode}_vote_validate", $node, $_POST);
+  if (function_exists("{$mode}_decisions_vote_validate") ) {
+    return call_user_func("{$mode}_decisions_vote_validate", $node, $_POST);
   }
   return TRUE;
 }

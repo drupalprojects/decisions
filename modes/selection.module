@@ -37,7 +37,7 @@ function selection_node_info() {
 /**
  * Implementation of the decisions_algorithms() hook
  */
-function decisions_selection_algorithms() {
+function selection_decisions_algorithms() {
   return array('plurality');
 }
 
@@ -46,7 +46,7 @@ function decisions_selection_algorithms() {
  * 
  * This creates a list of choices to allow the user to vote on choices.
  */
-function decisions_selection_voting_form(&$node, $teaser, $page) {
+function selection_decisions_voting_form(&$node, $teaser, $page) {
   if ($node->choice) {
     $list = array();
 
@@ -96,7 +96,7 @@ function decisions_selection_voting_form(&$node, $teaser, $page) {
  *
  * TODO: implement (http://drupal.org/node/48249)
  */
-function decisions_selection_view_results($node, $teaser, $page) {
+function selection_decisions_view_results($node, $teaser, $page) {
 
   $output = "";
   $results = votingapi_get_voting_results('decisions', $node->nid);
@@ -141,7 +141,7 @@ function decisions_selection_view_results($node, $teaser, $page) {
  *
  * @returns a formatted string
  */
-function decisions_selection_format_votes($node, $votes) {
+function selection_decisions_format_votes($node, $votes) {
   $unordered_votes = array();
   foreach ($votes as $vote) {
     // Just need one dimensional results
@@ -158,7 +158,7 @@ function decisions_selection_format_votes($node, $votes) {
  *
  * registers the vote as a key for this node using votingapi_set_vote()
  */
-function decisions_selection_vote($node, $form_values) {
+function selection_decisions_vote($node, $form_values) {
   $votes = array();
   if ($node->maxchoices == 1) {
     // plurality voting
@@ -190,7 +190,7 @@ function decisions_selection_vote($node, $form_values) {
  *
  * @returns boolean true if the form is valid
  */
-function decisions_selection_vote_validate($node, $form_values) {
+function selection_decisions_vote_validate($node, $form_values) {
   $ok = TRUE;
   if ($node->maxchoices == 1) {
     // plurality voting
