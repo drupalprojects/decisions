@@ -20,6 +20,11 @@ define('DECISIONS_DEFAULT_ELECTORAL_LIST', 0);
 define('DECISIONS_DEFAULT_VIEW_RESULTS', 'aftervote');
 define('DECISIONS_RUNTIME_INFINITY', 0);
 
+
+/*****************/
+/* API functions */
+/*****************/
+
 /**
  * Implementation of hook_access().
  */
@@ -51,7 +56,7 @@ function decisions_block($op = 'list', $delta = 'mostrecent', $edit = array()){
     if (user_access('view decisions')) {
       switch ($delta) {
       case 'mostrecent':
-        $block = array('subject' => t('Decisions - Newest'), 'content' => decisions_block_mostrecent());
+        $block = array('subject' => t('Decisions - Newest'), 'content' => _decisions_block_mostrecent());
         break;
       default:
         $block = array();
@@ -60,26 +65,6 @@ function decisions_block($op = 'list', $delta = 'mostrecent', $edit = array()){
     }
   }
   return $block;
-}
-
-/**
- * Content of the block, as returned by decisions_block('view')
- */
-function decisions_block_mostrecent() {
-  $output = '';
-  $result = db_query('SELECT nid FROM {decisions} WHERE active=1 ORDER BY nid DESC LIMIT 1');
-  // Check that there is an active decision
-  if (db_num_rows($result) > 0) {
-    $decision = db_fetch_object($result);
-    $n = decisions_view(node_load($decision->nid), false, false, true);
-    /* XXX: we have to do this because somehow the #printed settings lives across multiple node_load */
-    unset($n->content['#printed']);
-    $output = drupal_render($n->content);
-  }
-  else {
-    $output = t('No active decisions.');
-  }
-  return $output;
 }
 
 /**
@@ -93,7 +78,6 @@ function decisions_cron() {
     db_query("UPDATE {decisions} SET active = 0 WHERE nid=%d", $decision->nid);
   }
 }
-
 
 /**
  * Implementation of hook_delete().
@@ -238,7 +222,7 @@ function decisions_form(&$node, $form_values = NULL) {
                                           '#description' => t('Limits the total number of choices voters may select.'),
                                           );
 
-  $algs = _decisions_algorithms($mode);
+  $algs = decisions_algorithms($mode);
   
   foreach ($algs as $alg) {
     $voting_algorithms[$alg] = ucwords($alg);
@@ -307,7 +291,7 @@ function decisions_form(&$node, $form_values = NULL) {
     '#collapsed' => FALSE,
     '#description' => t('Opening date')
   );  
-  $form['settings']['date']['startdate']['date'] = decisions_form_date($startdate);
+  $form['settings']['date']['startdate']['date'] = _decisions_form_date($startdate);
   
   $form['settings']['date']['noenddate'] = array(
     '#type' => 'checkbox',
@@ -321,7 +305,7 @@ function decisions_form(&$node, $form_values = NULL) {
     '#collapsed' => FALSE,
     '#description' => t('Closing date')
   );  
-  $form['settings']['date']['enddate']['date'] = decisions_form_date($enddate);
+  $form['settings']['date']['enddate']['date'] = _decisions_form_date($enddate);
 
   
   $form['settings']['quorum'] = array(
@@ -358,7 +342,6 @@ function decisions_form(&$node, $form_values = NULL) {
   $form['#multistep'] = TRUE;
   return $form;
 }
-
 
 /**
  * Implementation of hook_help().
@@ -519,6 +502,344 @@ function decisions_menu($may_cache) {
   return $items;
 }
 
+/**
+ * Implementation of hook_node_info().
+ */
+function decisions_node_info() {
+  $modes = decisions_modes();
+  $node_info = array();
+   
+  foreach ($modes as $mode) {
+    $function = "decisions_${mode}_node_info";
+    if (function_exists($function)) {
+      $mode_node_info = call_user_func($function);
+      $node_info["decisions_{$mode}"] = $mode_node_info;
+      $node_info["decisions_{$mode}"]['module'] = 'decisions';
+    } else {
+      _decisions_panic_on_mode($mode, __FUNCTION__);
+    }
+  }
+  
+  return $node_info;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function decisions_perm() {
+  return array('create decisions', 'delete decisions', 'view decisions', 'vote on decisions', 'cancel own vote', 'administer decisions', 'inspect all votes');
+}
+
+/**
+ * Implementation of the admin_settings hook
+ */
+function decisions_admin_settings() {
+  $enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
+
+  $form['main']['decisions_default_electoral_list'] = array(
+                                                            '#type' => 'radios',
+                                                            '#title' => t('Use electoral list by default'),
+                                                            '#description' => t('Use an electoral list by default for new decisions.'),
+                                                            '#default_value' => variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
+                                                            '#options' => $enabled,
+                                                            );
+
+  $view_results = array(
+                        'always' => t('Always'),
+                        'aftervote' => t('After user has voted'),
+                        'afterclose' => t('After voting has closed'),
+                        );
+
+  $form['main']['decisions_view_results'] = array(
+                                                  '#type' => 'radios',
+                                                  '#title' => t('When should results be displayed'),
+                                                  '#description' => t('Determines when users may view the results of the decision.'),
+                                                  '#default_value' => variable_get('decisions_view_results', DECISIONS_DEFAULT_VIEW_RESULTS),
+                                                  '#options' => $view_results,
+                                                  );
+
+  return system_settings_form($form);
+}
+
+function decisions_cancel_form($nid) {
+  $form['#action'] = url("decisions/cancel/$nid");
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Cancel your vote'));
+  return $form; 
+}
+
+/**
+ * Implementation of hook_update().
+ *
+ * This is called upon node edition.
+ */
+function decisions_update($node) {
+  // Compute startdate and runtime.
+  $startdate = decisions_translate_form_date($node->settings['date']['startdate']['date']);
+  if ($node->settings['date']['noenddate']) {
+    $runtime = DECISIONS_RUNTIME_INFINITY;
+  } else {
+    $enddate =  decisions_translate_form_date($node->settings['date']['enddate']['date']);
+    if ($enddate < $startdate) {
+      form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
+      $enddate = $startdate;
+    }
+    $runtime = $enddate - $startdate;
+  }
+    
+  db_query("UPDATE {decisions} SET quorum_abs=%d, quorum_percent=%f, active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d, startdate=%d WHERE nid = %d", $node->settings['quorum_abs'], $node->settings['quorum_percent'], $node->settings['active'], $runtime, $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $startdate, $node->nid);
+  // XXX: should update decisions here, when it has some parameters
+  // XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
+  db_query('DELETE FROM {decisions_choices} WHERE nid = %d', $node->nid);
+
+  // Start at one rather than 0 due to Drupal FormAPI
+  $i = 1;
+  foreach ($node->choice as $key => $choice) {
+    // XXX: this is ugly. For some reason, formapi was passing a value
+    // at the end of the array in which $choice = 0 *and*
+    // isset($choice['label']) returns true. so we use this whole ugly
+    // string.
+    if (is_array($choice) && array_key_exists('label', $choice) && $choice['label'] != '') {
+      db_query("INSERT INTO {decisions_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $node->nid, $choice['label'], $i++);
+    }
+  }
+}
+
+function _decisions_get_mode($node) {
+  if ($node->type) {
+    $types = explode('_', $node->type, 2);
+    return $types[1];
+  }
+  else {
+    drupal_set_message('No type specified for node: ' . $node->nid, 'error');
+    return '';
+  }
+}
+
+/**
+ * Implementation of hook_insert()
+ *
+ * This is called upon node creation
+ */
+function decisions_insert($node) {
+  // Compute startdate and runtime.
+  $startdate = decisions_translate_form_date($node->settings['date']['startdate']['date']);
+  if ($node->settings['date']['noenddate']) {
+    $runtime = DECISIONS_RUNTIME_INFINITY;
+  } else {
+    $enddate =  decisions_translate_form_date($node->settings['date']['enddate']['date']);
+    if ($enddate < $startdate) {
+      form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
+      $enddate = $startdate;
+    }
+    $runtime = $enddate - $startdate;
+  }
+  
+  // just create an empty entry for now
+  $mode = _decisions_get_mode($node);
+
+  $algs = decisions_algorithms($mode);
+  db_query("INSERT INTO {decisions} (nid, mode, quorum_abs, quorum_percent, uselist, active, runtime, maxchoices, algorithm, startdate) VALUES (%d, '%s', %d, %f, %d, %d, %d, %d, '%s', %d)", $node->nid, $mode, $node->settings['quorum_abs'], $node->settings['quorum_percent'], $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $algs[0], $startdate);
+
+  // create the electoral list if desired
+
+  if ($node->settings['uselist']) {
+    // check first if authenticated users have the right to vote, because authenticated users are not added to the users_roles permission, probably for performance reasons
+    $result = db_fetch_object(db_query("SELECT COUNT(*) AS hit FROM {permission} JOIN role ON role.rid = permission.rid WHERE FIND_IN_SET(' vote on decisions', perm) AND role.name = 'authenticated user'"));
+    if ($result->hit) {
+      // special case: any authenticated user can vote
+      // add all current users to electoral list
+      db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.uid != 0", $node->nid);
+    }
+    else {
+      // all users must not be allowed to vote, add relevant users only
+      db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users_roles u, permission p WHERE FIND_IN_SET(' view decisions', p.perm) AND u.rid = p.rid AND u.uid != 0", $node->nid);
+    }
+  }
+
+  // insert the choices, same sequence than update
+  decisions_update($node);
+}
+
+/**
+ * Implementation of hook_validate().
+ *
+ * XXX: No validation yet.
+ */
+function decisions_validate(&$node) {
+  // Use form_set_error for any errors
+  $node->choice = array_values($node->choice);
+
+  // Start keys at 1 rather than 0
+  array_unshift($node->choice, '');
+  unset($node->choice[0]);
+
+  // Check for at least two choices
+  $realchoices = 0;
+  foreach ($node->choice as $i => $choice) {
+    if ($choice['label'] != '') {
+      $realchoices++;
+    }
+  }
+
+  if ($realchoices < 2) {
+    form_set_error("choice][$realchoices][label", t('You must fill in at least two choices.'));
+  }
+}
+
+function decisions_submit(&$node) {
+  $node->choice = array_values($node->choice);
+  // Start keys at 1 rather than 0
+  array_unshift($node->choice, '');
+  unset($node->choice[0]);
+}
+
+/**
+ * Implementation of hook_view().
+ */
+function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
+  $mode = _decisions_get_mode($node);
+
+  if ($_POST['op'] == t('Vote')) {
+    // hook_vote_validate will return FALSE on error
+    $valid = _decisions_vote_validate($node);
+    if ($valid) {
+      decisions_vote($node);
+      drupal_set_message(t('Your vote was registered.'));
+      // Transferring makes the results tab display correctly
+      drupal_goto('node/' . $node->nid);
+    }
+  }
+
+  // Previewing a node, so don't show results
+  if ($node->in_preview) {
+    // Show the voting form but don't let them vote
+    $node->content['decisions']['form']['#value'] = drupal_get_form('decisions_voting_form', $node, $teaser, $page);
+  }
+  else {
+    // print status messages
+    $status_messages = "";
+    if (!_decisions_meets_quorum($node)) {
+      $status_messages .= theme_decisions_status(t("This decision is not valid. You will not be able to see it until the quorum is met. The quorum is set at @quorum.", array('@quorum' => _decisions_get_quorum($node))));
+    }
+    if (!$node->active) {
+      $status_messages .= theme_decisions_status(t("This decision is currently closed."));
+    } else {
+      $time = time();
+      if ($time < $node->startdate) {
+        $status_messages .= theme_decisions_status(t("This decision is not yet opened."));
+      } else if ($node->runtime != DECISIONS_RUNTIME_INFINITY && $time >= $node->startdate + $node->runtime) {
+        $status_messages .= theme_decisions_status(t("This decision is now closed."));
+      }
+    }
+    $node->content['decisions']['status']['#value'] = $status_messages;
+    
+    if (arg(2) != 'results' && _decisions_can_vote($node)) {
+      // User hasn't voted and we're not on the results tab
+      $node->content['decisions']['form']['#value'] = drupal_get_form('decisions_voting_form', $node, $teaser, $page);
+      $node->content['decisions']['list']['#value'] = theme_decisions_view_header($node, $teaser);
+    }
+    else if (_decisions_can_view_results($node)) {
+      // show results only if the user has voted or decision is closed
+      $node->content['decisions']['results']['#value'] = decisions_view_results($node, $teaser, $page);
+      $node->content['decisions']['list']['#value'] = theme_decisions_view_header($node, $teaser);
+    }
+    if (isset($node->voted) && $node->voted && user_access('cancel own vote') && $node->active) {
+      $node->content['decisions']['cancel']['#value'] = drupal_get_form('decisions_cancel_form', $node->nid);
+      $node->content['decisions']['cancel']['#weight'] = 10;
+    }
+  }
+
+  return $node;
+}
+
+
+/*******************/
+/* Theme functions */
+/*******************/
+
+function theme_decisions_view_header($node, $teaser = FALSE) {
+
+  $output = '<div class="decisions-header">';
+
+  // dates
+  $output .= '<div class="decisions-dates">';
+  $output .= theme_item_list(
+              array(
+                 t('Current date: @date', array('@date' => format_date(time()))),
+                 t('Opening date: @date', array('@date' => format_date($node->startdate))),
+                 ($node->runtime == DECISIONS_RUNTIME_INFINITY ? 
+                   t('No closing date.') :
+                   t('Closing date: @date', array('@date' => format_date($node->startdate + $node->runtime))))));
+  $output .= '</div>';
+
+  // votes
+  $num_eligible_voters = _decisions_count_eligible($node);
+  $result = db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid);
+  $num_votes = db_num_rows($result);
+  $output .= '<div class="decisions-votes">';
+  $output .= t('Total votes: @d', array('@d' => $num_votes));
+  $output .= t(' (out of @v eligible voter' . 
+                 ($num_eligible_voters == 1? '' : 's') . ')',
+                 array('@v' => $num_eligible_voters));
+  $output .= '</div>';
+
+  // quorum
+  $quorum = _decisions_get_quorum($node);
+  if ($quorum > 0) {
+    $output .= '<div class="decisions-quorum">';
+    $output .= t('Quorum: @d', array('@d' => $quorum));
+    $output .= '</div>';
+  }
+    
+  $output .= '</div>';
+  return $output;
+}
+
+/**
+ * Theme stub for redering the voting form, to allow the chance for
+ * themes to make this nicer/different
+ */
+function theme_decisions_view_voting($form) {
+  
+  $render = 'drupal_render';
+  if (!function_exists($render)) {
+    $render = 'form_render';
+  }
+  $output .= '<div class="decisions">';
+  $output .= '  <div class="choice-form">';
+  $output .= '    <div class="choices">';
+  $output .= $render($form['choice']);
+  $output .= '    </div>';
+  $output .= $render($form['nid']);
+  $output .= $render($form['vote']);
+  $output .= '  </div>';
+  $output .= $render($form);
+  $output .= '</div>';
+  return $output;
+}
+
+function theme_decisions_bar($title, $percentage, $votes) {
+  $output = '<div class="text">'. $title .'</div>';
+  $output .= '<div class="bar"><div style="width: '. $percentage .'%;" class="foreground"></div></div>';
+  $output .= '<div class="percent">'. $percentage .'% ('. $votes .')</div>';
+   return $output;
+ }
+ 
+ /**
+ * outputs a status line
+ */
+function theme_decisions_status($message) {
+    return '<div class="error">' . $message . '</div>';
+}
+
+
+/****************************/
+/* Electoral list functions */
+/****************************/
+
+/**
+ * Creates the form for the electoral list.
+ */
 function decisions_electoral_list_form($nid) {
   
   $form['electoral_list'] = array(
@@ -670,7 +991,7 @@ function decisions_electoral_list_submit($form_id, $form_values) {
     drupal_set_message(t('%user added to electoral list.', array('%user' => $add_user)));
   }
 }
-  	 
+
 /**
  * display the votes tab
  */
@@ -718,340 +1039,54 @@ function decisions_tab_votes() {
   }
 }
 
-/**
- * Returns true if the user can view the results of current node.
- */
-function _decisions_can_view_results($node) {
-  $view_results = variable_get('decisions_view_results', DECISIONS_DEFAULT_VIEW_RESULTS);
-  return (decisions_meets_quorum($node) && // node meets the quorum
-          (!decisions_is_open($node)       // node is closed
-          || ($node->voted && $view_results == 'aftervote') // user voted
-          || ($view_results == 'always'))); // all can view
-}
+
+/***********************************/
+/* Decision-mode related functions */
+/***********************************/
 
 /**
- * Implementation of hook_node_info().
- */
-function decisions_node_info() {
-  $modes = decisions_modes();
-  $node_info = array();
-   
-  foreach ($modes as $mode) {
-    $function = "decisions_${mode}_node_info";
-    if (function_exists($function)) {
-      $mode_node_info = call_user_func($function);
-      $node_info["decisions_{$mode}"] = $mode_node_info;
-      $node_info["decisions_{$mode}"]['module'] = 'decisions';
-    } else {
-      _decisions_panic_on_mode($mode, __FUNCTION__);
-    }
-  }
-  
-  return $node_info;
-}
-
-/**
- * Implementation of hook_perm().
- */
-function decisions_perm() {
-  return array('create decisions', 'delete decisions', 'view decisions', 'vote on decisions', 'cancel own vote', 'administer decisions', 'inspect all votes');
-}
-
-/**
- * Implementation of the admin_settings hook
- */
-function decisions_admin_settings() {
-  $enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
-
-  $form['main']['decisions_default_electoral_list'] = array(
-                                                            '#type' => 'radios',
-                                                            '#title' => t('Use electoral list by default'),
-                                                            '#description' => t('Use an electoral list by default for new decisions.'),
-                                                            '#default_value' => variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
-                                                            '#options' => $enabled,
-                                                            );
-
-  $view_results = array(
-                        'always' => t('Always'),
-                        'aftervote' => t('After user has voted'),
-                        'afterclose' => t('After voting has closed'),
-                        );
-
-  $form['main']['decisions_view_results'] = array(
-                                                  '#type' => 'radios',
-                                                  '#title' => t('When should results be displayed'),
-                                                  '#description' => t('Determines when users may view the results of the decision.'),
-                                                  '#default_value' => variable_get('decisions_view_results', DECISIONS_DEFAULT_VIEW_RESULTS),
-                                                  '#options' => $view_results,
-                                                  );
-
-  return system_settings_form($form);
-}
-
-function decisions_cancel_form($nid) {
-  $form['#action'] = url("decisions/cancel/$nid");
-  $form['submit'] = array('#type' => 'submit', '#value' => t('Cancel your vote'));
-  return $form; 
-}
-
-/**
- * Implementation of hook_update().
+ * internal function to load the available modes.
  *
- * This is called upon node edition.
- */
-function decisions_update($node) {
-  // Compute startdate and runtime.
-  $startdate = decisions_translate_form_date($node->settings['date']['startdate']['date']);
-  if ($node->settings['date']['noenddate']) {
-    $runtime = DECISIONS_RUNTIME_INFINITY;
-  } else {
-    $enddate =  decisions_translate_form_date($node->settings['date']['enddate']['date']);
-    if ($enddate < $startdate) {
-      form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
-      $enddate = $startdate;
-    }
-    $runtime = $enddate - $startdate;
-  }
-    
-  db_query("UPDATE {decisions} SET quorum_abs=%d, quorum_percent=%f, active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d, startdate=%d WHERE nid = %d", $node->settings['quorum_abs'], $node->settings['quorum_percent'], $node->settings['active'], $runtime, $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $startdate, $node->nid);
-  // XXX: should update decisions here, when it has some parameters
-  // XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
-  db_query('DELETE FROM {decisions_choices} WHERE nid = %d', $node->nid);
-
-  // Start at one rather than 0 due to Drupal FormAPI
-  $i = 1;
-  foreach ($node->choice as $key => $choice) {
-    // XXX: this is ugly. For some reason, formapi was passing a value
-    // at the end of the array in which $choice = 0 *and*
-    // isset($choice['label']) returns true. so we use this whole ugly
-    // string.
-    if (is_array($choice) && array_key_exists('label', $choice) && $choice['label'] != '') {
-      db_query("INSERT INTO {decisions_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $node->nid, $choice['label'], $i++);
-    }
-  }
-}
-
-function _decisions_get_mode($node) {
-  if ($node->type) {
-    $types = explode('_', $node->type, 2);
-    return $types[1];
-  }
-  else {
-    drupal_set_message('No type specified for node: ' . $node->nid, 'error');
-    return '';
-  }
-}
-
-/**
- * Implementation of hook_insert()
+ * this scans the modes subdirectory to find mode.inc files, where
+ * mode is considered to be the mode name. found files are loaded and
+ * added to the mode list.
  *
- * This is called upon node creation
+ * @uses file_scan_directory()
  */
-function decisions_insert($node) {
-  // Compute startdate and runtime.
-  $startdate = decisions_translate_form_date($node->settings['date']['startdate']['date']);
-  if ($node->settings['date']['noenddate']) {
-    $runtime = DECISIONS_RUNTIME_INFINITY;
-  } else {
-    $enddate =  decisions_translate_form_date($node->settings['date']['enddate']['date']);
-    if ($enddate < $startdate) {
-      form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
-      $enddate = $startdate;
-    }
-    $runtime = $enddate - $startdate;
-  }
-  
-  // just create an empty entry for now
-  $mode = _decisions_get_mode($node);
+function decisions_modes() {
+  static $decisions_modes;
 
-  $algs = _decisions_algorithms($mode);
-  db_query("INSERT INTO {decisions} (nid, mode, quorum_abs, quorum_percent, uselist, active, runtime, maxchoices, algorithm, startdate) VALUES (%d, '%s', %d, %f, %d, %d, %d, %d, '%s', %d)", $node->nid, $mode, $node->settings['quorum_abs'], $node->settings['quorum_percent'], $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $algs[0], $startdate);
-
-  // create the electoral list if desired
-
-  if ($node->settings['uselist']) {
-    // check first if authenticated users have the right to vote, because authenticated users are not added to the users_roles permission, probably for performance reasons
-    $result = db_fetch_object(db_query("SELECT COUNT(*) AS hit FROM {permission} JOIN role ON role.rid = permission.rid WHERE FIND_IN_SET(' vote on decisions', perm) AND role.name = 'authenticated user'"));
-    if ($result->hit) {
-      // special case: any authenticated user can vote
-      // add all current users to electoral list
-      db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.uid != 0", $node->nid);
-    }
-    else {
-      // all users must not be allowed to vote, add relevant users only
-      db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users_roles u, permission p WHERE FIND_IN_SET(' view decisions', p.perm) AND u.rid = p.rid AND u.uid != 0", $node->nid);
-    }
-  }
-
-  // insert the choices, same sequence than update
-  decisions_update($node);
-}
-
-/**
- * Implementation of hook_validate().
- *
- * XXX: No validation yet.
- */
-function decisions_validate(&$node) {
-  // Use form_set_error for any errors
-  $node->choice = array_values($node->choice);
-
-  // Start keys at 1 rather than 0
-  array_unshift($node->choice, '');
-  unset($node->choice[0]);
-
-  // Check for at least two choices
-  $realchoices = 0;
-  foreach ($node->choice as $i => $choice) {
-    if ($choice['label'] != '') {
-      $realchoices++;
-    }
-  }
-
-  if ($realchoices < 2) {
-    form_set_error("choice][$realchoices][label", t('You must fill in at least two choices.'));
-  }
-}
-
-function decisions_submit(&$node) {
-  $node->choice = array_values($node->choice);
-  // Start keys at 1 rather than 0
-  array_unshift($node->choice, '');
-  unset($node->choice[0]);
-}
-
-/**
- * Implementation of hook_view().
- */
-function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
-  $mode = _decisions_get_mode($node);
-
-  if ($_POST['op'] == t('Vote')) {
-    // hook_vote_validate will return FALSE on error
-    $valid = decisions_vote_validate($node);
-    if ($valid) {
-      decisions_vote($node);
-      drupal_set_message(t('Your vote was registered.'));
-      // Transferring makes the results tab display correctly
-      drupal_goto('node/' . $node->nid);
-    }
-  }
-
-  // Previewing a node, so don't show results
-  if ($node->in_preview) {
-    // Show the voting form but don't let them vote
-    $node->content['decisions']['form']['#value'] = drupal_get_form('decisions_voting_form', $node, $teaser, $page);
-  }
-  else {
-    // print status messages
-    $status_messages = "";
-    if (!decisions_meets_quorum($node)) {
-      $status_messages .= theme_decisions_status(t("This decision is not valid. You will not be able to see it until the quorum is met. The quorum is set at @quorum.", array('@quorum' => _decisions_get_quorum($node))));
-    }
-    if (!$node->active) {
-      $status_messages .= theme_decisions_status(t("This decision is currently closed."));
-    } else {
-      $time = time();
-      if ($time < $node->startdate) {
-        $status_messages .= theme_decisions_status(t("This decision is not yet opened."));
-      } else if ($node->runtime != DECISIONS_RUNTIME_INFINITY && $time >= $node->startdate + $node->runtime) {
-        $status_messages .= theme_decisions_status(t("This decision is now closed."));
+  if (!isset($decisions_modes)) {
+    $path = drupal_get_path('module', 'decisions');
+    $files = file_scan_directory($path . '/modes', '^.*\.inc$');
+    foreach ($files as $filename => $file) {
+      require_once($file->filename);
+      $mode = $file->name;
+      if (function_exists("decisions_${mode}_longname") ) {
+        $decisions_modes[] = $mode;
+      } else {
+        drupal_set_message("Function decisions_${mode}_longname is not set, setting a default name.");
       }
     }
-    $node->content['decisions']['status']['#value'] = $status_messages;
-    
-    if (arg(2) != 'results' && decisions_can_vote($node)) {
-      // User hasn't voted and we're not on the results tab
-      $node->content['decisions']['form']['#value'] = drupal_get_form('decisions_voting_form', $node, $teaser, $page);
-      $node->content['decisions']['list']['#value'] = theme_decisions_view_header($node, $teaser);
-    }
-    else if (_decisions_can_view_results($node)) {
-      // show results only if the user has voted or decision is closed
-      $node->content['decisions']['results']['#value'] = decisions_view_results($node, $teaser, $page);
-      $node->content['decisions']['list']['#value'] = theme_decisions_view_header($node, $teaser);
-    }
-    if (isset($node->voted) && $node->voted && user_access('cancel own vote') && $node->active) {
-      $node->content['decisions']['cancel']['#value'] = drupal_get_form('decisions_cancel_form', $node->nid);
-      $node->content['decisions']['cancel']['#weight'] = 10;
-    }
   }
-
-  return $node;
+  return $decisions_modes;
 }
-
-function theme_decisions_view_header($node, $teaser = FALSE) {
-
-  $output = '<div class="decisions-header">';
-
-  // dates
-  $output .= '<div class="decisions-dates">';
-  $output .= theme_item_list(
-              array(
-                 t('Current date: @date', array('@date' => format_date(time()))),
-                 t('Opening date: @date', array('@date' => format_date($node->startdate))),
-                 ($node->runtime == DECISIONS_RUNTIME_INFINITY ? 
-                   t('No closing date.') :
-                   t('Closing date: @date', array('@date' => format_date($node->startdate + $node->runtime))))));
-  $output .= '</div>';
-
-  // votes
-  $num_eligible_voters = _decisions_count_eligible($node);
-  $result = db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid);
-  $num_votes = db_num_rows($result);
-  $output .= '<div class="decisions-votes">';
-  $output .= t('Total votes: @d', array('@d' => $num_votes));
-  $output .= t(' (out of @v eligible voter' . 
-                 ($num_eligible_voters == 1? '' : 's') . ')',
-                 array('@v' => $num_eligible_voters));
-  $output .= '</div>';
-
-  // quorum
-  $quorum = _decisions_get_quorum($node);
-  if ($quorum > 0) {
-    $output .= '<div class="decisions-quorum">';
-    $output .= t('Quorum: @d', array('@d' => $quorum));
-    $output .= '</div>';
-  }
-    
-  $output .= '</div>';
-  return $output;
-}
-
-/**
- * Theme stub for redering the voting form, to allow the chance for
- * themes to make this nicer/different
- */
-function theme_decisions_view_voting($form) {
-  
-  $render = 'drupal_render';
-  if (!function_exists($render)) {
-    $render = 'form_render';
-  }
-  $output .= '<div class="decisions">';
-  $output .= '  <div class="choice-form">';
-  $output .= '    <div class="choices">';
-  $output .= $render($form['choice']);
-  $output .= '    </div>';
-  $output .= $render($form['nid']);
-  $output .= $render($form['vote']);
-  $output .= '  </div>';
-  $output .= $render($form);
-  $output .= '</div>';
-  return $output;
-}
-
-function theme_decisions_bar($title, $percentage, $votes) {
-  $output = '<div class="text">'. $title .'</div>';
-  $output .= '<div class="bar"><div style="width: '. $percentage .'%;" class="foreground"></div></div>';
-  $output .= '<div class="percent">'. $percentage .'% ('. $votes .')</div>';
-   return $output;
- }
  
- /**
- * outputs a status line
+/**
+ * show results of the vote
+ *
+ * this calls the appropriate vote results function, depending on the
+ * mode. It will call the decisions_view_results_$mode hook.
  */
-function theme_decisions_status($message) {
-    return '<div class="error">' . $message . '</div>';
+function decisions_view_results(&$node, $teaser, $page) {
+  $mode = _decisions_get_mode($node);
+  $function = "decisions_{$mode}_view_results";
+  if (function_exists($function)) {
+    return call_user_func($function, $node, $teaser, $page);
+  }
+  else {
+    _decisions_panic_on_mode($mode, __FUNCTION__);
+  }
 }
 
 /**
@@ -1075,37 +1110,6 @@ function decisions_voting_form(&$node, $teaser = FALSE, $page = FALSE) {
 }
 
 /**
- * Callback for 'results' tab for decisions you can vote on
- */
-function decisions_results() {
-  if ($node = node_load(arg(1))) {
-    drupal_set_title(check_plain($node->title));
-    return node_show($node, 0);
-  }
-  else {
-    // The url does not provide the appropriate node id
-    drupal_not_found();
-  }
-}
- 
-/**
- * show results of the vote
- *
- * this calls the appropriate vote results function, depending on the
- * mode. It will call the decisions_view_results_$mode hook.
- */
-function decisions_view_results(&$node, $teaser, $page) {
-  $mode = _decisions_get_mode($node);
-  $function = "decisions_{$mode}_view_results";
-  if (function_exists($function)) {
-    return call_user_func($function, $node, $teaser, $page);
-  }
-  else {
-    _decisions_panic_on_mode($mode, __FUNCTION__);
-  }
-}
-
-/**
  * record a vote on the node
  *
  * this calls the appropriate vote recording function, depending on
@@ -1115,7 +1119,7 @@ function decisions_vote($node) {
   $mode = _decisions_get_mode($node);
   $form_values = $_POST;
   $ok = FALSE; // error by default
-  if (decisions_eligible($node)) {
+  if (_decisions_eligible($node)) {
     if (function_exists("decisions_{$mode}_vote")) {
       call_user_func("decisions_{$mode}_vote", $node, $form_values);
     }
@@ -1129,35 +1133,49 @@ function decisions_vote($node) {
 }
 
 /**
- * Callback that tells if the given decision is open to votes.
+ * Helper function to list algorithms for a given mode
  */
-function decisions_is_open($node) {
-  $time = time();
-  return ($node->active &&                    // node must be active
-          // current time must be past start date and before end date
-          ($time >= $node->startdate) &&
-          ($node->runtime == DECISIONS_RUNTIME_INFINITY ||
-           $time < ($node->startdate + $node->runtime)));
+function decisions_algorithms($mode) {
+  if (function_exists("decisions_{$mode}_algorithms")) {
+    $algs = call_user_func("decisions_{$mode}_algorithms");
+    $error = false;
+    if (!is_array($algs)) {
+      $error = t('Element returned by the call to function @function is not an array, returning dummy value.', 
+                    array('@function' => "decisions_{$mode}_algorithms"));
+    } else if (count($algs) == 0) {
+      $error = t('Array returned by the call to function @function is empty, returning dummy value.', 
+                    array('@function' => "decisions_{$mode}_algorithms"));      
+    }
+    if ($error) {
+      watchdog('decisions', $error, WATCHDOG_WARNING);
+      drupal_set_message($error, 'warning');
+      return array(NULL);
+    } else {
+      return $algs;
+    }
+  }
+  else {
+    _decisions_panic_on_mode($mode, __FUNCTION__);
+  }
 }
 
-/**
- * Callback that tells if the given user can vote on this decision.
- */
-function decisions_can_vote($node, $user = NULL) {
-  return (decisions_is_open($node) &&         // node must be open
-          !$node->voted &&                    // user should not have already voted
-          decisions_eligible($node, $user));  // user must be eligible to vote
-}
+
+/*************/
+/* Callbacks */
+/*************/
 
 /**
- * Callback that tells if the given decision meets the quorum.
+ * Callback for 'results' tab for decisions you can vote on
  */
-function decisions_meets_quorum($node) {
-  // compute number of people that have cast their vote
-  $result = db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid);
-  $num_voters = db_num_rows($result);
-  $quorum = _decisions_get_quorum($node);
-  return ($num_voters >= $quorum);
+function decisions_results() {
+  if ($node = node_load(arg(1))) {
+    drupal_set_title(check_plain($node->title));
+    return node_show($node, 0);
+  }
+  else {
+    // The url does not provide the appropriate node id
+    drupal_not_found();
+  }
 }
 
 /**
@@ -1186,6 +1204,43 @@ function decisions_cancel($nid) {
   }
 }
 
+
+/**********************/
+/* Internal functions */
+/**********************/
+
+/**
+ * Function that tells if the given decision is open to votes.
+ */
+function _decisions_is_open($node) {
+  $time = time();
+  return ($node->active &&                    // node must be active
+          // current time must be past start date and before end date
+          ($time >= $node->startdate) &&
+          ($node->runtime == DECISIONS_RUNTIME_INFINITY ||
+           $time < ($node->startdate + $node->runtime)));
+}
+
+/**
+ * Function that tells if the given user can vote on this decision.
+ */
+function _decisions_can_vote($node, $user = NULL) {
+  return (_decisions_is_open($node) &&         // node must be open
+          !$node->voted &&                    // user should not have already voted
+          _decisions_eligible($node, $user));  // user must be eligible to vote
+}
+
+/**
+ * Function that tells if the given decision meets the quorum.
+ */
+function _decisions_meets_quorum($node) {
+  // compute number of people that have cast their vote
+  $result = db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid);
+  $num_voters = db_num_rows($result);
+  $quorum = _decisions_get_quorum($node);
+  return ($num_voters >= $quorum);
+}
+
 /**
  * validate vote form submission
  *
@@ -1197,31 +1252,12 @@ function decisions_cancel($nid) {
  * @returns boolean true if form has valid data or if no hook is
  * defined in mode
  */
-function decisions_vote_validate($node) {
+function _decisions_vote_validate($node) {
   $mode = _decisions_get_mode($node);
   if (function_exists("decisions_{$mode}_vote_validate") ) {
     return call_user_func("decisions_{$mode}_vote_validate", $node, $_POST);
   }
   return TRUE;
-}
-
-/**
- * check if user is eligible to this decision
- */
-function decisions_eligible($node, $uid = NULL) {
-  global $user;
-  if (is_null($uid)) {
-    $uid = $user->uid;
-  }
-
-  if ($node->uselist) {
-    $can_vote = db_fetch_object(db_query("SELECT COUNT(*) AS eligible FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d", $node->nid, $uid));
-    $eligible = $can_vote->eligible;
-  }
-  else {
-    $eligible = user_access('vote on decisions');
-  }
-  return $eligible;
 }
 
 /**
@@ -1231,34 +1267,6 @@ function decisions_eligible($node, $uid = NULL) {
 function _decisions_panic_on_mode($mode, $function = '') {
   watchdog('decisions', t('Unknown decision mode : @mode in "@function".', array('@mode' => $mode, '@function' => $function), WATCHDOG_ERROR));
   drupal_set_message(t('Unknown decision mode : @mode in "@function".', array('@mode' => $mode, '@function' => $function), 'error'));
-}
-
-/**
- * internal function to load the available modes.
- *
- * this scans the modes subdirectory to find mode.inc files, where
- * mode is considered to be the mode name. found files are loaded and
- * added to the mode list.
- *
- * @uses file_scan_directory()
- */
-function decisions_modes() {
-  static $decisions_modes;
-
-  if (!isset($decisions_modes)) {
-    $path = drupal_get_path('module', 'decisions');
-    $files = file_scan_directory($path . '/modes', '^.*\.inc$');
-    foreach ($files as $filename => $file) {
-      require_once($file->filename);
-      $mode = $file->name;
-      if (function_exists("decisions_${mode}_longname") ) {
-        $decisions_modes[] = $mode;
-      } else {
-        drupal_set_message("Function decisions_${mode}_longname is not set, setting a default name.");
-      }
-    }
-  }
-  return $decisions_modes;
 }
 
 /**
@@ -1326,30 +1334,22 @@ function _decisions_user_votes($node) {
 }
 
 /**
- * Helper function to list algorithms for a given mode
+ * check if user is eligible to this decision
  */
-function _decisions_algorithms($mode) {
-  if (function_exists("decisions_{$mode}_algorithms")) {
-    $algs = call_user_func("decisions_{$mode}_algorithms");
-    $error = false;
-    if (!is_array($algs)) {
-      $error = t('Element returned by the call to function @function is not an array, returning dummy value.', 
-                    array('@function' => "decisions_{$mode}_algorithms"));
-    } else if (count($algs) == 0) {
-      $error = t('Array returned by the call to function @function is empty, returning dummy value.', 
-                    array('@function' => "decisions_{$mode}_algorithms"));      
-    }
-    if ($error) {
-      watchdog('decisions', $error, WATCHDOG_WARNING);
-      drupal_set_message($error, 'warning');
-      return array(NULL);
-    } else {
-      return $algs;
-    }
+function _decisions_eligible($node, $uid = NULL) {
+  global $user;
+  if (is_null($uid)) {
+    $uid = $user->uid;
+  }
+
+  if ($node->uselist) {
+    $can_vote = db_fetch_object(db_query("SELECT COUNT(*) AS eligible FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d", $node->nid, $uid));
+    $eligible = $can_vote->eligible;
   }
   else {
-    _decisions_panic_on_mode($mode, __FUNCTION__);
+    $eligible = user_access('vote on decisions');
   }
+  return $eligible;
 }
 
 /**
@@ -1360,7 +1360,7 @@ function _decisions_algorithms($mode) {
  *   value.
  * @return An array of form elements for month, day, year, hour, and minute
  */
-function decisions_form_date($timestamp) {
+function _decisions_form_date($timestamp) {
   // populate drop down values...
   // ...months
   $months = array(1 => t('January'), t('February'), t('March'), t('April'), t('May'), t('June'), t('July'), t('August'), t('September'), t('October'), t('November'), t('December'));
@@ -1422,7 +1422,6 @@ function decisions_form_date($timestamp) {
   return $form;
 }
 
-
 /**
  * Takes a time element and prepares to send it to form_date()
  * 
@@ -1458,6 +1457,37 @@ function _decisions_form_prepare_datetime($time = '', $offset = 0){
   }
   // return the array
   return $time_array;
+}
+
+/**
+ * Content of the block, as returned by decisions_block('view')
+ */
+function _decisions_block_mostrecent() {
+  $output = '';
+  $result = db_query('SELECT nid FROM {decisions} WHERE active=1 ORDER BY nid DESC LIMIT 1');
+  // Check that there is an active decision
+  if (db_num_rows($result) > 0) {
+    $decision = db_fetch_object($result);
+    $n = decisions_view(node_load($decision->nid), false, false, true);
+    /* XXX: we have to do this because somehow the #printed settings lives across multiple node_load */
+    unset($n->content['#printed']);
+    $output = drupal_render($n->content);
+  }
+  else {
+    $output = t('No active decisions.');
+  }
+  return $output;
+}
+
+/**
+ * Returns true if the user can view the results of current node.
+ */
+function _decisions_can_view_results($node) {
+  $view_results = variable_get('decisions_view_results', DECISIONS_DEFAULT_VIEW_RESULTS);
+  return (_decisions_meets_quorum($node) && // node meets the quorum
+          (!_decisions_is_open($node)       // node is closed
+          || ($node->voted && $view_results == 'aftervote') // user voted
+          || ($view_results == 'always'))); // all can view
 }
 
 ?>
