@@ -268,9 +268,6 @@ function decisions_form(&$node, $form_values = NULL) {
                                          '#default_value' => isset($node->showvotes)? $node->showvotes : 1,
                                          );
 
-  
-//  $_duration = array(0 => t('Unlimited')) + drupal_map_assoc(array(86400, 172800, 345600, 604800, 1209600, 2419200, 4838400, 9676800, 31536000), 'format_interval');
-
   $form['settings']['date'] = array(
     '#type' => 'fieldset',
     '#title' => t('Date options'),
@@ -757,6 +754,9 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
 /* Theme functions */
 /*******************/
 
+/**
+ * Theme stub for rendering ecisions header (contains dates and quorum informations).
+ */
 function theme_decisions_view_header($node, $teaser = FALSE) {
 
   $output = '<div class="decisions-header">';
@@ -818,15 +818,18 @@ function theme_decisions_view_voting($form) {
   return $output;
 }
 
+/**
+ * Theme stub for a decisions bar.
+ */
 function theme_decisions_bar($title, $percentage, $votes) {
   $output = '<div class="text">'. $title .'</div>';
   $output .= '<div class="bar"><div style="width: '. $percentage .'%;" class="foreground"></div></div>';
   $output .= '<div class="percent">'. $percentage .'% ('. $votes .')</div>';
    return $output;
- }
+}
  
- /**
- * outputs a status line
+/**
+ * Outputs a status line.
  */
 function theme_decisions_status($message) {
     return '<div class="error">' . $message . '</div>';
@@ -1029,9 +1032,9 @@ function decisions_modes() {
 }
  
 /**
- * show results of the vote
+ * Show results of the vote.
  *
- * this calls the appropriate vote results function, depending on the
+ * This calls the appropriate vote results function, depending on the
  * mode. It will call the decisions_view_results_$mode hook.
  */
 function decisions_view_results(&$node, $teaser, $page) {
@@ -1066,9 +1069,9 @@ function decisions_voting_form(&$node, $teaser = FALSE, $page = FALSE) {
 }
 
 /**
- * record a vote on the node
+ * Record a vote on the node.
  *
- * this calls the appropriate vote recording function, depending on
+ * This calls the appropriate vote recording function, depending on
  * the mode. It will call the decisions_vote_$mode hook.
  */
 function decisions_vote($node) {
@@ -1121,7 +1124,7 @@ function decisions_algorithms($mode) {
 /*************/
 
 /**
- * Callback for 'results' tab for decisions you can vote on
+ * Callback for 'results' tab for decisions you can vote on.
  */
 function decisions_results() {
   if ($node = node_load(arg(1))) {
@@ -1135,7 +1138,7 @@ function decisions_results() {
 }
 
 /**
- * Callback for canceling a vote
+ * Callback for canceling a vote.
  */
 function decisions_cancel($nid) {
   global $user;
@@ -1161,7 +1164,7 @@ function decisions_cancel($nid) {
 }
 
 /**
- * Display the votes tab
+ * Callback to display the votes tab.
  */
 function decisions_votes_tab() {
   if ($node = node_load(arg(1))) {
@@ -1245,9 +1248,9 @@ function _decisions_meets_quorum($node) {
 }
 
 /**
- * validate vote form submission
+ * Validate vote form submission
  *
- * this will call a hook named decisions_vote_validate_$mode and
+ * This will call a hook named decisions_vote_validate_$mode and
  * return its value. hooks should check $POST to see if the vote data
  * submitted is valid and use form_set_error() if the form has invalid
  * data.
@@ -1264,8 +1267,8 @@ function _decisions_vote_validate($node) {
 }
 
 /**
- * internal function factored out that just rings lots of bells when
- * we detect an unknown mode
+ * Internal function factored out that just rings lots of bells when
+ * we detect an unknown mode.
  */
 function _decisions_panic_on_mode($mode, $function = '') {
   watchdog('decisions', t('Unknown decision mode : @mode in "@function".', array('@mode' => $mode, '@function' => $function), WATCHDOG_ERROR));
@@ -1273,7 +1276,7 @@ function _decisions_panic_on_mode($mode, $function = '') {
 }
 
 /**
- * get all votes from the given node
+ * Get all votes from the given node.
  */
 function _decisions_votes($node) {
   $votes = array();
@@ -1286,7 +1289,7 @@ function _decisions_votes($node) {
 }
 
 /**
- * count the elligible voters for a given decision
+ * Count the elligible voters for a given decision.
  */
 function _decisions_count_eligible($node) {
   if ($node->uselist) {
@@ -1310,7 +1313,7 @@ function _decisions_count_eligible($node) {
 }
 
 /**
- * returns the quorum (minimum voters) of a node
+ * Returns the quorum (minimum voters) of a node.
  */
 function _decisions_get_quorum($node) {
   $num_eligible_voters = _decisions_count_eligible($node);
@@ -1319,7 +1322,7 @@ function _decisions_get_quorum($node) {
 }
 
 /**
- * get all votes by uid in a an array, in a uid => votes fashion
+ * Get all votes by uid in a an array, in a uid => votes fashion.
  */
 function _decisions_user_votes($node) {
   $votes = _decisions_votes($node);
@@ -1337,7 +1340,7 @@ function _decisions_user_votes($node) {
 }
 
 /**
- * check if user is eligible to this decision
+ * Check if user is eligible to this decision.
  */
 function _decisions_eligible($node, $uid = NULL) {
   global $user;
