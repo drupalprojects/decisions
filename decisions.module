@@ -1014,6 +1014,7 @@ function decisions_vote($node) {
  * Helper function to list algorithms for a given mode
  */
 function decisions_algorithms($mode) {
+  $algs = array();
   if (function_exists("{$mode}_decisions_algorithms")) {
     $algs = call_user_func("{$mode}_decisions_algorithms");
     $error = false;
@@ -1027,14 +1028,12 @@ function decisions_algorithms($mode) {
     if ($error) {
       watchdog('decisions', $error, WATCHDOG_WARNING);
       drupal_set_message($error, 'warning');
-      return array(NULL);
-    } else {
-      return $algs;
     }
   }
   else {
     _decisions_panic_on_mode($mode, __FUNCTION__);
   }
+  return $algs;
 }
 
 
