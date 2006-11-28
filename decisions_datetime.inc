@@ -19,7 +19,7 @@
  * @param $node The submitted node with form data.
  * @param $date The name of the date ('decisions_open' or 'decisions_close') to translate.
  */
-function decisions_translate_form_date($array) {
+function _decisions_translate_form_date($array) {
   return _decisions_mktime($array['hour'], $array['minute'], 59, $array['month'], $array['day'], $array['year'], 0);
 }
 

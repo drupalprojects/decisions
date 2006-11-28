@@ -470,7 +470,7 @@ function decisions_menu($may_cache) {
           $items[] = array(
                            'path' => 'node/' . $nid . '/votes',
                            'title' => t('votes'),
-                           'callback' => 'decisions_tab_votes',
+                           'callback' => 'decisions_votes_tab',
                            'access' => user_access('inspect all votes'),
                            'weight' => 3,
                            'type' => MENU_LOCAL_TASK
@@ -481,7 +481,7 @@ function decisions_menu($may_cache) {
           $items[] = array(
                            'path' => 'node/' . $nid . '/electoral_list',
                            'title' => t('electoral list'),
-                           'callback' => 'decisions_tab_electoral_list',
+                           'callback' => 'decisions_electoral_list_tab',
                            'access' => user_access('view decisions'),
                            'weight' => 3,
                            'type' => MENU_LOCAL_TASK
@@ -489,7 +489,7 @@ function decisions_menu($may_cache) {
           // Allow voters to be removed
           $items[] = array(
                            'path' => 'node/' . $nid . '/remove',
-                           'callback' => 'decisions_remove_voter',
+                           'callback' => 'decisions_electoral_list_remove_voter',
                            'access' => user_access('administer decisions'),
                            'weight' => 3,
                            'type' => MENU_CALLBACK,
@@ -574,11 +574,11 @@ function decisions_cancel_form($nid) {
  */
 function decisions_update($node) {
   // Compute startdate and runtime.
-  $startdate = decisions_translate_form_date($node->settings['date']['startdate']['date']);
+  $startdate = _decisions_translate_form_date($node->settings['date']['startdate']['date']);
   if ($node->settings['date']['noenddate']) {
     $runtime = DECISIONS_RUNTIME_INFINITY;
   } else {
-    $enddate =  decisions_translate_form_date($node->settings['date']['enddate']['date']);
+    $enddate =  _decisions_translate_form_date($node->settings['date']['enddate']['date']);
     if ($enddate < $startdate) {
       form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
       $enddate = $startdate;
@@ -622,11 +622,11 @@ function _decisions_get_mode($node) {
  */
 function decisions_insert($node) {
   // Compute startdate and runtime.
-  $startdate = decisions_translate_form_date($node->settings['date']['startdate']['date']);
+  $startdate = _decisions_translate_form_date($node->settings['date']['startdate']['date']);
   if ($node->settings['date']['noenddate']) {
     $runtime = DECISIONS_RUNTIME_INFINITY;
   } else {
-    $enddate =  decisions_translate_form_date($node->settings['date']['enddate']['date']);
+    $enddate =  _decisions_translate_form_date($node->settings['date']['enddate']['date']);
     if ($enddate < $startdate) {
       form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
       $enddate = $startdate;
@@ -874,7 +874,10 @@ function decisions_electoral_list_form($nid) {
 
 }
 
-function decisions_tab_electoral_list() {
+/**
+ * Outputs the electoral list tab.
+ */
+function decisions_electoral_list_tab() {
   if ($node = node_load(arg(1))) {
     if (!$node->uselist) {
       drupal_not_found();
@@ -940,7 +943,7 @@ function decisions_tab_electoral_list() {
 /**
  * Remove an individual voter from the electoral list
  */
-function decisions_remove_voter() {
+function decisions_electoral_list_remove_voter() {
   $nid = arg(1);
   $uid = arg(3);
   if ($uid && $node = node_load($nid)) {
@@ -989,53 +992,6 @@ function decisions_electoral_list_submit($form_id, $form_values) {
   if ($add_user) {
     db_query('REPLACE INTO {decisions_electoral_list} (nid, uid) SELECT "%d", u.uid FROM users u WHERE u.name = "%s"', $form_values['nid'], $add_user);
     drupal_set_message(t('%user added to electoral list.', array('%user' => $add_user)));
-  }
-}
-
-/**
- * display the votes tab
- */
-function decisions_tab_votes() {
-  if ($node = node_load(arg(1))) {
-    if (!$node->showvotes) {
-      // Decision is set to not allow viewing of votes
-      drupal_not_found();
-      return;
-    }
-    drupal_set_title(check_plain($node->title));
-    $output = t('This table lists all the recorded votes for this Decision. If anonymous users are allowed to vote, they will be identified by the IP address of the computer they used when they voted.');
-
-    $header[] = array('data' => t('Visitor'), 'field' => 'u.name');
-    $header[] = array('data' => t('Vote'), '');
-
-    $result = pager_query('SELECT v.value, v.uid, v.hostname, v.tag, u.name FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_id = %d' . tablesort_sql($header), 20, 0, NULL, $node->nid);
-    $votes = array();
-    $names = array();
-    while ($vote = db_fetch_object($result)) {
-      $key = $vote->uid? $vote->uid : $vote->hostname;
-      $votes[$key][] = $vote;
-      $names[$key] = $vote->name ? theme('username', $vote) : check_plain($vote->hostname);
-    }
-
-    $mode = _decisions_get_mode($node);
-    $function_format_votes = "decisions_{$mode}_format_votes";
-    if (!function_exists($function_format_votes)) {
-      _decisions_panic_on_mode($mode, __FUNCTION__);
-      drupal_not_found();
-    }
-    
-    $rows = array();
-    foreach ($names as $key => $name) {
-      $rows[$key]['name'] = $name;
-      $rows[$key]['vote'] = call_user_func($function_format_votes, $node, $votes[$key]);
-    }
-
-    $output .= theme('table', $header, $rows);
-    $output .= theme('pager', NULL, 20, 0);
-    print theme('page', $output);
-  }
-  else {
-    drupal_not_found();
   }
 }
 
@@ -1199,6 +1155,53 @@ function decisions_cancel($nid) {
     }
     drupal_goto('node/'. $nid);
   }       
+  else {
+    drupal_not_found();
+  }
+}
+
+/**
+ * Display the votes tab
+ */
+function decisions_votes_tab() {
+  if ($node = node_load(arg(1))) {
+    if (!$node->showvotes) {
+      // Decision is set to not allow viewing of votes
+      drupal_not_found();
+      return;
+    }
+    drupal_set_title(check_plain($node->title));
+    $output = t('This table lists all the recorded votes for this Decision. If anonymous users are allowed to vote, they will be identified by the IP address of the computer they used when they voted.');
+
+    $header[] = array('data' => t('Visitor'), 'field' => 'u.name');
+    $header[] = array('data' => t('Vote'), '');
+
+    $result = pager_query('SELECT v.value, v.uid, v.hostname, v.tag, u.name FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_id = %d' . tablesort_sql($header), 20, 0, NULL, $node->nid);
+    $votes = array();
+    $names = array();
+    while ($vote = db_fetch_object($result)) {
+      $key = $vote->uid? $vote->uid : $vote->hostname;
+      $votes[$key][] = $vote;
+      $names[$key] = $vote->name ? theme('username', $vote) : check_plain($vote->hostname);
+    }
+
+    $mode = _decisions_get_mode($node);
+    $function_format_votes = "decisions_{$mode}_format_votes";
+    if (!function_exists($function_format_votes)) {
+      _decisions_panic_on_mode($mode, __FUNCTION__);
+      drupal_not_found();
+    }
+    
+    $rows = array();
+    foreach ($names as $key => $name) {
+      $rows[$key]['name'] = $name;
+      $rows[$key]['vote'] = call_user_func($function_format_votes, $node, $votes[$key]);
+    }
+
+    $output .= theme('table', $header, $rows);
+    $output .= theme('pager', NULL, 20, 0);
+    print theme('page', $output);
+  }
   else {
     drupal_not_found();
   }
