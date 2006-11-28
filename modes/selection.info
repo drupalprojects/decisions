@@ -1,0 +1,5 @@
+; $Id$
+name = Selection
+description = A decision mode for the Decisions module that allows select one or many options.
+package = Decisions
+dependencies = decisions votingapi

@@ -5,6 +5,7 @@ Decisions HEAD in development
    * install and deinstall hooks
    * still has major issues
    * branch will be created and 0.2 released when port is functional
+ * voting modes are now modules on their own
  * encapsulation of the modes out of the .module, to ease addition of
    new modes and allow the deactivation of modes from the module page
    * added a decisions_hook_node_info() to dynamically generate the decisions_node_info()

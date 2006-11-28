@@ -7,13 +7,33 @@
  * from 1 to n
  *
  * $Id$
+ * 
  */
 
-/**
- * Implementation of the decisions_longname() hook
- */
-function decisions_ranking_longname() {
-  return t("Ranking");
+
+function ranking_help($section) {
+  switch ($section) {
+  case 'admin/modules#description':
+    break;
+  default:
+    if ($section == 'node/add#decisions-ranking') {
+      $help = t('Creates a vote where n options are ranked from 1 to n.');
+    }
+    break;
+  }
+  return $help;
+}
+
+function ranking_menu($may_cache) {
+  $items[] = array('path' => 'node/add/decisions-ranking',
+                   'title' => 'decisions-ranking',
+                   'access' => user_access('create decisions'),
+                   );
+  return $items;
+}
+
+function ranking_node_info() {
+  return array('decisions_ranking' => array('name' => t('Decisions - ranking'), 'module' => 'decisions', 'description' => t('Creates a vote where n options are ranked from 1 to n.')));
 }
 
 /**
@@ -21,16 +41,6 @@ function decisions_ranking_longname() {
  */
 function decisions_ranking_algorithms() {
   return array('instant runoff', 'borda count');
-}
-
-/**
- * Implementation of the decisions_node_info() hook
- */
-function decisions_ranking_node_info() {
-  return array(
-      'name' => t('decisions-ranking'),
-      'description' => t('Creates a vote where n options are ranked from 1 to n.')
-    );
 }
 
 /**
