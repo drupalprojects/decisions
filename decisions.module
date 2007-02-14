@@ -407,9 +407,8 @@ function decisions_menu($may_cache) {
                      'title' => t('Decisions'),
                      'description' => t('Update settings for Decisions'),
                      'callback' => 'drupal_get_form',
-                     'callback arguments' => array('decisions_settings_helper'),
+                     'callback arguments' => array('decisions_admin_settings'),
                      'access' => user_access('administer decisions'),
-                     
                      );
   }
   else {
@@ -724,10 +723,13 @@ function theme_decisions_view_header($node, $teaser = FALSE) {
   $result = db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid);
   $num_votes = db_num_rows($result);
   $output .= '<div class="decisions-votes">';
-  $output .= t('Total votes: @d', array('@d' => $num_votes));
-  $output .= t(' (out of @v eligible voter' . 
-                 ($num_eligible_voters == 1? '' : 's') . ')',
-                 array('@v' => $num_eligible_voters));
+  $output .= t('Total votes: @num-votes (out of @num-voters eligible @voters)',
+               array(
+                 '@num-votes' => $num_votes,
+                 '@num-voters' => $num_eligible_voters,
+                 '@voters' => format_plural($num_eligible_voters, 'voter', 'voters')
+               )
+              );
   $output .= '</div>';
 
   // quorum
