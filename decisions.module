@@ -407,9 +407,8 @@ function decisions_menu($may_cache) {
                      'title' => t('Decisions'),
                      'description' => t('Update settings for Decisions'),
                      'callback' => 'drupal_get_form',
-                     'callback arguments' => array('decisions_settings_helper'),
+                     'callback arguments' => array('decisions_admin_settings'),
                      'access' => user_access('administer decisions'),
-                     
                      );
   }
   else {
