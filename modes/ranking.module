@@ -72,7 +72,7 @@ function ranking_decisions_voting_form(&$node, $teaser, $page) {
         $val = t('3rd');
       }
       else {
-        $val = t(strval($i) . 'th');
+        $val = t('!{num}th', array('!{num}' => $i));
       }
       $choices[$i] = $val;
     }
