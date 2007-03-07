@@ -653,6 +653,11 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
     }
   }
 
+  // Since we have a body (the decision's description), we need to
+  // include that in the $node->content array, too.
+  $node = node_prepare($node, $teaser);
+  $node->content['body']['#weight'] = -1;
+
   // Previewing a node, so don't show results
   if ($node->in_preview) {
     // Show the voting form but don't let them vote
