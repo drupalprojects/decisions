@@ -10,16 +10,9 @@
 
 function selection_help($section) {
   switch ($section) {
-  case 'admin/modules#description':
-    $help = "foo";
-    break;
-  default:
-    if ($section == 'node/add#decisions-selection') {
-      $help = t('Creates a decision where the user selects one or many options.');
-    }
-    break;
+  case 'node/add#decisions-selection':
+    return t('Creates a decision where the user selects one or many options.');
   }
-  return $help;
 }
 
 function selection_menu($may_cache) {

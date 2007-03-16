@@ -13,15 +13,9 @@
 
 function ranking_help($section) {
   switch ($section) {
-  case 'admin/modules#description':
-    break;
-  default:
-    if ($section == 'node/add#decisions-ranking') {
-      $help = t('Creates a vote where n options are ranked from 1 to n.');
-    }
-    break;
+  case 'node/add#decisions-ranking':
+    return t('Creates a vote where n options are ranked from 1 to n.');
   }
-  return $help;
 }
 
 function ranking_menu($may_cache) {
