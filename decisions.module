@@ -127,7 +127,7 @@ function decisions_form(&$node, $form_values = NULL) {
     // Hack for translating string before we know the specific number
     t('Choice @n', array('@n' => 'n'))
     .':\'.replace(\'n\', nextChoiceN) + \'<\/label>\' +
-     \'<input type="text" maxlength="128" name="choice[\' + nextChoiceN + \'][label]"" id="edit-choice-\' + nextChoiceN + \'-label" size="60" class="form-text choices" />\' +
+     \'<input type="text" maxlength="128" name="choice[\' + nextChoiceN + \'][label]" id="edit-choice-\' + nextChoiceN + \'-label" size="60" class="form-text choices" />\' +
      \'<\/div>\';
       
     $(html).insertBefore("#morechoices").fadeIn();
