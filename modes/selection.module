@@ -117,7 +117,7 @@ function selection_decisions_view_results($node, $teaser, $page) {
       if (!$votes[$i]) {
         $votes[$i] = 0;
       }
-      $percentage = round(100 * $votes[$i] / $total_votes, 0);
+      $percentage = round(100 * $votes[$i] / array_sum($votes), 0);
       $output .= theme('decisions_bar',  check_plain($ch['label']), $percentage, format_plural($votes[$i], '1 vote', '@count votes'));
     }
     $output .= '</div>';
