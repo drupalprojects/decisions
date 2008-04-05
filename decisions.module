@@ -587,15 +587,15 @@ function decisions_insert($node) {
 
   if ($node->settings['uselist']) {
     // check first if authenticated users have the right to vote, because authenticated users are not added to the users_roles permission, probably for performance reasons
-    $result = db_fetch_object(db_query("SELECT COUNT(*) AS hit FROM {permission} JOIN role ON role.rid = permission.rid WHERE FIND_IN_SET(' vote on decisions', perm) AND role.name = 'authenticated user'"));
+    $result = db_fetch_object(db_query("SELECT COUNT(*) AS hit FROM {permission} p JOIN {role} r ON r.rid = p.rid WHERE FIND_IN_SET(' vote on decisions', perm) AND r.name = 'authenticated user'"));
     if ($result->hit) {
       // special case: any authenticated user can vote
       // add all current users to electoral list
-      db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.uid != 0", $node->nid);
+      db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM {users} u WHERE u.uid != 0", $node->nid);
     }
     else {
       // all users must not be allowed to vote, add relevant users only
-      db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users_roles u, permission p WHERE FIND_IN_SET(' view decisions', p.perm) AND u.rid = p.rid AND u.uid != 0", $node->nid);
+      db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM {users_roles} u, {permission} p WHERE FIND_IN_SET(' view decisions', p.perm) AND u.rid = p.rid AND u.uid != 0", $node->nid);
     }
   }
 
@@ -947,7 +947,7 @@ function decisions_electoral_list_validate($form_id, $form_values) {
 function decisions_electoral_list_submit($form_id, $form_values) {
   $add_user = $form_values['electoral_list']['add_user'];
   if ($add_user) {
-    db_query('REPLACE INTO {decisions_electoral_list} (nid, uid) SELECT "%d", u.uid FROM users u WHERE u.name = "%s"', $form_values['nid'], $add_user);
+    db_query('REPLACE INTO {decisions_electoral_list} (nid, uid) SELECT "%d", u.uid FROM {users} u WHERE u.name = "%s"', $form_values['nid'], $add_user);
     drupal_set_message(t('%user added to electoral list.', array('%user' => $add_user)));
   }
 }
@@ -1222,7 +1222,7 @@ function _decisions_count_eligible($node) {
     return $result->num;    
   } else {
     // check first if authenticated users have the right to vote, because authenticated users are not added to the users_roles permission, probably for performance reasons
-    $result = db_fetch_object(db_query("SELECT COUNT(*) AS hit FROM {permission} JOIN role ON role.rid = permission.rid WHERE FIND_IN_SET(' vote on decisions', perm) AND role.name = 'authenticated user'"));
+    $result = db_fetch_object(db_query("SELECT COUNT(*) AS hit FROM {permission} p JOIN {role} r ON r.rid = p.rid WHERE FIND_IN_SET(' vote on decisions', perm) AND r.name = 'authenticated user'"));
     if ($result->hit) {
       // special case: any authenticated user can vote
       // consider all current to be elligible
