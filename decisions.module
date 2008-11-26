@@ -109,33 +109,9 @@ function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_
  *
  * This hook displays the form necessary to edit the *node* (ie. not the votes).
  */
-function decisions_form(&$node, $form_state) {
+function decisions_form(&$node, &$form_state) {
   $mode = _decisions_get_mode($node);
-
-  if (function_exists('_drupal_add_js')) {
-    $jQuery = TRUE;
-    // Using 5.0 or 4.7 with the jQuery patch
-        $js = '$(document).ready(function(){
-  $("#morechoices").hide();
-  $(\'<input type="button" id="add-choice" value="'. t('Add choice') .'"/>\').insertAfter("#morechoices");
-  $("#add-choice").click(function(){
-    var nextChoiceN = $("input.choices").length + 1;
-    var html = \'<div class="form-item">\' +
-      \'<label for="edit-choice-\' + nextChoiceN + \'-label">\' + \''. 
-    // Hack for translating string before we know the specific number
-    t('Choice @n', array('@n' => 'n'))
-    .':\'.replace(\'n\', nextChoiceN) + \'<\/label>\' +
-     \'<input type="text" maxlength="128" name="choice[\' + nextChoiceN + \'][label]" id="edit-choice-\' + nextChoiceN + \'-label" size="60" class="form-text choices" />\' +
-     \'<\/div>\';
-      
-    $(html).insertBefore("#morechoices").fadeIn();
-    $("#edit-choices").val(nextChoiceN);
-    $("#edit-changed").val($("#edit-changed").val() + 1);
-  });
-});';
-    drupal_add_js($js, 'inline');
-    
-  }
+  $form_values = $form_state['values']; # adapt to D6 FormsAPI
 
   $form['title'] = array(
                          '#type' => 'textfield',
