@@ -22,17 +22,14 @@ function selection_help($section) {
   return $help;
 }
 
-function selection_menu($may_cache) {
-  $items[] = array('path' => 'node/add/decisions-selection',
-                   'title' => 'decisions-selection',
-                   'access' => user_access('create decisions'),
-                   );
-  return $items;
-}
-
 function selection_node_info() {
   return array('decisions_selection' => array('name' => t('Decisions - selection'), 'module' => 'decisions', 'description' => t('Creates a decision where the user selects one or many options.')));
 }
+
+function selection_perm() { return decisions_perm(); } 
+function selection_acces($op, $node, $account) { return decisions_perm($op, $node, $account); }
+function selection_form(&$node) { return decisions_form($node); }
+
 
 /**
  * Implementation of the decisions_algorithms() hook
@@ -99,7 +96,7 @@ function selection_decisions_voting_form(&$node, $teaser, $page) {
 function selection_decisions_view_results($node, $teaser, $page) {
 
   $output = "";
-  $results = votingapi_get_voting_results('decisions', $node->nid);
+  $results = votingapi_select_votes(array('content_type' => 'decisions', 'nid' => $node->nid));
 
   // Count the votes for each choice
   $votes = array();
@@ -166,6 +163,8 @@ function selection_decisions_vote($node, $form_values) {
     $vote->value = 1;
     $vote->tag = $form_values['choice'];
     $vote->value_type = 'option';
+    $vote->content_type = 'decisions';
+    $vote->content_id = $node->nid;
     $votes[] = $vote;
   }
   else {
@@ -176,11 +175,13 @@ function selection_decisions_vote($node, $form_values) {
         $vote->value = $form_values['choice'][$key];
         $vote->value_type = 'option';
         $vote->tag = $key;
+        $vote->content_type = 'decisions';
+        $vote->content_id = $node->nid;
         $votes[] = $vote;
       }
     }
   }
-  votingapi_set_vote('decisions', $node->nid, $votes);
+  votingapi_add_votes($votes);
 }
 
 /**

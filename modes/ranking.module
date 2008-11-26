@@ -24,16 +24,20 @@ function ranking_help($section) {
   return $help;
 }
 
-function ranking_menu($may_cache) {
-  $items[] = array('path' => 'node/add/decisions-ranking',
-                   'title' => 'decisions-ranking',
-                   'access' => user_access('create decisions'),
-                   );
-  return $items;
-}
+function ranking_perm() { return decisions_perm(); } 
+function ranking_acces($op, $node, $account) { return decisions_perm($op, $node, $account); }
+function ranking_form(&$node) { return decisions_form($node); }
 
 function ranking_node_info() {
-  return array('decisions_ranking' => array('name' => t('Decisions - ranking'), 'module' => 'decisions', 'description' => t('Creates a vote where n options are ranked from 1 to n.')));
+  $info = array();
+  $info['decisions_ranking'] = array(
+    'name' => 'Decisions - ranking',
+    'module' => 'decisions',
+    'description' => 'Creates a vote where n options are ranked from 1 to n.',
+    'title_label' => t('Ranking decision'),
+    'body_label' => t('Description'),
+  );
+  return $info;
 }
 
 /**
@@ -325,7 +329,7 @@ function _decisions_calculate_bordacount($node) {
   foreach ($votes as $vote) {
     if ($vote->uid == 0) {
       // anonymous user
-      $key = $vote->hostname;
+      $key = $vote->vote_source;
     }
     else {
       // logged-in user
@@ -409,7 +413,7 @@ function _decisions_calculate_instantrunoff($node) {
   foreach ($votes as $vote) {
     if ($vote->uid == 0) {
       // anonymous user
-      $key = $vote->hostname;
+      $key = $vote->vote_source;
     }
     else {
       // logged-in user

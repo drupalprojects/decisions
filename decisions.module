@@ -28,18 +28,16 @@ define('DECISIONS_RUNTIME_INFINITY', 0);
 /**
  * Implementation of hook_access().
  */
-function decisions_access($op, $node) {
-  global $user;
-
+function decisions_access($op, $node, $account) {
   if ($op == 'create') {
-    return user_access('create decisions');
+    return user_access('create decisions', $account);
   }
   if ($op == 'delete') {
-    return user_access('delete decisions');
+    return user_access('delete decisions', $account);
   }
   if ($op == 'update') {
     /* you can update it if you can create it, provided it is your own... */
-    if (user_access('create decisions') && ($user->uid == $node->uid)) {
+    if (user_access('create decisions', $account) && ($account->uid == $node->uid)) {
       return TRUE;
     }
   }
@@ -111,7 +109,7 @@ function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_
  *
  * This hook displays the form necessary to edit the *node* (ie. not the votes).
  */
-function decisions_form(&$node, $form_values = NULL) {
+function decisions_form(&$node, $form_state) {
   $mode = _decisions_get_mode($node);
 
   if (function_exists('_drupal_add_js')) {
@@ -179,7 +177,7 @@ function decisions_form(&$node, $form_values = NULL) {
                                          '#weight' => 1
                                          );
   
-  $form['choice'] = form_builder($node->type . '_node_form', $form['choice']);
+  $form['choice'] = form_builder($node->type . '_node_form', $form['choice'], $form_state);
   
   // Decisions choices
   $form['choice'] += array(
@@ -336,15 +334,14 @@ function decisions_form(&$node, $form_values = NULL) {
 
 
   $form['format'] = filter_form($node->form);
-  $form['#multistep'] = TRUE;
   return $form;
 }
 
 /**
  * Implementation of hook_help().
  */
-function decisions_help($section) {
-  switch ($section) {
+function decisions_help($path, $arg) {
+  switch ($path) {
   case 'admin/modules#description':
     return t('Allow people to reproduce and surpass the kinds of decision-making instances that exist in face-to-face meetings.');
   }
@@ -366,19 +363,14 @@ function decisions_load($node) {
 
   $decision->voted = false;
   // See if user has voted
-  if ($user->uid) {
-    $decision->voted = (count(votingapi_get_user_votes('decisions', $node->nid)) > 0);
-  }
-  else {
-    $result = db_query('SELECT value FROM {votingapi_vote} '
-                       . 'WHERE content_id=%d AND ' . 'hostname="%s"',
-                       $node->nid, $_SERVER['REMOTE_ADDR']);
-    if (db_num_rows($result) > 0) {
-      $decision->voted = true;
-    }
-  }
+  $decision->voted = (count(votingapi_select_votes(array('content_type' => 'decisions', 'nid' => $node->nid))) > 0);
 
   return $decision;
+}
+
+function decisions_init() {
+  // extension files are included here in order to lighten Drupal bootstrap
+  module_load_include('inc', 'decisions', 'decisions_datetime');
 }
 
 /**
@@ -388,30 +380,29 @@ function decisions_load($node) {
  * eventually have a 'my decisions' and 'view decisions' kind of
  * page. (TODO)
  */
-function decisions_menu($may_cache) {
+function decisions_menu() {
   global $user;
 
-  // extension files are included here in order to lighten Drupal bootstrap
-  include_once(drupal_get_path('module', 'decisions').'/decisions_datetime.inc');
-  $items = array();
-
-  if ($may_cache) {
   
-    $items[] = array('path' => 'decisions/cancel',
-                     'title' => t('cancel'),
-                     'callback' => 'decisions_cancel',
-                     'access' => user_access('cancel own vote'),
-                     'type' => MENU_CALLBACK);
-    $items[] = array(
-                     'path' => 'admin/settings/decisions',
-                     'title' => t('Decisions'),
-                     'description' => t('Update settings for Decisions'),
+  $items['admin/settings/decisions'] = array(
+                     'title' => 'Decisions',
+                     'description' => 'Update settings for Decisions',
                      'callback' => 'drupal_get_form',
                      'callback arguments' => array('decisions_admin_settings'),
-                     'access' => user_access('administer decisions'),
+                     'access callback' => 'user_access',
+                     'access arguments' => array('administer decisions'),
                      );
-  }
-  else {
+
+  $items['node/%node/votes'] = array(
+                           'title' => 'votes',
+                           'page callback' => 'decisions_votes_tab',
+                           'page arguments' => array(1),
+                           'access callback' => '_decisions_votes_access',
+                           'access arguments' => array(1, 'inspect all votes', FALSE),
+                           'weight' => 3,
+                           'type' => MENU_LOCAL_TASK
+                           );
+    /* XXX: Needs to be ported to Drupal-6 */
     // need to be able to extract the nid
     if (arg(0) == 'node' && is_numeric(arg(1))) {
       $nid = arg(1);
@@ -421,47 +412,36 @@ function decisions_menu($may_cache) {
         // Show the results tab
         if ($node->active && !$node->voted
             && _decisions_can_view_results($node)) {
-          $items[] = array('path' => 'node/' . $nid . '/results',
-                           'title' => t('results'),
+          $items['node/' . $nid . '/results'] = array(
+                           'title' => 'results',
                            'callback' => 'decisions_results',
-                           'access' => user_access('view decisions'),
+                           'access callback' => 'user_access',
+                           'access arguments' => array('view decisions'),
                            'weight' => 3,
                            'type' => MENU_LOCAL_TASK);
         }
 
-        // Show the votes tab
-        if ($node->showvotes) {
-          $items[] = array(
-                           'path' => 'node/' . $nid . '/votes',
-                           'title' => t('votes'),
-                           'callback' => 'decisions_votes_tab',
-                           'access' => user_access('inspect all votes'),
-                           'weight' => 3,
-                           'type' => MENU_LOCAL_TASK
-                           );
-        }
-
         if ($node->uselist) {
-          $items[] = array(
-                           'path' => 'node/' . $nid . '/electoral_list',
-                           'title' => t('electoral list'),
+          $items['node/' . $nid . '/electoral_list'] = array(
+                           'title' => 'electoral list',
                            'callback' => 'decisions_electoral_list_tab',
-                           'access' => user_access('view decisions'),
+                           'access callback' => 'user_access',
+                           'access arguments' => array('view decisions'),
                            'weight' => 3,
                            'type' => MENU_LOCAL_TASK
                            );
           // Allow voters to be removed
-          $items[] = array(
-                           'path' => 'node/' . $nid . '/remove',
-                           'callback' => 'decisions_electoral_list_remove_voter',
-                           'access' => user_access('administer decisions'),
+          $items['node/%nid/remove'] = array(
+                           'page_callback' => 'decisions_electoral_list_remove_voter',
+                           'page arguments' => array('%nid' => 1),
+                           'access callback' => 'user_access',
+                           'access arguments' => array('administer decisions'),
                            'weight' => 3,
                            'type' => MENU_CALLBACK,
                            );
         }
       }
     }
-  }
 
   return $items;
 }
@@ -504,10 +484,14 @@ function decisions_admin_settings() {
   return system_settings_form($form);
 }
 
-function decisions_cancel_form($nid) {
-  $form['#action'] = url("decisions/cancel/$nid");
+function decisions_cancel_form($form_state, $nid) {
+  $form['node'] = array('#type' => 'hidden', '#value' => $nid);
   $form['submit'] = array('#type' => 'submit', '#value' => t('Cancel your vote'));
   return $form; 
+}
+
+function decisions_cancel_form_submit($form, &$form_state) {
+  decisions_cancel($form_state['values']['node']);
 }
 
 /**
@@ -705,6 +689,15 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
 /* Theme functions */
 /*******************/
 
+function decisions_theme() {
+  return array(
+    'view_header' => array('arguments' => array('node' => NULL, 'teaser' => FALSE)),
+    'view_voting' => array('arguments' => array('form' => NULL)),
+    'bar' => array('arguments' => array('title' => NULL, 'percentage' => NULL, 'votes' => NULL)),
+    'status' => array('arguments' => array('message' => NULL))
+    );
+}
+
 /**
  * Theme stub for rendering ecisions header (contains dates and quorum informations).
  */
@@ -725,8 +718,8 @@ function theme_decisions_view_header($node, $teaser = FALSE) {
 
   // votes
   $num_eligible_voters = _decisions_count_eligible($node);
-  $result = db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid);
-  $num_votes = db_num_rows($result);
+  $result = db_fetch_object(db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid));
+  $num_votes = $result->voters;
   $output .= '<div class="decisions-votes">';
   $output .= t('Total votes: @num-votes (out of @num-voters eligible @voters)',
                array(
@@ -835,7 +828,7 @@ function decisions_electoral_list_form($nid) {
  * Outputs the electoral list tab.
  */
 function decisions_electoral_list_tab() {
-  if ($node = node_load(arg(1))) {
+  if ($node = menu_get_object()) {
     if (!$node->uselist) {
       drupal_not_found();
       return;
@@ -904,9 +897,9 @@ function decisions_electoral_list_remove_voter() {
   $nid = arg(1);
   $uid = arg(3);
   if ($uid && $node = node_load($nid)) {
+    # XXX: useless SELECT call
     $result = db_query('SELECT name FROM {users} WHERE uid=%d', $uid);
-    if (db_num_rows($result) > 0) {
-      $user = db_fetch_object($result);
+    if ($user = db_fetch_object($result)) {
       db_query('DELETE FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d',
                $nid, $uid);
       drupal_set_message(t('%user removed from the electoral list.', array('%user' => $user->name)));
@@ -922,19 +915,18 @@ function decisions_electoral_list_remove_voter() {
 /**
  * Validate changes to the electoral list
  */
-function decisions_electoral_list_validate($form_id, $form_values) {
-  if ($form_values['op'] == t('Reset electoral list')) {
+function decisions_electoral_list_validate($form, &$form_state) {
+  if ($form_state['values']['op'] == t('Reset electoral list')) {
     if (user_access('administer decisions')) {
-      db_query('DELETE FROM {decisions_electoral_list} WHERE nid=%d', $form_values['nid']);
+      db_query('DELETE FROM {decisions_electoral_list} WHERE nid=%d', $form_state['values']['nid']);
       drupal_set_message(t('Electoral list cleared.'));
       return;
     }
   }
-  $add_user = $form_values['electoral_list']['add_user'];
+  $add_user = $form_state['values']['electoral_list']['add_user'];
   if ($add_user) {
     // Check that the user exists
-    $result = db_query('SELECT uid FROM {users} WHERE name="%s"', $add_user);
-    if (db_num_rows($result) == 0) {
+    if (db_fetch_object(db_query('SELECT uid FROM {users} WHERE name="%s"', $add_user))) {
       form_set_error('electoral_list][add_user', t('User %user does not exist.', array('%user' => $add_user)));
       return FALSE;
     }
@@ -944,10 +936,10 @@ function decisions_electoral_list_validate($form_id, $form_values) {
 /**
  * Submit changes to the electoral list
  */
-function decisions_electoral_list_submit($form_id, $form_values) {
-  $add_user = $form_values['electoral_list']['add_user'];
+function decisions_electoral_list_submit($form, &$form_state) {
+  $add_user = $form_state['values']['electoral_list']['add_user'];
   if ($add_user) {
-    db_query('REPLACE INTO {decisions_electoral_list} (nid, uid) SELECT "%d", u.uid FROM users u WHERE u.name = "%s"', $form_values['nid'], $add_user);
+    db_query('REPLACE INTO {decisions_electoral_list} (nid, uid) SELECT "%d", u.uid FROM users u WHERE u.name = "%s"', $form_state['values']['nid'], $add_user);
     drupal_set_message(t('%user added to electoral list.', array('%user' => $add_user)));
   }
 }
@@ -984,7 +976,7 @@ function decisions_view_results(&$node, $teaser, $page) {
  * This also takes care of registering new votes, if the vote button
  * has been pressed.
  */
-function decisions_voting_form(&$node, $teaser = FALSE, $page = FALSE) {
+function decisions_voting_form($form, &$node, $teaser = FALSE, $page = FALSE) {
   $mode = _decisions_get_mode($node);
   if (function_exists("{$mode}_decisions_voting_form")) {
     return call_user_func("{$mode}_decisions_voting_form", $node, $teaser, $page);
@@ -1052,7 +1044,7 @@ function decisions_algorithms($mode) {
  * Callback for 'results' tab for decisions you can vote on.
  */
 function decisions_results() {
-  if ($node = node_load(arg(1))) {
+  if ($node = menu_get_object()) {
     drupal_set_title(check_plain($node->title));
     return node_show($node, 0);
   }
@@ -1067,15 +1059,16 @@ function decisions_results() {
  */
 function decisions_cancel($nid) {
   global $user;
-  $nid = arg(2);
-  if ($node = node_load(array('nid' => $nid))) {
+  if ($node = node_load($nid)) {
     if ($node->voted && $node->active) {
+      $criteria = array('content_type' => 'decisions', 'content_id' => $node->nid);
       if ($user->uid) {
-        votingapi_unset_vote('decisions', $node->nid, $user->uid);
+        $criteria['uid'] = $user->uid;
       }
       else {
-        db_query("DELETE FROM {votingapi_vote} WHERE content_id=%d and hostname = '%s'", $node->nid, $_SERVER['REMOTE_ADDR']);
+        $criteria['vote_source'] = get_ipaddress();
       }
+      votingapi_delete_votes(votingapi_select_votes($criteria));
       drupal_set_message(t('Your vote was canceled.'));
     }
     else {
@@ -1092,7 +1085,7 @@ function decisions_cancel($nid) {
  * Callback to display the votes tab.
  */
 function decisions_votes_tab() {
-  if ($node = node_load(arg(1))) {
+  if ($node = menu_get_object()) {
     if (!$node->showvotes) {
       // Decision is set to not allow viewing of votes
       drupal_not_found();
@@ -1104,13 +1097,13 @@ function decisions_votes_tab() {
     $header[] = array('data' => t('Visitor'), 'field' => 'u.name');
     $header[] = array('data' => t('Vote'), '');
 
-    $result = pager_query('SELECT v.value, v.uid, v.hostname, v.tag, u.name FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_id = %d' . tablesort_sql($header), 20, 0, NULL, $node->nid);
+    $result = pager_query('SELECT v.value, v.uid, v.vote_source, v.tag, u.name FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_id = %d' . tablesort_sql($header), 20, 0, NULL, $node->nid);
     $votes = array();
     $names = array();
     while ($vote = db_fetch_object($result)) {
-      $key = $vote->uid? $vote->uid : $vote->hostname;
+      $key = $vote->uid? $vote->uid : $vote->vote_source;
       $votes[$key][] = $vote;
-      $names[$key] = $vote->name ? theme('username', $vote) : check_plain($vote->hostname);
+      $names[$key] = $vote->name ? theme('username', $vote) : check_plain($vote->vote_source);
     }
 
     $mode = _decisions_get_mode($node);
@@ -1141,6 +1134,14 @@ function decisions_votes_tab() {
 /**********************/
 
 /**
+ * Callback function to see if a node is acceptable for poll menu items.
+ */
+function _decisions_votes_access($node, $perm, $inspect_allowvotes) {
+  return true;
+  return user_access($perm) && ($node->type == 'decisions') && ($node->showvotes || !$inspect_allowvotes);
+}
+
+/**
  * Function that tells if the given decision is open to votes.
  */
 function _decisions_is_open($node) {
@@ -1166,8 +1167,8 @@ function _decisions_can_vote($node, $user = NULL) {
  */
 function _decisions_meets_quorum($node) {
   // compute number of people that have cast their vote
-  $result = db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid);
-  $num_voters = db_num_rows($result);
+  $result = db_fetch_object(db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid));
+  $num_voters = $result->voters;
   $quorum = _decisions_get_quorum($node);
   return ($num_voters >= $quorum);
 }
@@ -1196,7 +1197,7 @@ function _decisions_vote_validate($node) {
  * we detect an unknown mode.
  */
 function _decisions_panic_on_mode($mode, $function = '') {
-  watchdog('decisions', t('Unknown decision mode : @mode in "@function".', array('@mode' => $mode, '@function' => $function), WATCHDOG_ERROR));
+  watchdog('decisions', 'Unknown decision mode : @mode in "@function".', array('@mode' => $mode, '@function' => $function, WATCHDOG_ERROR));
   drupal_set_message(t('Unknown decision mode : @mode in "@function".', array('@mode' => $mode, '@function' => $function), 'error'));
 }
 
@@ -1257,7 +1258,7 @@ function _decisions_user_votes($node) {
   $userVotes = array();
 
   foreach ($votes as $vote) {
-    $key = ($vote->uid == 0 ? $vote->hostname : $vote->uid);
+    $key = ($vote->uid == 0 ? $vote->vote_source: $vote->uid);
     $user_votes[$key][] = $vote;
   }
   
@@ -1397,8 +1398,7 @@ function _decisions_block_mostrecent() {
   $output = '';
   $result = db_query('SELECT nid FROM {decisions} WHERE active=1 ORDER BY nid DESC LIMIT 1');
   // Check that there is an active decision
-  if (db_num_rows($result) > 0) {
-    $decision = db_fetch_object($result);
+  if ($decision = db_fetch_object($result)) {
     $n = decisions_view(node_load($decision->nid), false, false, true);
     /* XXX: we have to do this because somehow the #printed settings lives across multiple node_load */
     unset($n->content['#printed']);
