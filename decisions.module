@@ -628,17 +628,6 @@ function decisions_submit(&$node) {
 function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
   $mode = _decisions_get_mode($node);
 
-  if ($_POST['op'] == t('Vote')) {
-    // hook_vote_validate will return FALSE on error
-    $valid = _decisions_vote_validate($node);
-    if ($valid) {
-      decisions_vote($node);
-      drupal_set_message(t('Your vote was registered.'));
-      // Transferring makes the results tab display correctly
-      drupal_goto('node/' . $node->nid);
-    }
-  }
-
   // Since we have a body (the decision's description), we need to
   // include that in the $node->content array, too.
   $node = node_prepare($node, $teaser);
@@ -693,10 +682,10 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
 
 function decisions_theme() {
   return array(
-    'view_header' => array('arguments' => array('node' => NULL, 'teaser' => FALSE)),
-    'view_voting' => array('arguments' => array('form' => NULL)),
+    'decisions_view_header' => array('arguments' => array('node' => NULL, 'teaser' => FALSE)),
+    'decisions_view_voting' => array('arguments' => array('form' => NULL)),
     'decisions_bar' => array('arguments' => array('title' => NULL, 'percentage' => NULL, 'votes' => NULL)),
-    'status' => array('arguments' => array('message' => NULL))
+    'decisions_status' => array('arguments' => array('message' => NULL))
     );
 }
 
@@ -988,6 +977,37 @@ function decisions_voting_form($form, &$node, $teaser = FALSE, $page = FALSE) {
   }
 }
 
+function decisions_voting_form_submit($form, &$form_state) {
+  $node = node_load($form_state['values']['nid']);
+  // hook_vote_validate will return FALSE on error
+  if (decisions_voting_form_validate($node)) {
+    decisions_vote($node);
+    drupal_set_message(t('Your vote was registered.'));
+    // Transferring makes the results tab display correctly
+    drupal_goto('node/' . $node->nid);
+  }
+}
+
+/**
+ * Validate vote form submission
+ *
+ * This will call a hook named decisions_vote_validate_$mode and
+ * return its value. hooks should check $POST to see if the vote data
+ * submitted is valid and use form_set_error() if the form has invalid
+ * data.
+ *
+ * @returns boolean true if form has valid data or if no hook is
+ * defined in mode
+ */
+function decisions_voting_form_validate($form, &$form_state) {
+  $node = node_load($form_state['values']['nid']);
+  $mode = _decisions_get_mode($node);
+  if (function_exists("{$mode}_decisions_vote_validate") ) {
+    return call_user_func("{$mode}_decisions_vote_validate", $node, $form_state['values']);
+  }
+  return TRUE;
+}
+
 /**
  * Record a vote on the node.
  *
@@ -1171,24 +1191,6 @@ function _decisions_meets_quorum($node) {
   return ($num_voters >= $quorum);
 }
 
-/**
- * Validate vote form submission
- *
- * This will call a hook named decisions_vote_validate_$mode and
- * return its value. hooks should check $POST to see if the vote data
- * submitted is valid and use form_set_error() if the form has invalid
- * data.
- *
- * @returns boolean true if form has valid data or if no hook is
- * defined in mode
- */
-function _decisions_vote_validate($node) {
-  $mode = _decisions_get_mode($node);
-  if (function_exists("{$mode}_decisions_vote_validate") ) {
-    return call_user_func("{$mode}_decisions_vote_validate", $node, $_POST);
-  }
-  return TRUE;
-}
 
 /**
  * Internal function factored out that just rings lots of bells when
