@@ -129,11 +129,7 @@ function decisions_form(&$node, &$form_state) {
 
   if (isset($form_values['choices'])) {
     $choices = $form_values['choices'];
-    if ($form_values['morechoices']) {
-      $choices *= 2;
-    }    
-  }
-  else {
+  } else {
     $choices = max(2, isset($node->choice) && count($node->choice) ? count($node->choice) : 5);
   }
   
@@ -311,6 +307,28 @@ function decisions_form(&$node, &$form_state) {
 
   $form['format'] = filter_form($node->form);
   return $form;
+}
+
+/**
+ * Implementation of hook_form_alter()
+ *
+ * This is the implementation of the "More choices" option
+ */
+function decisions_form_alter(&$form, $form_state, $form_id) {
+  if (preg_match('/^decisions_.*_node_form$/', $form_id)) {
+    if ($form['choice']['morechoices']['#return_value']) { # XXX: not sure this is right
+      $form['#rebuild'] = TRUE;
+      $choices = $form['choice']['choices']['#value'];
+      for ($a = $choices+1; $a <= $choices*2; $a++) {
+        $form['choice'][$a]['label'] = array(
+                                             '#type' => 'textfield',
+                                             '#title' => t('Choice @n', array('@n' => $a)),
+                                             '#default_value' => (isset($node->choice) ? $node->choice[$a]['label'] : NULL),
+                                             '#attributes' => array('class' => 'choices'),
+        );
+      }
+    }
+  }
 }
 
 /**
