@@ -362,12 +362,9 @@ function decisions_load($node) {
   $decision->choices = count($decision->choice);
 
   // See if user has voted
-  $criteria = array('content_type' => 'decisions', 'content_id' => $node->nid);
-  if ($user->uid) {
-    $criteria['uid'] = $user->uid;
-  } else {
-    $criteria['vote_source'] = ip_address();
-  }
+  $criteria = votingapi_current_user_identifier();
+  $criteria['content_type'] = 'decisions';
+  $criteria['content_id'] = $node->nid;
   $decision->voted = count(votingapi_select_votes($criteria)) > 0;
 
   return $decision;
@@ -1066,13 +1063,9 @@ function decisions_cancel($nid) {
   global $user;
   if ($node = node_load($nid)) {
     if ($node->voted && $node->active) {
-      $criteria = array('content_type' => 'decisions', 'content_id' => $node->nid);
-      if ($user->uid) {
-        $criteria['uid'] = $user->uid;
-      }
-      else {
-        $criteria['vote_source'] = ip_address();
-      }
+      $criteria = votingapi_current_user_identifier();
+      $criteria['content_type'] => 'decisions';
+      $criteria['content_id'] => $node->nid;
       votingapi_delete_votes(votingapi_select_votes($criteria));
       drupal_set_message(t('Your vote was canceled.'));
     }
