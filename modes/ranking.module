@@ -123,6 +123,8 @@ function ranking_decisions_voting_form(&$node, $teaser, $page) {
 function ranking_decisions_view_results($node, $teaser, $page) {
   $results = _ranking_decisions_calculate_results($node);
 
+  $output = '';
+
   // If no one has voted, $results = array() and thus is empty
   if (!empty($results)) {
 
@@ -145,33 +147,32 @@ function ranking_decisions_view_results($node, $teaser, $page) {
       $output .= '</li>';
     }
     $output .= '</ol>';
-  }
 
-  if (user_access('inspect all votes') && $results->matrix) {
-    $header[0] = "Rounds";
-    $round = 1;
-    if (count($results->matrix) > 0) {
-      foreach ($results->matrix as $aRound) {
-        $header[$round] = $round;
-        $round++;
-      }
-    }
-    
-    $round = 1;
-    $i = 0;
-    if (count($results->matrix) > 0) {
-      foreach ($results->matrix as $aRound) {
-        foreach ($node->choice as $key => $choicename) {
-          $rows[$i][0] = $choicename['label'];
-          $rows[$i][$round] = count($aRound[$key]);
-          $i++;
+    if (user_access('inspect all votes') && isset($results->matrix)) {
+      $header[0] = "Rounds";
+      $round = 1;
+      if (count($results->matrix) > 0) {
+        foreach ($results->matrix as $aRound) {
+          $header[$round] = $round;
+          $round++;
         }
-        $i=0;
-        $round++;
       }
+    
+      $round = 1;
+      $i = 0;
+      if (count($results->matrix) > 0) {
+        foreach ($results->matrix as $aRound) {
+          foreach ($node->choice as $key => $choicename) {
+            $rows[$i][0] = $choicename['label'];
+            $rows[$i][$round] = count($aRound[$key]);
+            $i++;
+          }
+          $i=0;
+          $round++;
+        }
+      }
+      $output .= theme_table($header, $rows);
     }
-    $output .= theme_table($header, $rows);
-
   }
   return $output;
 }
