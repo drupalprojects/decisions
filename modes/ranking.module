@@ -172,8 +172,8 @@ function ranking_decisions_view_results($node, $teaser, $page) {
     }
     $output .= theme_table($header, $rows);
 
-    return $output;
   }
+  return $output;
 }
 
 /**
@@ -316,7 +316,7 @@ function _ranking_decisions_calculate_results($node) {
  */
 
 function _decisions_calculate_bordacount($node) {
-  $votes = _decisions_votes($node);
+  $votes = votingapi_select_votes(array('content_id' => $node->nid, 'content_type' => 'decisions'));
   
   if (count($votes) == 0) {
     // no votes yet
@@ -328,16 +328,16 @@ function _decisions_calculate_bordacount($node) {
   $userVotes = array();
 
   foreach ($votes as $vote) {
-    if ($vote->uid == 0) {
+    if ($vote['uid'] == 0) {
       // anonymous user
-      $key = $vote->vote_source;
+      $key = $vote['vote_source'];
     }
     else {
       // logged-in user
-      $key = $vote->uid;
+      $key = $vote['uid'];
     }
 
-    $userVotes[$key][$vote->value] = $vote->tag;
+    $userVotes[$key][$vote['value']] = $vote['tag'];
   }
 
   $choiceVotes = array();
@@ -412,25 +412,25 @@ function _decisions_calculate_instantrunoff($node) {
   $userVotes = array();
 
   foreach ($votes as $vote) {
-    if ($vote->uid == 0) {
+    if ($vote['uid'] == 0) {
       // anonymous user
-      $key = $vote->vote_source;
+      $key = $vote['vote_source'];
     }
     else {
       // logged-in user
-      $key = $vote->uid;
+      $key = $vote['uid'];
     }
 
     // Note: relies on ORDER BY value ASC in vote-getting SQL query
     // Otherwise a later vote might have a lower value
-    $userVotes[$key][] = $vote->tag;
+    $userVotes[$key][] = $vote['tag'];
   }
 
   $totalVotes = count($userVotes);
 
   /*
-    if ($vote->value == 1) {
-        $curRound[$vote->tag]++;
+    if ($vote['value'] == 1) {
+        $curRound[$vote['tag']]++;
         // TODO: This method of counting total votes is inaccurate because users
         // may vote but not choose a 1st-place vote
                         $totalvotes++;
