@@ -9,9 +9,9 @@
  */
 
 function selection_help($section) {
+  $help = "";
   switch ($section) {
   case 'admin/modules#description':
-    $help = "foo";
     break;
   default:
     if ($section == 'node/add#decisions-selection') {

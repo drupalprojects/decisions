@@ -12,6 +12,7 @@
 
 
 function ranking_help($section) {
+  $help = '';
   switch ($section) {
   case 'admin/modules#description':
     break;
