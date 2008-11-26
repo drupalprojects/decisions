@@ -64,6 +64,7 @@ Stéphane Couture
 Patrice D'Amours
 Chris Kennedy
 Mathieu Petit-Clair
+Yann Rocq
 [who's missing here?]
 
 Updates
