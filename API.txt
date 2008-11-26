@@ -47,8 +47,8 @@ decision_vote
 -------------
 
 Mandatory. This hook is called when a vote is registered. Form data
-setup in decisions_view_voting_$mode() will be available in the POST,
-normally. This will usually call votingapi_set_vote() or similar.
+setup in decisions_view_voting_$mode() will as an argument. This will
+usually call votingapi_set_vote() or similar.
 
 decisions_vote_validate
 -----------------------
