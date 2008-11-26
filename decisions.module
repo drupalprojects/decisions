@@ -361,9 +361,14 @@ function decisions_load($node) {
   }
   $decision->choices = count($decision->choice);
 
-  $decision->voted = false;
   // See if user has voted
-  $decision->voted = (count(votingapi_select_votes(array('content_type' => 'decisions', 'nid' => $node->nid))) > 0);
+  $criteria = array('content_type' => 'decisions', 'content_id' => $node->nid);
+  if ($user->uid) {
+    $criteria['uid'] = $user->uid;
+  } else {
+    $criteria['vote_source'] = ip_address();
+  }
+  $decision->voted = count(votingapi_select_votes($criteria)) > 0;
 
   return $decision;
 }
@@ -670,7 +675,7 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
       $node->content['decisions']['form']['#value'] = drupal_get_form('decisions_voting_form', $node, $teaser, $page);
       $node->content['decisions']['list']['#value'] = theme_decisions_view_header($node, $teaser);
     }
-    else if (_decisions_can_view_results($node)) {
+    elseif (_decisions_can_view_results($node)) {
       // show results only if the user has voted or decision is closed
       $node->content['decisions']['results']['#value'] = decisions_view_results($node, $teaser, $page);
       $node->content['decisions']['list']['#value'] = theme_decisions_view_header($node, $teaser);
@@ -693,7 +698,7 @@ function decisions_theme() {
   return array(
     'view_header' => array('arguments' => array('node' => NULL, 'teaser' => FALSE)),
     'view_voting' => array('arguments' => array('form' => NULL)),
-    'bar' => array('arguments' => array('title' => NULL, 'percentage' => NULL, 'votes' => NULL)),
+    'decisions_bar' => array('arguments' => array('title' => NULL, 'percentage' => NULL, 'votes' => NULL)),
     'status' => array('arguments' => array('message' => NULL))
     );
 }
@@ -1066,7 +1071,7 @@ function decisions_cancel($nid) {
         $criteria['uid'] = $user->uid;
       }
       else {
-        $criteria['vote_source'] = get_ipaddress();
+        $criteria['vote_source'] = ip_address();
       }
       votingapi_delete_votes(votingapi_select_votes($criteria));
       drupal_set_message(t('Your vote was canceled.'));
