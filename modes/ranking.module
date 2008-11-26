@@ -349,6 +349,9 @@ function _decisions_calculate_bordacount($node) {
     foreach ($userVote as $ranking => $choice) {
       // Negative values are possible if choices were removed after vote
       $voteValue = max($totalChoices - $ranking, 0);
+      if (!array_key_exists($choice, $choiceVotes)) {
+        $choiceVotes[$choice] = 0;
+      }        
       $choiceVotes[$choice] +=  $voteValue;
     }
   }
@@ -398,7 +401,7 @@ function _decisions_calculate_instantrunoff($node) {
   $votes = array();
   // ORDER BY value ASC lets us ensure no gaps
   $result = db_query("SELECT * FROM {votingapi_vote} v WHERE content_type='%s' AND content_id='%d' ORDER BY value ASC", 'decisions', $node->nid);
-  while ($vobj = db_fetch_object($result)) {
+  while ($vobj = db_fetch_array($result)) {
     $votes[] = $vobj;
   }
 
