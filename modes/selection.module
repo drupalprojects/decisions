@@ -103,13 +103,13 @@ function selection_decisions_view_results($node, $teaser, $page) {
   foreach ($results as $result) {
 
     // approval
-    $voteval = $result->tag;
+    $voteval = $result['tag'];
     
-    if (!$votes[$voteval]) {
+    if (!array_key_exists($voteval, $votes)) {
       $votes[$voteval] = 0;
     }
     // Not sure if this can just be = rather than +=
-    $votes[$voteval] += $result->value;
+    $votes[$voteval] += $result['value'];
   }
 
   $total_votes = array_sum($votes);
@@ -118,7 +118,7 @@ function selection_decisions_view_results($node, $teaser, $page) {
     // display results for each possible choice
     $output .= '<div class="poll">';
     foreach ($node->choice as $i => $ch) {
-      if (!$votes[$i]) {
+      if (!array_key_exists($i, $votes)) {
         $votes[$i] = 0;
       }
       $percentage = round(100 * $votes[$i] / $total_votes, 0);
