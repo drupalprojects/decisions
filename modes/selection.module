@@ -108,8 +108,8 @@ function selection_decisions_view_results($node, $teaser, $page) {
     if (!array_key_exists($voteval, $votes)) {
       $votes[$voteval] = 0;
     }
-    // Not sure if this can just be = rather than +=
-    $votes[$voteval] += $result['value'];
+    // the value is the position chosen in this case, we just want to increment
+    $votes[$voteval]++;
   }
 
   $total_votes = array_sum($votes);
