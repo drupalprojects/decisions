@@ -1,5 +1,20 @@
-Decisions HEAD in development
-----------------------------
+Decisions 6.x branch (HEAD, in progress)
+----------------------------------------
+
+ * 6.x port
+ * VotingAPI 2.x support (DRUPAL-6--2 branch, specifically)
+ * Cleanup of some forms submission processes (no more $_POST!)
+ * This port drops a few functionalities and may still be broken in
+   many ways. In particular, the Javascript is gone from the "More
+   choices" option.
+ * Some voting calculations may also be broken and have not been
+   tested.
+ * Do not rely on REMOTE_ADDR environment, use ip_address() (fixes
+   voting through proxy servers)
+ * Ranking and selection have been tested and work generally well.
+
+Decisions 5.x branch (stalled)
+------------------------------
 
  * 5.0 port (in progress)
    * install and deinstall hooks
@@ -16,8 +31,8 @@ Decisions HEAD in development
  * changed the hook_submit() to vote_submit() as per documentation and advpoll
  * changed the decisions_validate_vote_hook() to decisions_hook_validate_vote()
 
-Decisions 0.2 (DRUPAL-4-7 branch) in development
-------------------------------------------------
+Decisions 0.2 (DRUPAL-4-7 branch) (deprecated)
+----------------------------------------------
 
  * database changes:
    * startdate field added (instead of using creation date, still in progress)
