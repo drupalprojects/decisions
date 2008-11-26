@@ -159,24 +159,25 @@ function selection_decisions_vote($node, $form_values) {
   $votes = array();
   if ($node->maxchoices == 1) {
     // plurality voting
-    $vote = new stdClass();
-    $vote->value = 1;
-    $vote->tag = $form_values['choice'];
-    $vote->value_type = 'option';
-    $vote->content_type = 'decisions';
-    $vote->content_id = $node->nid;
+    $vote = array(
+                  'value' => 1,
+                  'tag' => $form_values['choice'],
+                  'value_type' => 'option',
+                  'content_type' => 'decisions',
+                  'content_id' => $node->nid);
     $votes[] = $vote;
   }
   else {
     // approval voting
     foreach ($node->choice as $key => $choice) {
       if (isset($form_values['choice'][$key])) {
-        $vote = new stdClass();
-        $vote->value = $form_values['choice'][$key];
-        $vote->value_type = 'option';
-        $vote->tag = $key;
-        $vote->content_type = 'decisions';
-        $vote->content_id = $node->nid;
+        $vote = array(
+                      'value' => $form_values['choice'][$key],
+                      'value_type' => 'option',
+                      'tag' => $key,
+                      'content_type' => 'decisions',
+                      'content_id' => $node->nid
+        );
         $votes[] = $vote;
       }
     }

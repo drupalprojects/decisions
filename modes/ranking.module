@@ -205,13 +205,12 @@ function ranking_decisions_format_votes($node, $votes) {
 function ranking_decisions_vote($node, $form_values) {
   $votes = array();
   foreach ( $form_values['choice'] as $choice => $rank ) {
-    $vote = new stdClass();
-    $vote->value = $rank;
+    $vote = array('value' => $rank);
 
     // A zero value indicates they didn't rank that choice
     if ($vote->value != 0) {
-      $vote->value_type = 'option';
-      $vote->tag = $choice;
+      $vote['value_type'] = 'option';
+      $vote['tag'] = $choice;
       $votes[] = $vote;
     }
   }
