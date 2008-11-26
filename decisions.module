@@ -975,7 +975,7 @@ function decisions_voting_form_submit($form, &$form_state) {
   $node = node_load($form_state['values']['nid']);
   // hook_vote_validate will return FALSE on error
   if (decisions_voting_form_validate($node)) {
-    decisions_vote($node);
+    decisions_vote($node, $form_state['values']);
     drupal_set_message(t('Your vote was registered.'));
     // Transferring makes the results tab display correctly
     drupal_goto('node/' . $node->nid);
@@ -1008,9 +1008,8 @@ function decisions_voting_form_validate($form, &$form_state) {
  * This calls the appropriate vote recording function, depending on
  * the mode. It will call the decisions_vote_$mode hook.
  */
-function decisions_vote($node) {
+function decisions_vote($node, $form_values) {
   $mode = _decisions_get_mode($node);
-  $form_values = $_POST;
   $ok = FALSE; // error by default
   if (_decisions_eligible($node)) {
     if (function_exists("{$mode}_decisions_vote")) {
