@@ -398,27 +398,25 @@ function decisions_menu() {
                            'type' => MENU_LOCAL_TASK
                            );
   
-  if ($node->uselist) {
-    $items['node/%node/electoral_list'] = array(
+  $items['node/%node/electoral_list'] = array(
                            'title' => 'Electoral list',
                            'page callback' => 'decisions_electoral_list_tab',
                            'page arguments' => array(1),
-                           'access callback' => 'user_access',
-                           'access arguments' => array('view decisions'),
+                           'access callback' => '_decisions_electoral_list_access',
+                           'access arguments' => array(1, 'view decisions', FALSE),
                            'weight' => 3,
                            'type' => MENU_LOCAL_TASK
                            );
-    // Allow voters to be removed
-    $items['node/%node/remove'] = array(
+  // Allow voters to be removed
+  $items['node/%node/remove'] = array(
                            'page callback' => 'decisions_electoral_list_remove_voter',
                            'page arguments' => array(1),
-                           'access callback' => 'user_access',
-                           'access arguments' => array('administer decisions'),
+                           'access callback' => '_decisions_electoral_list_access',
+                           'access arguments' => array(1, 'administer decisions', FALSE),
                            'weight' => 3,
                            'type' => MENU_CALLBACK,
                            );
-  }
-  
+    
   return $items;
 }
 
@@ -1119,8 +1117,11 @@ function decisions_votes_tab() {
  * Callback function to see if a node is acceptable for poll menu items.
  */
 function _decisions_votes_access($node, $perm, $inspect_allowvotes) {
-  return true;
-  return user_access($perm) && ($node->type == 'decisions') && ($node->showvotes || !$inspect_allowvotes);
+  return user_access($perm) && ($node->showvotes || !$inspect_allowvotes);
+}
+
+function _decisions_electoral_list_access($node, $perm, $void) {
+  return user_access($perm) && $node->uselist;
 }
 
 /**
