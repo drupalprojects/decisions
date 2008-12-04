@@ -681,6 +681,7 @@ function theme_decisions_view_header($node, $teaser = FALSE) {
   $num_eligible_voters = _decisions_count_eligible($node);
   $result = db_fetch_object(db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid));
   $num_votes = $result->voters;
+  if (!$num_votes) $num_votes = 0;
   $output .= '<div class="decisions-votes">';
   $output .= t('Total votes: @num-votes (out of @num-voters eligible @voters)',
                array(
@@ -1113,19 +1114,7 @@ function decisions_votes_tab() {
  * Callback function to see if a node is acceptable for poll menu items.
  */
 function _decisions_votes_access($node, $perm) {
-  switch (variable_get('decisions_view_results', DECISIONS_DEFAULT_VIEW_RESULTS)) {
-  case 'always':
-    $p = true;
-    break;
-  case 'aftervote':
-    $p = $node->voted;
-    break;
-  case 'afterclose':
-    $p = $node->closed;
-    break;
-  }      
-      
-  return user_access($perm) && $node->showvotes && $p;
+  return user_access($perm) && $node->showvotes;
 }
 
 function _decisions_electoral_list_access($node, $perm) {
