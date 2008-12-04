@@ -379,15 +379,14 @@ function decisions_init() {
 function decisions_menu() {
   global $user;
 
-  
   $items['admin/settings/decisions'] = array(
-                     'title' => 'Decisions',
-                     'description' => 'Update settings for Decisions',
-                     'callback' => 'drupal_get_form',
-                     'callback arguments' => array('decisions_admin_settings'),
-                     'access callback' => 'user_access',
-                     'access arguments' => array('administer decisions'),
-                     );
+    'title' => 'Configure decisions',
+    'description' => 'Configure Decisions',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('decisions_admin'),
+    'access arguments' => array('administer decisions'),
+    'type' => MENU_NORMAL_ITEM,
+   );
 
   $items['node/%node/votes'] = array(
                            'title' => 'votes',
@@ -452,7 +451,8 @@ function decisions_perm() {
 /**
  * Implementation of the admin_settings hook
  */
-function decisions_admin_settings() {
+function decisions_admin() {
+
   $enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
 
   $form['main']['decisions_default_electoral_list'] = array(
