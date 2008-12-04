@@ -347,7 +347,6 @@ function decisions_help($path, $arg) {
  * Load the votes and decision-specific data into the node object.
  */
 function decisions_load($node) {
-  global $user;
   $decision = db_fetch_object(db_query("SELECT * FROM {decisions} WHERE nid = %d", $node->nid));
   $result = db_query("SELECT vote_offset, label FROM {decisions_choices} WHERE nid = %d ORDER BY vote_offset", $node->nid);
   while ($choice = db_fetch_array($result)) {
@@ -377,8 +376,6 @@ function decisions_init() {
  * page. (TODO)
  */
 function decisions_menu() {
-  global $user;
-
   $items['admin/settings/decisions'] = array(
     'title' => 'Configure decisions',
     'description' => 'Configure Decisions',
@@ -1042,7 +1039,6 @@ function decisions_algorithms($mode) {
  * Callback for canceling a vote.
  */
 function decisions_cancel($nid) {
-  global $user;
   if ($node = node_load($nid)) {
     if ($node->voted && $node->active) {
       $criteria = votingapi_current_user_identifier();
