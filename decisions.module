@@ -260,7 +260,7 @@ function theme_decisions_view_header($node, $teaser = FALSE) {
   $num_eligible_voters = _decisions_count_eligible($node);
   $num_votes = _decisions_count_voters($node);
   $output .= '<div class="decisions-votes">';
-  $output .= t('Total votes: @num-votes (out of @num-voters eligible @voters)',
+  $output .= t('@num-votes voters out of @num-voters eligible @voters',
                array(
                  '@num-votes' => $num_votes,
                  '@num-voters' => $num_eligible_voters,
