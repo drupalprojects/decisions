@@ -954,13 +954,10 @@ function decisions_voting_form($form, &$node, $teaser = FALSE, $page = FALSE) {
 
 function decisions_voting_form_submit($form, &$form_state) {
   $node = node_load($form_state['values']['nid']);
-  // hook_vote_validate will return FALSE on error
-  if (decisions_voting_form_validate($node)) {
-    decisions_vote($node, $form_state['values']);
-    drupal_set_message(t('Your vote was registered.'));
-    // Transferring makes the results tab display correctly
-    drupal_goto('node/' . $node->nid);
-  }
+  decisions_vote($node, $form_state['values']);
+  drupal_set_message(t('Your vote was registered.'));
+  // Transferring makes the results tab display correctly
+  drupal_goto('node/' . $node->nid);
 }
 
 /**
@@ -1147,9 +1144,11 @@ function _decisions_can_vote($node, $user = NULL) {
  */
 function _decisions_meets_quorum($node) {
   // compute number of people that have cast their vote
-  $result = db_fetch_object(db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid));
-  $num_voters = $result->voters;
-  $quorum = _decisions_get_quorum($node);
+  $num_voters = 0;
+  if ($result = db_fetch_object(db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid))) {
+    $num_voters = $result->voters;
+    $quorum = _decisions_get_quorum($node);
+  }
   return ($num_voters >= $quorum);
 }
 
