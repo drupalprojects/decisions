@@ -1271,44 +1271,41 @@ function _decisions_form_date($timestamp) {
   // ...minutes (with leading 0s)
   for ($i = 0; $i <= 59; $i++) $minutes[$i] = $i < 10 ? "0$i" : $i;
 
-  // XXX: what is this for?
-  $offset = 0;
-
   // This is a GMT timestamp, so the _event_date() wrapper to display local times.
   $form['day'] = array(
     '#prefix' => '<div class="container-inline"><div class="day">',
     '#type' => 'textfield',
-    '#default_value' => _decisions_date('d', $timestamp, $offset),
+    '#default_value' => _decisions_date('d', $timestamp),
     '#maxlength' => 2,
     '#size' => 2,
     '#required' => TRUE);
   $form['month'] = array(
     '#type' => 'select',
-    '#default_value' => _decisions_date('m', $timestamp, $offset),
+    '#default_value' => _decisions_date('m', $timestamp),
     '#options' => $months,
     '#required' => TRUE);
   $form['year'] = array(
     '#type' => 'textfield',
-    '#default_value' => _decisions_date('Y', $timestamp, $offset),
+    '#default_value' => _decisions_date('Y', $timestamp),
     '#maxlength' => 4,
     '#size' => 4,
     '#required' => TRUE);
   $form['hour'] = array(
     '#prefix' => '</div>&#8212;<div class="time">',
     '#type' => 'select',
-    '#default_value' => _decisions_date($hour_format, $timestamp, $offset),
+    '#default_value' => _decisions_date($hour_format, $timestamp),
     '#options' => $hours,
     '#required' => TRUE);
   $form['minute'] = array(
     '#prefix' => ':',
     '#type' => 'select',
-    '#default_value' => _decisions_date('i', $timestamp, $offset),
+    '#default_value' => _decisions_date('i', $timestamp),
     '#options' => $minutes,
     '#required' => TRUE);
   if (isset($am_pms)) {
     $form['ampm'] = array(
       '#type' => 'radios',
-      '#default_value' => _decisions_date('a', $timestamp, $offset),
+      '#default_value' => _decisions_date('a', $timestamp),
       '#options' => $am_pms,
       '#required' => TRUE);
   }
