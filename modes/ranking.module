@@ -103,15 +103,13 @@ function ranking_decisions_voting_form(&$node, $teaser, $page) {
                        '#value' => $node->nid,
                        '#weight' => $weight++,
                        );
-
-  if (!$node->in_preview) {
-    $form['vote'] = array(
+    
+  $form['vote'] = array(
                           '#type' => 'submit',
                           '#value' => t('Vote'),
                           '#weight' => $weight++,
                           );
-  }
-
+  
   $form['#action'] = url('node/'. $node->nid);
   return $form;
 }
