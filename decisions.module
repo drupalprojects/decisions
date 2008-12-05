@@ -366,6 +366,7 @@ function decisions_load($node) {
 function decisions_init() {
   // extension files are included here in order to lighten Drupal bootstrap
   module_load_include('inc', 'decisions', 'decisions_datetime');
+  drupal_add_css(drupal_get_path('module', 'poll') .'/poll.css');
 }
 
 /**
