@@ -1176,22 +1176,21 @@ function _decisions_votes($node) {
 function _decisions_count_eligible($node) {
   if ($node->uselist) {
     $result = db_fetch_object(db_query("SELECT COUNT(*) AS num FROM {decisions_electoral_list} WHERE nid=%d", $node->nid));
-    return $result->num;    
   } else {
-    // check first if authenticated users have the right to vote, because authenticated users are not added to the users_roles permission, probably for performance reasons
-    $result = db_fetch_object(db_query("SELECT COUNT(*) AS hit FROM {permission} JOIN role ON role.rid = permission.rid WHERE FIND_IN_SET(' vote on decisions', perm) AND role.name = 'authenticated user'"));
-    if ($result->hit) {
+    // check first if authenticated users have the right to vote, because
+    // authenticated users are not added to the users_roles permission,
+    // probably for performance reasons
+    $roles = user_roles(FALSE, 'vote on decisions');
+    if ($roles[DRUPAL_AUTHENTICATED_RID]) {
       // special case: any authenticated user can vote
       // consider all current to be elligible
       $result = db_fetch_object(db_query("SELECT COUNT(*) AS num FROM {users} u WHERE u.uid != 0"));
-      return $result->num;
-    }
-    else {
-      // all users are elligible, add relevant users only
+    } else {
+      // only some roles are elligible, add relevant users only
       $result = db_fetch_object(db_query("SELECT COUNT(DISTINCT ur.uid) AS num FROM {users_roles} ur JOIN {permission} p ON ur.rid = p.rid WHERE FIND_IN_SET(' vote on decisions', p.perm) AND ur.uid != 0"));
-      return $result->num;
     }
   }
+  return $result->num;    
 }
 
 /**
