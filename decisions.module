@@ -258,12 +258,12 @@ function theme_decisions_view_header($node, $teaser = FALSE) {
 
   // votes
   $num_eligible_voters = _decisions_count_eligible($node);
-  $num_votes = _decisions_count_voters($node);
+  $num_voters = _decisions_count_voters($node);
   $output .= '<div class="decisions-votes">';
-  $output .= t('@num-votes voters out of @num-voters eligible @voters',
+  $output .= t('@num-voters out of @num-voters-eligible eligible @voters cast their ballot',
                array(
-                 '@num-votes' => $num_votes,
-                 '@num-voters' => $num_eligible_voters,
+                 '@num-voters' => $num_voters,
+                 '@num-voters-eligible' => $num_eligible_voters,
                  '@voters' => format_plural($num_eligible_voters, 'voter', 'voters')
                )
               );
