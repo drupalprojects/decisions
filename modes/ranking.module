@@ -400,7 +400,7 @@ function _decisions_calculate_bordacount($node) {
 
 function _decisions_calculate_instantrunoff($node) {
   $votes = array();
-  // ORDER BY value ASC lets us ensure no gaps
+  // we bypass votingapi because we need ORDER BY value ASC lets us ensure no gaps
   $result = db_query("SELECT * FROM {votingapi_vote} v WHERE content_type='%s' AND content_id='%d' ORDER BY value ASC", 'decisions', $node->nid);
   while ($vobj = db_fetch_array($result)) {
     $votes[] = $vobj;
