@@ -1140,8 +1140,8 @@ function _decisions_meets_quorum($node) {
   $num_voters = 0;
   if ($result = db_fetch_object(db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid))) {
     $num_voters = $result->voters;
-    $quorum = _decisions_get_quorum($node);
   }
+  $quorum = _decisions_get_quorum($node);
   return ($num_voters >= $quorum);
 }
 
