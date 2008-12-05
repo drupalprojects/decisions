@@ -111,7 +111,11 @@ function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_
  */
 function decisions_form(&$node, &$form_state) {
   $mode = _decisions_get_mode($node);
-  $form_values = $form_state['values']; # adapt to D6 FormsAPI
+  if (array_key_exists('values', $form_state)) {
+    $form_values = $form_state['values']; # adapt to D6 FormsAPI
+  } else {
+    $form_values = array();
+  }
 
   $form['title'] = array(
                          '#type' => 'textfield',
@@ -148,8 +152,6 @@ function decisions_form(&$node, &$form_state) {
                                          '#description' => t("If the amount of boxes above isn't enough, check this box and click the Preview button below to add some more."),
                                          '#weight' => 1
                                          );
-  
-  $form['choice'] = form_builder($node->type . '_node_form', $form['choice'], $form_state);
   
   // Decisions choices
   $form['choice'] += array(
@@ -198,11 +200,7 @@ function decisions_form(&$node, &$form_state) {
     $voting_algorithms[$alg] = ucwords($alg);
   }
 
-  $defaultalg = ($form_values['edit']['settings']['algorithm'] ?
-                   $form_values['edit']['settings']['algorithm'] : 
-                 (isset($node->algorithm) ? $node->algorithm : 
-                     (isset($algs[0]) ? $algs[0] : '')));
-
+  $defaultalg = (isset($node->algorithm) ? $node->algorithm : (isset($algs[0]) ? $algs[0] : ''));
   if (count($voting_algorithms) > 1) {
     $form['settings']['algorithm'] = array(
                                          '#type' => 'select',
@@ -308,7 +306,6 @@ function decisions_form(&$node, &$form_state) {
                                        );
 
 
-  $form['format'] = filter_form($node->form);
   return $form;
 }
 
@@ -586,6 +583,13 @@ function decisions_validate(&$node) {
   if ($realchoices < 2) {
     form_set_error("choice][$realchoices][label", t('You must fill in at least two choices.'));
   }
+
+  $startdate = _decisions_translate_form_date($node->settings['date']['startdate']['date']);
+  $enddate =  _decisions_translate_form_date($node->settings['date']['enddate']['date']);
+  if ($enddate < $startdate) {
+    form_set_error('enddate', t('The specified close date is less than the opening date.'));
+  }
+
 }
 
 function decisions_submit(&$node) {
