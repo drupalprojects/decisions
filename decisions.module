@@ -386,22 +386,29 @@ function decisions_menu() {
    );
 
   $items['node/%node/votes'] = array(
-                           'title' => 'votes',
+                           'title' => 'Votes',
                            'page callback' => 'decisions_votes_tab',
                            'page arguments' => array(1),
                            'access callback' => '_decisions_votes_access',
                            'access arguments' => array(1, 'inspect all votes'),
-                           'weight' => 3,
+                           'weight' => 4,
                            'type' => MENU_LOCAL_TASK
                            );
-  
+  $items['node/%node/results'] = array(
+	                            'title' => 'Results',
+	                            'page callback' => 'decisions_results',
+                                    'page arguments' => array(1),
+	                            'access callback' => '_decisions_can_view_results',
+	                            'access arguments' => array(1),
+	                            'weight' => 1, 	 
+	                            'type' => MENU_LOCAL_TASK);
   $items['node/%node/electoral_list'] = array(
                            'title' => 'Electoral list',
                            'page callback' => 'decisions_electoral_list_tab',
                            'page arguments' => array(1),
                            'access callback' => '_decisions_electoral_list_access',
                            'access arguments' => array(1, 'view electoral list'),
-                           'weight' => 3,
+                           'weight' => 2,
                            'type' => MENU_LOCAL_TASK
                            );
   // Allow voters to be removed
@@ -1100,6 +1107,19 @@ function decisions_votes_tab() {
   }
 }
 
+/**
+ * Callback for 'results' tab for decisions you can vote on. 	 
+ */ 	 
+function decisions_results() { 	 
+  if ($node = menu_get_object()) { 	 
+    drupal_set_title(check_plain($node->title)); 	 
+    return node_show($node, 0); 	 
+  } 	 
+  else { 	 
+    // The url does not provide the appropriate node id 	 
+    drupal_not_found(); 	 
+  } 	 
+}
 
 /**********************/
 /* Internal functions */
