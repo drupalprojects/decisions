@@ -96,10 +96,14 @@ function selection_decisions_voting_form(&$node, $teaser, $page) {
 function selection_decisions_view_results($node, $teaser, $page) {
 
   $output = "";
-  $results = votingapi_select_votes(array('content_type' => 'decisions', 'nid' => $node->nid));
+  $criteria = votingapi_current_user_identifier();
+  $criteria['content_type'] = 'decisions';
+  $criteria['content_id'] = $node->nid;
 
+  $results = votingapi_select_votes($criteria);
   // Count the votes for each choice
   $votes = array();
+
   foreach ($results as $result) {
 
     // approval
@@ -170,9 +174,9 @@ function selection_decisions_vote($node, $form_values) {
   else {
     // approval voting
     foreach ($node->choice as $key => $choice) {
-      if (isset($form_values['choice'][$key])) {
+      if (isset($form_values['choice'][$key]) && $form_values['choice'][$key]) {
         $vote = array(
-                      'value' => $form_values['choice'][$key],
+                      'value' => 1,
                       'value_type' => 'option',
                       'tag' => $key,
                       'content_type' => 'decisions',
