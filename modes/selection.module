@@ -96,11 +96,7 @@ function selection_decisions_voting_form(&$node, $teaser, $page) {
 function selection_decisions_view_results($node, $teaser, $page) {
 
   $output = "";
-  $criteria = votingapi_current_user_identifier();
-  $criteria['content_type'] = 'decisions';
-  $criteria['content_id'] = $node->nid;
-
-  $results = votingapi_select_votes($criteria);
+  $results = votingapi_select_votes(array('content_id' => $node->nid, 'content_type' => 'decisions'));
   // Count the votes for each choice
   $votes = array();
 
