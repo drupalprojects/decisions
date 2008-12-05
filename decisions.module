@@ -224,11 +224,13 @@ function decisions_form(&$node, &$form_state) {
                                       '#description' => t('When a decision is closed users may no longer vote on it.'),
                                       );
 
+  $enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
   $form['settings']['uselist'] = array(
                                        '#type' => 'checkbox',
                                        '#title' => t('Restrict voting to electoral list'),
                                        '#description' => t('If enabled, a list of eligible voters will be created and only that group will be able to vote in the decision.'),
                                        '#default_value' => isset($node->uselist)? $node->uselist : variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
+                                       '#options' => $enabled,
                                        );
 
   $form['settings']['showvotes'] = array(
@@ -236,6 +238,7 @@ function decisions_form(&$node, &$form_state) {
                                          '#title' => t('Show individual votes'),
                                          '#description' => t('Users with the appropriate permissions will be able to see how each person voted.'),
                                          '#default_value' => isset($node->showvotes)? $node->showvotes : 1,
+                                         '#options' => $enabled,
                                          );
 
   $form['settings']['date'] = array(
