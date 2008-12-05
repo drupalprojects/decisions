@@ -128,7 +128,7 @@ function ranking_decisions_view_results($node, $teaser, $page) {
   // If no one has voted, $results = array() and thus is empty
   if (!empty($results)) {
 
-    $output .= t('Final results: ') . '<ol>';
+    $output .= t('Results: ') . '<ol>';
 
     for ($i = 0; $i < count($results->ranking); $i++) {
       $output .= '<li> ';
