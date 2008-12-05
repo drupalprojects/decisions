@@ -283,7 +283,7 @@ function decisions_form(&$node, &$form_state) {
                             '#collapsible' => TRUE,
                             '#collapsed' => TRUE,
                             '#weight' => 2,
-                            '#description' => t('These settings allow for a decision to be valid only if a certain number of eligible voters have cast their ballot. It can be configured both with an absolute number and a percentage of eligible voters. For example, a common setting is "50% + 1", which would be expressed as "@percent: 50" and "@number: 1".', array('@percent' => t('Percentage (%)'), '@number' => t('Number'))),
+                            '#description' => t('These settings allow for a decision to be valid only if a certain number of eligible voters have cast their ballot. It can be configured both with an absolute number and a percentage of eligible voters. For example, a common setting is "50% + 1", which would be expressed as "@percent: 50" and "@number: 1". Note that the quorum has no impact on the winning conditions.', array('@percent' => t('Percentage (%)'), '@number' => t('Number'))),
                             );
 
   $form['settings']['quorum']['quorum_abs'] = array(
@@ -292,7 +292,7 @@ function decisions_form(&$node, &$form_state) {
                                        '#title' => t('Number'),
                                        '#default_value' => ($node->quorum_abs? $node->quorum_abs : 0),
                                        '#required' => TRUE,
-                                       '#description' => t('Minimum number of voters required to cast their ballot for this decision to be valid.')
+                                       '#description' => t('Minimum number of voters required to cast their ballot for this decision to be valid, in addition to the percentage.')
                                        );
 
   $form['settings']['quorum']['quorum_percent'] = array(
@@ -301,7 +301,7 @@ function decisions_form(&$node, &$form_state) {
                                        '#title' => t('Percentage (%)'),
                                        '#default_value' => ($node->quorum_percent? $node->quorum_percent : 0),
                                        '#required' => TRUE,
-                                       '#description' => t('Minimum numbers of voters required for this decision to be valid, expressed as a percentage of the eligible voters (rounded up).'),
+                                       '#description' => t('Minimum numbers of voters required for this decision to be valid, expressed as a percentage of the eligible voters rounded up.'),
                                        '#weight' => -1,
                                        );
 
@@ -679,10 +679,7 @@ function theme_decisions_view_header($node, $teaser = FALSE) {
 
   // votes
   $num_eligible_voters = _decisions_count_eligible($node);
-  $num_votes = 0;
-  if ($result = db_fetch_object(db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid))) {
-    $num_votes = $result->voters;
-  }
+  $num_votes = _decisions_count_voters($node);
   $output .= '<div class="decisions-votes">';
   $output .= t('Total votes: @num-votes (out of @num-voters eligible @voters)',
                array(
@@ -1145,10 +1142,7 @@ function _decisions_can_vote($node, $user = NULL) {
  */
 function _decisions_meets_quorum($node) {
   // compute number of people that have cast their vote
-  $num_voters = 0;
-  if ($result = db_fetch_object(db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid))) {
-    $num_voters = $result->voters;
-  }
+  $num_voters = _decisions_count_voters($node);
   $quorum = _decisions_get_quorum($node);
   return ($num_voters >= $quorum);
 }
@@ -1207,6 +1201,17 @@ function _decisions_get_quorum($node) {
   $num_eligible_voters = _decisions_count_eligible($node);
   $quorum = $node->quorum_abs + ceil(($node->quorum_percent / 100.0) * $num_eligible_voters);
   return min($quorum, $num_eligible_voters);
+}
+
+/**
+ * Count the number of distinct voters.
+ */
+function _decisions_count_voters($node) {
+  $num_voters = 0;
+  if ($result = db_fetch_object(db_query("SELECT COUNT(DISTINCT CONCAT(uid,vote_source)) AS voters FROM {votingapi_vote} WHERE content_id=%d", $node->nid))) {
+    $num_voters = $result->voters;
+  }
+  return $num_voters;
 }
 
 /**
