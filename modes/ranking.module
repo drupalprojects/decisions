@@ -83,8 +83,10 @@ function ranking_decisions_voting_form(&$node, $teaser, $page) {
     }
 
     $form['choice'] = array(
-                            '#type' => 'checkboxes', //XXX: Workaround for FormAPI bug in PHP 4, see http://drupal.org/node/86657
+                            '#type' => 'fieldset',
                             '#tree' => TRUE,
+                            '#title' => t('Choices'),
+                            '#description' => t('Rank the following options in your prefered order, the lower the number the better'),
                             );
 
     foreach ($node->choice as $key => $choice) {
