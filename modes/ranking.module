@@ -5,12 +5,13 @@
  *
  * This file implements a ranking mode, where n options are ranked
  * from 1 to n
- *
- * $Id$
- * 
  */
 
+// $Id$
 
+/**
+ * Implementation of hook_help()
+ */
 function ranking_help($section) {
   $help = '';
   switch ($section) {
@@ -62,11 +63,11 @@ function ranking_decisions_voting_form(&$node, $teaser, $page) {
   if ($node->choice) {
     $list = array();
 
-    $numChoices = count($node->choice);
+    $num_choices = count($node->choice);
 
     // Generate the list of possible rankings
     $choices[0] = '--';
-    for ($i = 1; $i <= $numChoices; $i++) {
+    for ($i = 1; $i <= $num_choices; $i++) {
       if ($i == 1) {
         $val = t('1st');
       }
@@ -128,21 +129,21 @@ function ranking_decisions_view_results($node, $teaser, $page) {
   // If no one has voted, $results = array() and thus is empty
   if (!empty($results)) {
 
-    $output .= t('Results: ') . '<ol>';
+    $output .= t('Results: ') .'<ol>';
 
     for ($i = 0; $i < count($results->ranking); $i++) {
       $output .= '<li> ';
-      $firstOne = true;
+      $first_one = TRUE;
 
       // Loop through all choices with this ranking
       foreach ($results->ranking[$i]['choices'] as $choice) {
-        $output .= ($firstOne? '' : ', ') . check_plain($node->choice[$choice]['label']);
-        $firstOne = false;
+        $output .= ($first_one? '' : ', ') . check_plain($node->choice[$choice]['label']);
+        $first_one = FALSE;
       }
 
       // Show the ranking's score if it exists (depends on algorithm)
       if (isset($results->ranking[$i]['viewscore'])) {
-        $output .= ' (' . $results->ranking[$i]['viewscore'] . ')';
+        $output .= ' ('. $results->ranking[$i]['viewscore'] .')';
       }
       $output .= '</li>';
     }
@@ -152,7 +153,7 @@ function ranking_decisions_view_results($node, $teaser, $page) {
       $header[0] = "Rounds";
       $round = 1;
       if (count($results->matrix) > 0) {
-        foreach ($results->matrix as $aRound) {
+        foreach ($results->matrix as $a_round) {
           $header[$round] = $round;
           $round++;
         }
@@ -161,10 +162,10 @@ function ranking_decisions_view_results($node, $teaser, $page) {
       $round = 1;
       $i = 0;
       if (count($results->matrix) > 0) {
-        foreach ($results->matrix as $aRound) {
+        foreach ($results->matrix as $a_round) {
           foreach ($node->choice as $key => $choicename) {
             $rows[$i][0] = $choicename['label'];
-            $rows[$i][$round] = count($aRound[$key]);
+            $rows[$i][$round] = count($a_round[$key]);
             $i++;
           }
           $i=0;
@@ -242,10 +243,15 @@ function ranking_decisions_vote_validate($node, $form_values) {
     }
     $intvalue = intval($form_values['choice'][$key]);
     // mark this value as seen
-    $setvalues[$intvalue]++;
+    if (!array_key_exists($intvalue, $setvalues)) {
+      $setvalues[$intvalue] = 0;
+    }
+    else {
+      $setvalues[$intvalue]++;
+    }
     // check range
     if ($intvalue > count($node->choice) || $intvalue < 0) {
-      form_set_error('Choice_'.$key, "illegal rank for choice $key: $intvalue (min: 1, max: " . count($node->choice) . ")");
+      form_set_error('Choice_'. $key, "illegal rank for choice $key: $intvalue (min: 1, max: ". count($node->choice) .")");
       $ok = FALSE;
     }
 
@@ -254,21 +260,21 @@ function ranking_decisions_vote_validate($node, $form_values) {
   // too many choices ranked
   if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
     form_set_error('choice', t('@num choices were selected but only @max are allowed.', array('@num' => $numchoices, '@max' => $node->maxchoices)));
-    $ok = false;
+    $ok = FALSE;
   }
 
   // not enough choices ranked
   $minchoices = 1;
   if ($numchoices < $minchoices) {
     form_set_error('choice', t('At least one choice must be selected.'));
-    $ok = false;
+    $ok = FALSE;
   }
 
   // Check that multiple choices are not set to the same value
   foreach ($setvalues as $val => $count) {
     if ($val != 0 && $count > 1) {
       form_set_error('choice', t('Multiple choices given the rank of @val.', array('@val' => $val)));
-      $ok = false;
+      $ok = FALSE;
     }
   }
 
@@ -326,7 +332,7 @@ function _decisions_calculate_bordacount($node) {
 
   // aggregate votes by user (uid if logged in, IP if anonymous)
   // in ascending order of value
-  $userVotes = array();
+  $user_votes = array();
 
   foreach ($votes as $vote) {
     if ($vote['uid'] == 0) {
@@ -338,49 +344,48 @@ function _decisions_calculate_bordacount($node) {
       $key = $vote['uid'];
     }
 
-    $userVotes[$key][$vote['value']] = $vote['tag'];
+    $user_votes[$key][$vote['value']] = $vote['tag'];
   }
 
-  $choiceVotes = array();
+  $choice_votes = array();
 
-  $totalChoices = count($node->choice);
+  $total_choices = count($node->choice);
 
   // Loop through each user's vote
-  foreach ($userVotes as $uid => $userVote) {
-    foreach ($userVote as $ranking => $choice) {
+  foreach ($user_votes as $uid => $user_vote) {
+    foreach ($user_vote as $ranking => $choice) {
       // Negative values are possible if choices were removed after vote
-      $voteValue = max($totalChoices - $ranking, 0);
-      if (!array_key_exists($choice, $choiceVotes)) {
-        $choiceVotes[$choice] = 0;
+      $vote_value = max($total_choices - $ranking, 0);
+      if (!array_key_exists($choice, $choice_votes)) {
+        $choice_votes[$choice] = 0;
       }        
-      $choiceVotes[$choice] +=  $voteValue;
+      $choice_votes[$choice] +=  $vote_value;
     }
   }
 
   // sort descending (although there may be ties)
-  arsort($choiceVotes);
+  arsort($choice_votes);
 
   // Figure out the final ranking
   $ranking = array();
-  $previousTotal = -1;
-  $curResult = -1;
+  $previous_total = -1;
+  $cur_result = -1;
 
-  foreach ($choiceVotes as $choice => $total) {
-    if ($total != $previousTotal) {
+  foreach ($choice_votes as $choice => $total) {
+    if ($total != $previous_total) {
       // Didn't tie with the previous score
-      $curResult++;
+      $cur_result++;
     }
-    $ranking[$curResult]['choices'][] = $choice;
-    $ranking[$curResult]['rawscore'] = $total;
-    $ranking[$curResult]['viewscore'] = $total . ' point'
-      . ($total == 1? '' : 's');
+    $ranking[$cur_result]['choices'][] = $choice;
+    $ranking[$cur_result]['rawscore'] = $total;
+    $ranking[$cur_result]['viewscore'] = $total .' point'. ($total == 1? '' : 's');
   }
 
-  $totalVotes = count($userVotes);
+  $total_votes = count($user_votes);
 
-  $resultObj->ranking = $ranking;
-  $resultObj->totalVotes = $totalVotes;
-  return $resultObj;
+  $result_obj->ranking = $ranking;
+  $result_obj->total_votes = $total_votes;
+  return $result_obj;
 }
 
 
@@ -408,7 +413,7 @@ function _decisions_calculate_instantrunoff($node) {
 
   // aggregate votes by user (uid if logged in, IP if anonymous)
   // in ascending order of value
-  $userVotes = array();
+  $user_votes = array();
 
   foreach ($votes as $vote) {
     if ($vote['uid'] == 0) {
@@ -422,14 +427,14 @@ function _decisions_calculate_instantrunoff($node) {
 
     // Note: relies on ORDER BY value ASC in vote-getting SQL query
     // Otherwise a later vote might have a lower value
-    $userVotes[$key][] = $vote['tag'];
+    $user_votes[$key][] = $vote['tag'];
   }
 
-  $totalVotes = count($userVotes);
+  $total_votes = count($user_votes);
 
   /*
     if ($vote['value'] == 1) {
-        $curRound[$vote['tag']]++;
+        $cur_round[$vote['tag']]++;
         // TODO: This method of counting total votes is inaccurate because users
         // may vote but not choose a 1st-place vote
                         $totalvotes++;
@@ -439,176 +444,175 @@ function _decisions_calculate_instantrunoff($node) {
 
 
   // log of 1st-place votes per choice in each round
-  $roundLog = array();
+  $round_log = array();
 
   //
-  $reverseRanking = array();
+  $reverse_ranking = array();
 
 
         
   // If we eliminate one choice per round and have n choices, we should
   // not be able to do more than n - 1 rounds
-  $maxRounds = count($node->choice); 
-  for ($round = 0; $round < $maxRounds; $round++) {
+  $max_rounds = count($node->choice); 
+  for ($round = 0; $round < $max_rounds; $round++) {
 
-    // Initialize curRound
-    $curRound = array();
-    $totalChoices = count($node->choice);
+    // Initialize cur_round
+    $cur_round = array();
+    $total_choices = count($node->choice);
     foreach ($node->choice as $chi => $temp) {
-      $curRound[$chi] = array();
+      $cur_round[$chi] = array();
     }
 
                 
     // Loop through each user
-    foreach ($userVotes as $key => $userVote) {
-      // $userVote[0] contains the user's first remaining preference
-      $curRound[$userVote[0]][] = $key;
+    foreach ($user_votes as $key => $user_vote) {
+      // $user_vote[0] contains the user's first remaining preference
+      $cur_round[$user_vote[0]][] = $key;
     }
 
     if ($round == 0) {
       // This is the first round
       // Any choices with no first-place votes are considered eliminated
-      foreach ($curRound as $ch => $choiceVotes) {
-        if (count($choiceVotes) == 0) {
-          unset($curRound[$ch]);
-          $reverseRanking[0]['choices'][] = $ch;
+      foreach ($cur_round as $ch => $choice_votes) {
+        if (count($choice_votes) == 0) {
+          unset($cur_round[$ch]);
+          $reverse_ranking[0]['choices'][] = $ch;
         }
       }
     }
 
 
     // Add the current round to the matrix
-    $roundLog[] = $curRound;
+    $round_log[] = $cur_round;
 
     //Calculate the min and max number of votes
-    $minVotes = -1;
-    $maxVotes = 0;
+    $min_votes = -1;
+    $max_votes = 0;
 
     // Number of choices that have already been discarded
     $num_discarded = 0;
 
     // examine the number of votes each choice received this round
-    foreach ($curRound as $ch => $choiceVotes) {
-      $numVotes = count($choiceVotes);
+    foreach ($cur_round as $ch => $choice_votes) {
+      $num_votes = count($choice_votes);
 
-      if ($numVotes > $maxVotes) {
-        $maxVotes = $numVotes;
-        $curWinner = $ch; // store current winner in case it has a majority
+      if ($num_votes > $max_votes) {
+        $max_votes = $num_votes;
+        $cur_winner = $ch; // store current winner in case it has a majority
       }
 
       // This choice has already been eliminated (theoretically)
       // so don't count it as the minimum
-      if ($numVotes == 0) {
+      if ($num_votes == 0) {
         $num_discarded++; // probably don't need this variable any more
       }
-      else if ($numVotes != 0 && ($numVotes < $minVotes || $minVotes == -1)) {
-        $minVotes = $numVotes;
+      else if ($num_votes != 0 && ($num_votes < $min_votes || $min_votes == -1)) {
+        $min_votes = $num_votes;
       }
     }
 
     // If one choice has a majority of remaining users it wins
-    // Note: we use count($userVotes) because some users may have incomplete
+    // Note: we use count($user_votes) because some users may have incomplete
     // ballots and may have already had all of their choices eliminated
-    if ($maxVotes > count($userVotes) / 2) {
+    if ($max_votes > count($user_votes) / 2) {
                 
       // Prune out the winning choice if it's still in there
-      if (isset($curRound[$curWinner])) {
-        unset($curRound[$curWinner]);
+      if (isset($cur_round[$cur_winner])) {
+        unset($cur_round[$cur_winner]);
       }
 
       // Keep computing until we figure out all final rankings
-      while (count($curRound)  > 0) {
+      while (count($cur_round)  > 0) {
         // Loop through non-winning choices
-        $currentPlace = array();
+        $current_place = array();
         $min = -1;
-        foreach ($curRound as $ch => $choiceVotes) {
+        foreach ($cur_round as $ch => $choice_votes) {
           // Choice has already been eliminated, just unset it
-          if (count($choiceVotes) == 0) {
-            unset($curRound[$ch]);
+          if (count($choice_votes) == 0) {
+            unset($cur_round[$ch]);
           }
           else if ($min == -1
-                   || count($choiceVotes) < $min) {
+                   || count($choice_votes) < $min) {
             // New minimum
-            $currentPlace = array($ch);
-            $min = count($choiceVotes);
+            $current_place = array($ch);
+            $min = count($choice_votes);
             //drupal_set_message('New minimum: '. $ch .'('
-            //. count($choiceVotes) . ')');
+            //. count($choice_votes) . ')');
           }
-          else if (count($choiceVotes) == $min) {
+          else if (count($choice_votes) == $min) {
             // Tied for minimum
-            $currentPlace[] = $ch;
+            $current_place[] = $ch;
           }
         }
 
-        // currentPlace will be empty the first iteration if some
+        // current_place will be empty the first iteration if some
         // choices had no first-place votes and were eliminated
         // at the beginning
-        if (count($currentPlace) > 0) {
-          $reverseRanking[]['choices'] = $currentPlace; 
+        if (count($current_place) > 0) {
+          $reverse_ranking[]['choices'] = $current_place; 
           // Remove all choices that had the minimum
-          foreach ($currentPlace as $chKey) {
-            unset($curRound[$chKey]);
+          foreach ($current_place as $ch_key) {
+            unset($cur_round[$ch_key]);
           }
         }
       }
 
       // Save a reversed version of the round log to help compute winnerPercent
-      $revmat = array_reverse($roundLog);
+      $revmat = array_reverse($round_log);
 
       // The winner finally gets added
-      $reverseRanking[]['choices'] = array($curWinner);
-      $index = count($reverseRanking) - 1;
-      $reverseRanking[$index]['rawscore'] = round(count($revmat[0][$curWinner]) * 100 / count($userVotes), 1);
-      $reverseRanking[$index]['viewscore'] = $reverseRanking[$index]['rawscore'] . '%';
+      $reverse_ranking[]['choices'] = array($cur_winner);
+      $index = count($reverse_ranking) - 1;
+      $reverse_ranking[$index]['rawscore'] = round(count($revmat[0][$cur_winner]) * 100 / count($user_votes), 1);
+      $reverse_ranking[$index]['viewscore'] = $reverse_ranking[$index]['rawscore'] .'%';
 
-      $resultObj->matrix = $roundLog;
-      $resultObj->totalVotes = $totalVotes;
-      $resultObj->ranking = array_reverse($reverseRanking);
-      return $resultObj;
+      $result_obj->matrix = $round_log;
+      $result_obj->total_votes = $total_votes;
+      $result_obj->ranking = array_reverse($reverse_ranking);
+      return $result_obj;
     }
                 
     // Since we're still here, no one has won, so eliminate one of the
     // choices with the lowest number of votes.
 
     // Find all choices with the minimum number of votes
-    $minChoices = array();
-    foreach ($curRound as $ch => $choiceVotes) {
-      if (count($choiceVotes) == $minVotes) {
-        $minChoices[] = $ch;
+    $min_choices = array();
+    foreach ($cur_round as $ch => $choice_votes) {
+      if (count($choice_votes) == $min_votes) {
+        $min_choices[] = $ch;
       }
     }
 
     // Randomly select the choice to eliminate out of the available choices
     // TODO: due to the randomness, this result must be cached after each vote
-    $roundLoser = array_rand($minChoices);
+    $round_loser = array_rand($min_choices);
     //drupal_set_message('Round ' . ($round + 1) . ' eliminated: '
-    //. strval($minChoices[$roundLoser])
-    //. ' (min = ' . $minVotes . ') ' . count($curRound));
-    $reverseRanking[]['choices'] = array($minChoices[$roundLoser]);
+    //. strval($min_choices[$round_loser])
+    //. ' (min = ' . $min_votes . ') ' . count($cur_round));
+    $reverse_ranking[]['choices'] = array($min_choices[$round_loser]);
                 
     // Loop through the users who voted for the loser and redistribute
-    foreach ($curRound[$minChoices[$roundLoser]] as $userKey) {
+    foreach ($cur_round[$min_choices[$round_loser]] as $user_key) {
       // Remove their current first preference
-      array_shift($userVotes[$userKey]);
+      array_shift($user_votes[$user_key]);
 
       // Keep eliminating first preference until we run out or find an choice
       // that hasn't been eliminated
-      while ($curRound[$userVotes[$userKey][0]] == array()
-             && count($userVotes[$userKey]) > 0)
-        {
-          array_shift($userVotes[$userKey]);
+      while ($cur_round[$user_votes[$user_key][0]] == array()
+             && count($user_votes[$user_key]) > 0) {
+          array_shift($user_votes[$user_key]);
         }
 
       // If they have no more preferences, remove from list for simplicity
-      if (count($userVotes[$userKey]) == 0) {
-        unset($userVotes[$userKey]);
+      if (count($user_votes[$user_key]) == 0) {
+        unset($user_votes[$user_key]);
       }
     }
   }
   // loop detected. signal user and record.
-  drupal_set_message("Could not reach a decision within $maxRounds iterations.");
-  $resultObj->matrix = $roundLog;
-  $resultObj->totalVotes = $totalVotes;
-  return $resultObj;
+  drupal_set_message("Could not reach a decision within $max_rounds iterations.");
+  $result_obj->matrix = $round_log;
+  $result_obj->total_votes = $total_votes;
+  return $result_obj;
 
 }

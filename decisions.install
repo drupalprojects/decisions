@@ -4,9 +4,9 @@
  * @file
  *
  * .install file for decisions module
- *
- * $Id$
  */
+
+// $Id$
 
 /**
  * Implementation of hook_install().
@@ -64,18 +64,19 @@ function decisions_update_2() {
   switch ($GLOBALS['db_type']) {
   case 'mysql':
   case 'mysqli':
-    db_query("ALTER TABLE {decisions} ADD COLUMN active TINYINT DEFAULT '1'");
-    db_query("ALTER TABLE {decisions} ADD COLUMN runtime INT UNSIGNED DEFAULT '0'");
-    db_query("ALTER TABLE {decisions} ADD COLUMN maxchoices INT UNSIGNED");
-    db_query("ALTER TABLE {decisions} ADD COLUMN algorithm VARCHAR(255)");
-    db_query('UPDATE {decisions} SET maxchoices=1 WHERE mode="poll" AND maxchoices is null');
-    db_query("UPDATE {decisions} SET algorithm='runoff' WHERE mode='runoff'");
-    db_query("UPDATE {decisions} SET mode='ranking' WHERE mode='runoff'");
-    db_query("ALTER TABLE {decisions_options} CHANGE COLUMN opttext chtext text");
-    db_query("ALTER TABLE {decisions_options} CHANGE COLUMN optorder chorder int(2)");
-    db_query("RENAME TABLE {decisions_options} TO {decisions_choices}");
+    $items[] = update_sql("ALTER TABLE {decisions} ADD COLUMN active TINYINT DEFAULT '1'");
+    $items[] = update_sql("ALTER TABLE {decisions} ADD COLUMN runtime INT UNSIGNED DEFAULT '0'");
+    $items[] = update_sql("ALTER TABLE {decisions} ADD COLUMN maxchoices INT UNSIGNED");
+    $items[] = update_sql("ALTER TABLE {decisions} ADD COLUMN algorithm VARCHAR(255)");
+    $items[] = update_sql('UPDATE {decisions} SET maxchoices=1 WHERE mode="poll" AND maxchoices is null');
+    $items[] = update_sql("UPDATE {decisions} SET algorithm='runoff' WHERE mode='runoff'");
+    $items[] = update_sql("UPDATE {decisions} SET mode='ranking' WHERE mode='runoff'");
+    $items[] = update_sql("ALTER TABLE {decisions_options} CHANGE COLUMN opttext chtext text");
+    $items[] = update_sql("ALTER TABLE {decisions_options} CHANGE COLUMN optorder chorder int(2)");
+    $items[] = update_sql("RENAME TABLE {decisions_options} TO {decisions_choices}");
     break;
   }
+  return $items;
 }
 
 function decisions_update_3() {

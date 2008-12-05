@@ -4,9 +4,9 @@
  * @file
  *
  * This file implements a selection voting mode
- *
- * $Id$
  */
+
+// $Id$
 
 function selection_help($section) {
   $help = "";
@@ -225,14 +225,14 @@ function selection_decisions_vote_validate($node, $form_values) {
       form_set_error('choice',
                      t('%num choices were selected but only %max are allowed.',
                        array('%num' => $numchoices, '%max' => $node->maxchoices)));
-      $ok = false;
+      $ok = FALSE;
     }
 
     // not enough choices ranked
     $minchoices = 1;
     if ($numchoices < $minchoices) {
       form_set_error('choice', t('At least one choice must be selected.'));
-      $ok = false;
+      $ok = FALSE;
     }
   }
   return $ok;

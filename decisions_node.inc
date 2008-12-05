@@ -4,6 +4,8 @@
  * @file Implementation of node hooks
  */
 
+// $Id$
+
 /**
  * Implementation of hook_load().
  *
@@ -49,7 +51,8 @@ function decisions_insert($node) {
   $startdate = _decisions_translate_form_date($node->settings['date']['startdate']['date']);
   if ($node->settings['date']['noenddate']) {
     $runtime = DECISIONS_RUNTIME_INFINITY;
-  } else {
+  }
+  else {
     $enddate =  _decisions_translate_form_date($node->settings['date']['enddate']['date']);
     if ($enddate < $startdate) {
       form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
@@ -117,7 +120,8 @@ function decisions_update($node) {
   $startdate = _decisions_translate_form_date($node->settings['date']['startdate']['date']);
   if ($node->settings['date']['noenddate']) {
     $runtime = DECISIONS_RUNTIME_INFINITY;
-  } else {
+  }
+  else {
     $enddate =  _decisions_translate_form_date($node->settings['date']['enddate']['date']);
     if ($enddate < $startdate) {
       form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
@@ -169,11 +173,13 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
     }
     if (!$node->active) {
       $status_messages .= theme_decisions_status(t("This decision is currently closed."));
-    } else {
+    }
+    else {
       $time = time();
       if ($time < $node->startdate) {
         $status_messages .= theme_decisions_status(t("This decision is not yet opened."));
-      } else if ($node->runtime != DECISIONS_RUNTIME_INFINITY && $time >= $node->startdate + $node->runtime) {
+      }
+      else if ($node->runtime != DECISIONS_RUNTIME_INFINITY && $time >= $node->startdate + $node->runtime) {
         $status_messages .= theme_decisions_status(t("This decision is now closed."));
       }
     }
@@ -206,13 +212,14 @@ function decisions_form(&$node, &$form_state) {
   $mode = _decisions_get_mode($node);
   if (array_key_exists('values', $form_state)) {
     $form_values = $form_state['values']; # adapt to D6 FormsAPI
-  } else {
+  }
+  else {
     $form_values = array();
   }
 
   $form['title'] = array(
                          '#type' => 'textfield',
-                         '#title' => ucfirst($mode) . ' ' . t('Question'),
+                         '#title' => ucfirst($mode) .' '. t('Question'),
                          '#required' => TRUE,
                          '#default_value' => $node->title,
                          );
@@ -226,7 +233,8 @@ function decisions_form(&$node, &$form_state) {
 
   if (isset($form_values['choices'])) {
     $choices = $form_values['choices'];
-  } else {
+  }
+  else {
     $choices = max(2, isset($node->choice) && count($node->choice) ? count($node->choice) : 5);
   }
   
@@ -274,16 +282,16 @@ function decisions_form(&$node, &$form_state) {
                             '#weight' => 2,
                             );
 
-  $maxChoiceList = array();
+  $max_choice_list = array();
   for ($i = 0; $i <= $choices; $i++) {
-    $maxChoiceList[$i] = ($i == 0? 'No limit' : $i);
+    $max_choice_list[$i] = ($i == 0? 'No limit' : $i);
   }
 
   $form['settings']['maxchoices'] = array(
                                           '#type' => 'select',
                                           '#title' => t('Maximum Choices'),
                                           '#default_value' => (isset($node->maxchoices)? $node->maxchoices : 0),
-                                          '#options' => $maxChoiceList,
+                                          '#options' => $max_choice_list,
                                           '#description' => t('Limits the total number of choices voters may select.'),
                                           );
 
@@ -302,7 +310,8 @@ function decisions_form(&$node, &$form_state) {
                                          '#default_value' => $defaultalg,
                                          '#description' => 'Voting algorithm to use to calculate the winner.',
                                          );
-  } else {
+  }
+  else {
     $form['settings']['algorithm'] = array('#type' => 'hidden', '#value' => $defaultalg);
   }
 
@@ -343,7 +352,8 @@ function decisions_form(&$node, &$form_state) {
   $runtime = !is_null($node->runtime) ? $node->runtime : variable_get('decisions_default_runtime', 24 * 60 * 60);
   if ($runtime == DECISIONS_RUNTIME_INFINITY) {
     $enddate = $startdate; // by default
-  } else {
+  }
+  else {
     $enddate = $startdate + $runtime;
   }
   
@@ -409,7 +419,8 @@ function decisions_form(&$node, &$form_state) {
  */
 function decisions_form_alter(&$form, $form_state, $form_id) {
   if (preg_match('/^decisions_.*_node_form$/', $form_id)) {
-    if ($form['choice']['morechoices']['#return_value']) { # XXX: not sure this is right
+    # XXX: not sure this is right
+    if ($form['choice']['morechoices']['#return_value']) {
       $form['#rebuild'] = TRUE;
       $choices = $form['choice']['choices']['#value'];
       for ($a = $choices+1; $a <= $choices*2; $a++) {

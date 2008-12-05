@@ -2,17 +2,20 @@
 
 /**
  * @file Internal functions for decisions module
- *
- * $Id$
  */
 
+// $Id$
+
+/**
+ * Return the mode of a decision based on its type
+ */
 function _decisions_get_mode($node) {
   if ($node->type) {
     $types = explode('_', $node->type, 2);
     return $types[1];
   }
   else {
-    drupal_set_message('No type specified for node: ' . $node->nid, 'error');
+    drupal_set_message('No type specified for node: '. $node->nid, 'error');
     return '';
   }
 }
@@ -88,7 +91,8 @@ function _decisions_votes($node) {
 function _decisions_count_eligible($node) {
   if ($node->uselist) {
     $result = db_fetch_object(db_query("SELECT COUNT(*) AS num FROM {decisions_electoral_list} WHERE nid=%d", $node->nid));
-  } else {
+  }
+  else {
     // check first if authenticated users have the right to vote, because
     // authenticated users are not added to the users_roles permission,
     // probably for performance reasons
@@ -96,10 +100,11 @@ function _decisions_count_eligible($node) {
     if ($roles[DRUPAL_AUTHENTICATED_RID]) {
       // special case: any authenticated user can vote
       // consider all current to be elligible
-      $result = db_fetch_object(db_query("SELECT COUNT(*) AS num FROM {users} u WHERE u.uid != 0"));
-    } else {
+      $result = db_fetch_object(db_query("SELECT COUNT(*) AS num FROM {users} u WHERE u.uid <> 0"));
+    }
+    else {
       // only some roles are elligible, add relevant users only
-      $result = db_fetch_object(db_query("SELECT COUNT(DISTINCT ur.uid) AS num FROM {users_roles} ur JOIN {permission} p ON ur.rid = p.rid WHERE FIND_IN_SET(' vote on decisions', p.perm) AND ur.uid != 0"));
+      $result = db_fetch_object(db_query("SELECT COUNT(DISTINCT ur.uid) AS num FROM {users_roles} ur JOIN {permission} p ON ur.rid = p.rid WHERE FIND_IN_SET(' vote on decisions', p.perm) AND ur.uid <> 0"));
     }
   }
   return $result->num;    
@@ -133,7 +138,7 @@ function _decisions_user_votes($node) {
   
   // aggregate votes by user (uid if logged in, IP if anonymous)
   // in ascending order of value
-  $userVotes = array();
+  $user_votes = array();
 
   foreach ($votes as $vote) {
     $key = ($vote->uid == 0 ? $vote->vote_source: $vote->uid);
@@ -243,19 +248,19 @@ function _decisions_form_date($timestamp) {
  * @returnn
  *   an array for form_date (day, month, year)
  */
-function _decisions_form_prepare_datetime($time = '', $offset = 0){
+function _decisions_form_prepare_datetime($time = '', $offset = 0) {
   // if this is empty, get the current time
-  if($time == ''){
+  if ($time == '') {
     $time = time();
     $time = strtotime("+$offset days", $time);
   }
   // If we are previewing, $time will be an array so just pass it through
   $time_array = array();
-  if(is_array($time)){
-  	$time_array = $time;
+  if (is_array($time)) {
+    $time_array = $time;
   } 
   // otherwise build the array from the timestamp
-  elseif(is_numeric($time)){
+  elseif (is_numeric($time)) {
     $time_array = array(
       'day' => _decisions_date('j', $time),
       'month' => _decisions_date('n', $time),
@@ -274,10 +279,10 @@ function _decisions_form_prepare_datetime($time = '', $offset = 0){
  */
 function _decisions_block_mostrecent() {
   $output = '';
-  $result = db_query('SELECT nid FROM {decisions} WHERE active=1 ORDER BY nid DESC LIMIT 1');
+  $result = db_query_range('SELECT nid FROM {decisions} WHERE active=1 ORDER BY nid DESC', 1);
   // Check that there is an active decision
   if ($decision = db_fetch_object($result)) {
-    $n = decisions_view(node_load($decision->nid), false, false, true);
+    $n = decisions_view(node_load($decision->nid), FALSE, FALSE, TRUE);
     /* XXX: we have to do this because somehow the #printed settings lives across multiple node_load */
     unset($n->content['#printed']);
     $output = drupal_render($n->content);
@@ -308,11 +313,11 @@ function _decisions_electoral_list_reset($node) {
   if (isset($result) && $result->hit) {
     // special case: any authenticated user can vote
     // add all current users to electoral list
-    return db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.uid != 0", $node->nid);
+    return db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.uid <> 0", $node->nid);
   }
   else {
     // all users must not be allowed to vote, add relevant users only
-    return db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users_roles u, permission p WHERE FIND_IN_SET(' view decisions', p.perm) AND u.rid = p.rid AND u.uid != 0", $node->nid);
+    return db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users_roles u, permission p WHERE FIND_IN_SET(' view decisions', p.perm) AND u.rid = p.rid AND u.uid <> 0", $node->nid);
   }
 
 }

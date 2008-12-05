@@ -6,9 +6,9 @@
  * Date and time routines for use with decisions module.
  * Based on quiz module (which is, in turn, based on the event.module)
  * All references to event variables should be optional 
- * 
- * $Id$
  */
+
+// $Id$
 
 /**
  * Handles the start and end times in a node form submission.
@@ -65,7 +65,7 @@ function _decisions_mktime($hour, $minute, $second, $month, $day, $year, $offset
  * @param $offset Time zone offset to apply to the timestamp.
  * @return gmdate() formatted date value
  */
-function _decisions_date($format, $timestamp, $offset = null) {
+function _decisions_date($format, $timestamp, $offset = NULL) {
   global $user;
 
   if (!is_null($offset)) {
@@ -82,5 +82,3 @@ function _decisions_date($format, $timestamp, $offset = null) {
   $result = gmdate($format, $timestamp);
   return  $result;
 }
-
-?>
