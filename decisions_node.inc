@@ -130,6 +130,18 @@ function decisions_update($node) {
     $runtime = $enddate - $startdate;
   }
     
+  $uselist = db_result(db_query("SELECT uselist FROM {decisions} WHERE nid = %d", $node->nid));
+  if ($node->settings['uselist'] != $uselist) {
+    // create the electoral list if activated
+    if ($node->settings['uselist']) {
+      _decisions_electoral_list_reset($node);
+    }
+    // remove otherwise
+    else {
+      db_query("DELETE FROM {decisions_electoral_list} WHERE nid = %d", $node->nid);
+    }
+  } 
+
   db_query("UPDATE {decisions} SET quorum_abs=%d, quorum_percent=%f, active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d, startdate=%d WHERE nid = %d", $node->settings['quorum_abs'], $node->settings['quorum_percent'], $node->settings['active'], $runtime, $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $startdate, $node->nid);
   // XXX: should update decisions here, when it has some parameters
   // XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
