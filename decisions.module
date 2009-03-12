@@ -168,7 +168,8 @@ function decisions_menu() {
     'title' => 'Reset votes',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('decisions_reset_form', 1),
-    'access arguments' => array('administer decisions'),
+    'access callback' => '_decisions_reset_access',
+    'access arguments' => array(1, 'administer decisions'),
     'weight' => 3,
     'type' => MENU_LOCAL_TASK,
   );

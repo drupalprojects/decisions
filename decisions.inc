@@ -24,7 +24,11 @@ function _decisions_get_mode($node) {
  * Callback function to see if a node is acceptable for poll menu items.
  */
 function _decisions_votes_access($node, $perm) {
-  return user_access($perm) && $node->showvotes;
+	return user_access($perm) && $node->showvotes && strpos($node->type, 'decisions_') === 0;
+}
+
+function _decisions_reset_access($node, $perm) {
+	return user_access($perm) && strpos($node->type, 'decisions_') === 0;
 }
 
 function _decisions_electoral_list_access($node, $perm) {
@@ -299,6 +303,7 @@ function _decisions_block_mostrecent() {
 function _decisions_can_view_results($node) {
   $view_results = variable_get('decisions_view_results', DECISIONS_DEFAULT_VIEW_RESULTS);
   return (_decisions_meets_quorum($node) && // node meets the quorum
+          strpos($node->type, 'decisions_') === 0 &&
           (!_decisions_is_open($node)       // node is closed
           || ($node->voted && $view_results == 'aftervote') // user voted
           || ($view_results == 'always'))); // all can view
