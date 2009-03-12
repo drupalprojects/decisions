@@ -244,7 +244,7 @@ function ranking_decisions_vote_validate($node, $form_values) {
     $intvalue = intval($form_values['choice'][$key]);
     // mark this value as seen
     if (!array_key_exists($intvalue, $setvalues)) {
-      $setvalues[$intvalue] = 0;
+      $setvalues[$intvalue] = 1;
     }
     else {
       $setvalues[$intvalue]++;
