@@ -27,7 +27,7 @@ function selection_node_info() {
 }
 
 function selection_perm() { return decisions_perm(); } 
-function selection_acces($op, $node, $account) { return decisions_perm($op, $node, $account); }
+function selection_acces($op, $node, $account) { return decisions_access($op, $node, $account); }
 function selection_form(&$node) { return decisions_form($node); }
 
 
