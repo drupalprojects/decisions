@@ -166,39 +166,39 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
   $node = node_prepare($node, $teaser);
   $node->content['body']['#weight'] = -1;
 
-    // print status messages
-    $status_messages = "";
-    if (!_decisions_meets_quorum($node)) {
-      $status_messages .= theme_decisions_status(t("This decision is not valid. You will not be able to see it until the quorum is met. The quorum is set at @quorum.", array('@quorum' => _decisions_get_quorum($node))));
+  // print status messages
+  $status_messages = "";
+  if (!_decisions_meets_quorum($node)) {
+    $status_messages .= theme_decisions_status(t("This decision is not valid. You will not be able to see it until the quorum is met. The quorum is set at @quorum.", array('@quorum' => _decisions_get_quorum($node))));
+  }
+  if (!$node->active) {
+    $status_messages .= theme_decisions_status(t("This decision is currently closed."));
+  }
+  else {
+    $time = time();
+    if ($time < $node->startdate) {
+      $status_messages .= theme_decisions_status(t("This decision is not yet opened."));
     }
-    if (!$node->active) {
-      $status_messages .= theme_decisions_status(t("This decision is currently closed."));
+    else if ($node->runtime != DECISIONS_RUNTIME_INFINITY && $time >= $node->startdate + $node->runtime) {
+      $status_messages .= theme_decisions_status(t("This decision is now closed."));
     }
-    else {
-      $time = time();
-      if ($time < $node->startdate) {
-        $status_messages .= theme_decisions_status(t("This decision is not yet opened."));
-      }
-      else if ($node->runtime != DECISIONS_RUNTIME_INFINITY && $time >= $node->startdate + $node->runtime) {
-        $status_messages .= theme_decisions_status(t("This decision is now closed."));
-      }
-    }
-    $node->content['decisions']['status']['#value'] = $status_messages;
-    
-    if (arg(2) != 'results' && _decisions_can_vote($node)) {
-      // User hasn't voted and we're not on the results tab
-      $node->content['decisions']['form']['#value'] = drupal_get_form('decisions_voting_form', $node, $teaser, $page);
-      $node->content['decisions']['list']['#value'] = theme_decisions_view_header($node, $teaser);
-    }
-    elseif (_decisions_can_view_results($node)) {
-      // show results only if the user has voted or decision is closed
-      $node->content['decisions']['results']['#value'] = decisions_view_results($node, $teaser, $page);
-      $node->content['decisions']['list']['#value'] = theme_decisions_view_header($node, $teaser);
-    }
-    if (isset($node->voted) && $node->voted && user_access('cancel own vote') && $node->active) {
-      $node->content['decisions']['cancel']['#value'] = drupal_get_form('decisions_cancel_form', $node->nid);
-      $node->content['decisions']['cancel']['#weight'] = 10;
-    }
+  }
+  $node->content['decisions']['status']['#value'] = $status_messages;
+  $node->content['decisions']['#weight'] = 1;  
+
+  if (arg(2) != 'results' && _decisions_can_vote($node)) {
+    // User hasn't voted and we're not on the results tab
+    $node->content['decisions']['form']['#value'] = drupal_get_form('decisions_voting_form', $node, $teaser, $page);
+    $node->content['decisions']['list']['#value'] = theme_decisions_view_header($node, $teaser);
+  }
+  elseif (_decisions_can_view_results($node)) {
+    // show results only if the user has voted or decision is closed
+    $node->content['decisions']['results']['#value'] = decisions_view_results($node, $teaser, $page);
+    $node->content['decisions']['list']['#value'] = theme_decisions_view_header($node, $teaser);
+  }
+  if (isset($node->voted) && $node->voted && user_access('cancel own vote') && $node->active) {
+    $node->content['decisions']['cancel']['#value'] = drupal_get_form('decisions_cancel_form', $node->nid);
+  }
 
   return $node;
 }
