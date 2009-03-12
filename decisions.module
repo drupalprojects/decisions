@@ -469,6 +469,10 @@ function decisions_electoral_list_form_validate($form, &$form_state) {
       return FALSE;
     }
   }
+  else {
+    form_set_error('electoral_list][add_user', t('Please enter a user.'));
+    return FALSE;
+  }
 }
   	 
 /**
