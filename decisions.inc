@@ -202,7 +202,7 @@ function _decisions_form_date($timestamp) {
     '#required' => TRUE);
   $form['month'] = array(
     '#type' => 'select',
-    '#default_value' => _decisions_date('m', $timestamp),
+    '#default_value' => _decisions_date('n', $timestamp),
     '#options' => $months,
     '#required' => TRUE);
   $form['year'] = array(
