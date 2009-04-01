@@ -922,7 +922,7 @@ function decisions_electoral_list_remove_voter() {
 /**
  * Validate changes to the electoral list
  */
-function decisions_electoral_list_validate($form_id, $form_values) {
+function decisions_electoral_list_form_validate($form_id, $form_values) {
   if ($form_values['op'] == t('Reset electoral list')) {
     if (user_access('administer decisions')) {
       db_query('DELETE FROM {decisions_electoral_list} WHERE nid=%d', $form_values['nid']);
@@ -944,7 +944,7 @@ function decisions_electoral_list_validate($form_id, $form_values) {
 /**
  * Submit changes to the electoral list
  */
-function decisions_electoral_list_submit($form_id, $form_values) {
+function decisions_electoral_list_form_submit($form_id, $form_values) {
   $add_user = $form_values['electoral_list']['add_user'];
   if ($add_user) {
     db_query('REPLACE INTO {decisions_electoral_list} (nid, uid) SELECT "%d", u.uid FROM {users} u WHERE u.name = "%s"', $form_values['nid'], $add_user);
