@@ -168,6 +168,50 @@ function decisions_submit(&$node) {
 }
 
 /**
+ * Add new choices to decisions form when AHAH isn't available
+ */
+function decisions_add_choices_submit($form, &$form_state) {
+  // Set the form to rebuild and run submit handlers.
+  node_form_submit_build_node($form, $form_state);
+  if (!isset($form_state['values']['choice'])) return;
+
+  // Add new choices 
+  if ($form_state['values']['choice']['morechoices']) {
+    $form_state['values']['choice']['choices'] = count($form_state['values']['choice']) + 1; // adding 1 + 2 elements
+  }
+}
+
+/**
+ * Add a new choice to decisions form using AHAH menu callback
+ */
+function decisions_add_choices_js() {
+
+  $form_build_id = $_POST['form_build_id'];
+  $form_id = $_POST['form_id'];
+  
+  $form_state = array('submitted' => FALSE);
+  $form = form_get_cache($form_build_id, $form_state);  
+  
+  // Update related form data 
+  $count = ++$form['choice']['choices']['#default_value'];
+  $form['settings']['maxchoices']['#options'] = _decisions_choice_list($count);
+  $form['choice'][$count]['label'] = _decisions_new_choice($count);
+
+  form_set_cache($form_build_id, $form, $form_state);
+  
+  $form['#post'] = $_POST; 
+  $form['#redirect'] = FALSE; 
+  $form['#programmed'] = FALSE; 
+
+  $form = form_builder($form_id, $form, $form_state);
+
+  $newchoice = $form['choice'][$count];
+  $output = theme('status_messages') . drupal_render($newchoice);
+
+  drupal_json(array('status' => TRUE, 'data' => $output)); 
+}
+
+/**
  * Implementation of hook_view().
  */
 function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
@@ -216,6 +260,38 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
 }
 
 /**
+ * Generate a new choice element in decisions form
+ * 
+ * @param $index position of choice item in list
+ * @param $value default value of choice element 
+ * @return new choice element
+ */
+function _decisions_new_choice($index, $value = NULL) {
+
+  $newchoice = array(
+    '#type' => 'textfield',
+    '#title' => t('Choice @n', array('@n' => $index)),
+    '#default_value' => "$value",
+    '#attributes' => array('class' => 'choices'),
+  );
+
+  return $newchoice;
+}
+/*
+ * Generate maxchoices value list
+ * 
+ * @param $choices number of choices to generate
+ * @return array of choices
+ */
+function _decisions_choice_list($choices) {
+  $max_choice_list = array();
+  for ($i = 0; $i <= $choices; $i++) {
+    $max_choice_list[$i] = ($i == 0? 'No limit' : $i);
+  }
+  return $max_choice_list;
+}
+
+/**
  * Implementation of hook_form().
  *
  * This hook displays the form necessary to edit the *node* (ie. not the votes).
@@ -242,47 +318,52 @@ function decisions_form(&$node, &$form_state) {
                         '#required' => FALSE,
                         '#default_value' => $node->body,
                         );
-
-  if (isset($form_values['choices'])) {
-    $choices = $form_values['choices'];
-  }
+                       
+  if (isset($form_state['values']['choice']['choices']) && is_numeric($form_state['values']['choice']['choices'])) {
+    $choices = max(2, $form_state['values']['choice']['choices']);
+  } 
   else {
     $choices = max(2, isset($node->choice) && count($node->choice) ? count($node->choice) : 5);
   }
+
+  $form['choice']['js'] = array(
+    '#type' => 'markup',
+    '#theme' => 'decisions_morechoices',
+  );  
   
   $form['choice']['choices'] = array(
-                                     '#type' => 'hidden',
-                                     '#default_value' => $choices
-                                     );
-  
+    '#type' => 'hidden',
+    '#default_value' => $choices,  
+  );
+      
   $form['choice']['morechoices'] = array(
-                                         '#type' => 'checkbox',
-                                         '#title' => t('Need more choices'),
-                                         '#default_value' => 0,
-                                         '#return_value' => 1,
-                                         '#prefix' => '<div id="morechoices">',
-                                         '#suffix' => '</div>',
-                                         '#description' => t("If the amount of boxes above isn't enough, check this box and click the Preview button below to add some more."),
-                                         '#weight' => 1
-                                         );
-  
+    '#type' => 'submit',
+    '#value' => t('Add more choices'),
+    '#description' => t("Click this button to add more choices to this form."),
+    '#weight' => 2,
+    '#submit' => array('decisions_add_choices_submit'), // falback method for when JS is turned off
+    '#ahah' => array(
+      'path' => 'decisions/add_choices_js',
+      'wrapper' => 'edit-choice-morechoices',
+      'method' => 'decisions_addChoice',
+      'effect' => 'slide',
+    ),
+  );
+
   // Decisions choices
   $form['choice'] += array(
                            '#type' => 'fieldset',
                            '#title' => t('Decision choices'),
+                           '#description' => t('Enter all available choices here. Leave text box empty to delete a choice.'),
                            '#collapsible' => TRUE,
                            '#prefix' => '<div class="poll-form">',
-                           '#suffix' => '</div>', '#tree' => TRUE,
+                           '#suffix' => '</div>', 
+                           '#tree' => TRUE,
                            '#weight' => 1,
                            );
-    
+
   for ($a = 1; $a <= $choices; $a++) {
-    $form['choice'][$a]['label'] = array(
-                                          '#type' => 'textfield',
-                                          '#title' => t('Choice @n', array('@n' => $a)),
-                                          '#default_value' => (isset($node->choice) ? $node->choice[$a]['label'] : NULL),
-                                          '#attributes' => array('class' => 'choices'),
-                                          );
+    $form['choice'][$a]['label'] = _decisions_new_choice($a, (isset($node->choice) ? $node->choice[$a]['label'] : NULL));
   }
 
   $form['settings'] = array(
@@ -293,17 +374,12 @@ function decisions_form(&$node, &$form_state) {
                             '#collapsed' => TRUE,
                             '#weight' => 2,
                             );
-
-  $max_choice_list = array();
-  for ($i = 0; $i <= $choices; $i++) {
-    $max_choice_list[$i] = ($i == 0? 'No limit' : $i);
-  }
-
+ 
   $form['settings']['maxchoices'] = array(
                                           '#type' => 'select',
                                           '#title' => t('Maximum Choices'),
                                           '#default_value' => (isset($node->maxchoices)? $node->maxchoices : 0),
-                                          '#options' => $max_choice_list,
+                                          '#options' => _decisions_choice_list($choices),
                                           '#description' => t('Limits the total number of choices voters may select.'),
                                           );
 
@@ -419,31 +495,16 @@ function decisions_form(&$node, &$form_state) {
                                        '#description' => t('Minimum numbers of voters required for this decision to be valid, expressed as a percentage of the eligible voters rounded up.'),
                                        '#weight' => -1,
                                        );
-
-
+                                                                           
   return $form;
 }
 
-/**
- * Implementation of hook_form_alter()
- *
- * This is the implementation of the "More choices" option
- */
-function decisions_form_alter(&$form, $form_state, $form_id) {
-  if (preg_match('/^decisions_.*_node_form$/', $form_id)) {
-    # XXX: not sure this is right
-    if ($form['choice']['morechoices']['#return_value']) {
-      $form['#rebuild'] = TRUE;
-      $choices = $form['choice']['choices']['#value'];
-      for ($a = $choices+1; $a <= $choices*2; $a++) {
-        $form['choice'][$a]['label'] = array(
-                                             '#type' => 'textfield',
-                                             '#title' => t('Choice @n', array('@n' => $a)),
-                                             '#default_value' => (isset($node->choice) ? $node->choice[$a]['label'] : NULL),
-                                             '#attributes' => array('class' => 'choices'),
-        );
-      }
-    }
-  }
-}
+function theme_decisions_morechoices(&$element) {
+    
+    drupal_add_js('misc/jquery.form.js');
+    drupal_add_js('misc/ahah.js');
+    drupal_add_js(drupal_get_path('module', 'decisions') .'/decisions.js', 'module');
 
+    $output = drupal_render($element);     
+    return $output;
+}

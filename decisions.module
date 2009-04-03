@@ -173,7 +173,12 @@ function decisions_menu() {
     'weight' => 3,
     'type' => MENU_LOCAL_TASK,
   );
-    
+  $items['decisions/add_choices_js'] = array(
+    'page callback' => 'decisions_add_choices_js',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('administer decisions'),
+  );
+
   return $items;
 }
 
@@ -235,7 +240,8 @@ function decisions_theme() {
     'decisions_view_header' => array('arguments' => array('node' => NULL, 'teaser' => FALSE)),
     'decisions_view_voting' => array('arguments' => array('form' => NULL)),
     'decisions_bar' => array('arguments' => array('title' => NULL, 'percentage' => NULL, 'votes' => NULL)),
-    'decisions_status' => array('arguments' => array('message' => NULL))
+    'decisions_status' => array('arguments' => array('message' => NULL)),
+    'decisions_morechoices' => array('arguments' => array(), 'decisions_morechoices' => NULL),
     );
 }
 
