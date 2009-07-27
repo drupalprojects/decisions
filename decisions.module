@@ -1106,8 +1106,7 @@ function decisions_insert($node) {
   // just create an empty entry for now
   $mode = _decisions_get_mode($node);
 
-  $algs = decisions_algorithms($mode);
-  db_query("INSERT INTO {decisions} (nid, mode, quorum_abs, quorum_percent, uselist, active, runtime, maxchoices, algorithm, startdate) VALUES (%d, '%s', %d, %f, %d, %d, %d, %d, '%s', %d)", $node->nid, $mode, $node->settings['quorum_abs'], $node->settings['quorum_percent'], $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $algs[0], $startdate);
+  db_query("INSERT INTO {decisions} (nid, mode, quorum_abs, quorum_percent, uselist, active, runtime, maxchoices, algorithm, startdate) VALUES (%d, '%s', %d, %f, %d, %d, %d, %d, '%s', %d)", $node->nid, $mode, $node->settings['quorum_abs'], $node->settings['quorum_percent'], $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $startdate);
 
   // create the electoral list if desired
 
@@ -1429,9 +1428,10 @@ function decisions_form(&$node, &$form_state) {
                                           );
 
   $algs = decisions_algorithms($mode);
-  
-  foreach ($algs as $alg) {
+  $alg_desc = '';
+  foreach ($algs as $alg => $desc) {
     $voting_algorithms[$alg] = ucwords($alg);
+    $alg_desc .= ucwords($alg) . " - " . $desc . "<br />";
   }
 
   $defaultalg = (isset($node->algorithm) ? $node->algorithm : (isset($algs[0]) ? $algs[0] : ''));
@@ -1441,7 +1441,7 @@ function decisions_form(&$node, &$form_state) {
                                          '#title' => t('Algorithm'),
                                          '#options' => $voting_algorithms,
                                          '#default_value' => $defaultalg,
-                                         '#description' => 'Voting algorithm to use to calculate the winner.',
+                                         '#description' => t('Voting algorithm to use to calculate the winner.') . "<br />" . $alg_desc,
                                          );
   }
   else {

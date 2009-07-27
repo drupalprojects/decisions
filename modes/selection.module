@@ -35,7 +35,7 @@ function selection_form(&$node) { return decisions_form($node); }
  * Implementation of the decisions_algorithms() hook
  */
 function selection_decisions_algorithms() {
-  return array('plurality');
+  return array('plurality' => t('The plurality algorithm determines the winner based solely on the number of votes received: the one with the larger number of votes wins. See the <a href="http://en.wikipedia.org/wiki/Plurality_voting_system">Plurality voting system on Wikipedia</a> for more information'));
 }
 
 /**

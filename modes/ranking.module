@@ -46,7 +46,8 @@ function ranking_node_info() {
  * Implementation of the decisions_algorithms() hook
  */
 function ranking_decisions_algorithms() {
-  return array('instant runoff', 'borda count');
+  return array('instant runoff' => t('Instant run-off voting, also known as IVR or Alternative Voting, is an algorithm by which the candidate having the least ballots gets its votes redistributed to the other candidates. See <a href="http://en.wikipedia.org/wiki/Instant-runoff_voting">Instant runoff voting on Wikipedia</a> for more information.'),
+               'borda count' => t('Borda count is an algorithm by which each candidate gets a number of points assigned based on the number of candidates standing. See the <a href="http://en.wikipedia.org/wiki/Borda_count">Borda count article on Wikipedia</a> for more information.'));
 }
 
 /**

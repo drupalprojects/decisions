@@ -17,7 +17,14 @@ mandatory hooks will create warnings and problems.
 decisions_algorithms
 --------------------
 
-Mandatory. Return a list of algorithms provided by this decision mode.
+Mandatory. Return a list of algorithms provided by this decision mode. The list
+if of the form:
+
+algorithm => description
+
+where algorithm is a short name for the algorithm (suitable for storage in the
+database) and description a freeform description of the algorithm that will be
+presented to the user.
 
 decisions_voting_form
 ---------------------
