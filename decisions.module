@@ -486,7 +486,7 @@ function decisions_electoral_list_form_submit($form, &$form_state) {
   $add_user = $form_state['values']['electoral_list']['add_user'];
   $nid = $form_state['values']['nid'];
   if ($add_user) {
-    db_query('REPLACE INTO {decisions_electoral_list} (nid, uid) SELECT "%d", u.uid FROM users u WHERE u.name = "%s"', $nid, $add_user);
+    db_query('REPLACE INTO {decisions_electoral_list} (nid, uid) SELECT "%d", u.uid FROM {users} u WHERE u.name = "%s"', $nid, $add_user);
     drupal_set_message(t('%user added to electoral list.', array('%user' => $add_user)));
     drupal_goto('node/'. $nid .'/electoral_list');
   }
