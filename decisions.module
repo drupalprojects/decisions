@@ -82,7 +82,7 @@ function decisions_block($op = 'list', $delta = 'mostrecent', $edit = array()) {
  * Closes decisions that have exceeded their allowed runtime.
  */
 function decisions_cron() {
-  $result = db_query('SELECT d.nid FROM {decisions} d INNER JOIN {node} n ON d.nid = n.nid WHERE (n.created + d.runtime) < '. time() .' AND d.active = 1 AND d.runtime <> 0');
+  $result = db_query('SELECT d.nid FROM {decisions} d INNER JOIN {node} n ON d.nid = n.nid WHERE (d.created + d.runtime) < '. time() .' AND d.active = 1 AND d.runtime <> 0');
   while ($decision = db_fetch_object($result)) {
     db_query("UPDATE {decisions} SET active = 0 WHERE nid=%d", $decision->nid);
   }
