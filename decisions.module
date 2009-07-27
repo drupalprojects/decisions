@@ -239,7 +239,13 @@ function decisions_theme() {
     'decisions_bar' => array('arguments' => array('title' => NULL, 'percentage' => NULL, 'votes' => NULL)),
     'decisions_status' => array('arguments' => array('message' => NULL)),
     'decisions_morechoices' => array('arguments' => array(), 'decisions_morechoices' => NULL),
+    'decisions_view_own_result' => array(),
     );
+}
+
+function theme_decisions_view_own_result() {
+  $output = '<div class="decisions-own-result">' . t("Your vote has been recorded.") . '</div>';
+  return $output;
 }
 
 /**
@@ -1295,6 +1301,8 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
     // show results only if the user has voted or decision is closed
     $node->content['decisions']['results']['#value'] = decisions_view_results($node, $teaser, $page);
     $node->content['decisions']['list']['#value'] = theme_decisions_view_header($node, $teaser);
+  } else {
+    $node->content['decisions']['#value'] = theme_decisions_view_own_result();
   }
   if (isset($node->voted) && $node->voted && user_access('cancel own vote') && $node->active) {
     $node->content['decisions']['cancel']['#value'] = drupal_get_form('decisions_cancel_form', $node->nid);
