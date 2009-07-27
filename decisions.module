@@ -176,7 +176,7 @@ function decisions_menu() {
   $items['decisions/add_choices_js'] = array(
     'page callback' => 'decisions_add_choices_js',
     'type' => MENU_CALLBACK,
-    'access arguments' => array('administer decisions'),
+    'access arguments' => array('create decisions'),
   );
 
   return $items;
