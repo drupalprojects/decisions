@@ -193,6 +193,9 @@ function decisions_add_choices_js() {
   $form = form_get_cache($form_build_id, $form_state);  
   
   // Update related form data 
+  if (!$form['choice']['choices']['#default_value']) {
+    $form['choice']['choices']['#default_value'] = 0; // silence a warning
+  }
   $count = ++$form['choice']['choices']['#default_value'];
   $form['settings']['maxchoices']['#options'] = _decisions_choice_list($count);
   $form['choice'][$count]['label'] = _decisions_new_choice($count);
