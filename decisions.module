@@ -468,7 +468,7 @@ function decisions_electoral_list_form_validate($form, &$form_state) {
   $add_user = $form_state['values']['electoral_list']['add_user'];
   if ($add_user) {
     // Check that the user exists
-    if (db_fetch_object(db_query('SELECT uid FROM {users} WHERE name="%s"', $add_user))) {
+    if (!db_fetch_object(db_query('SELECT uid FROM {users} WHERE name="%s"', $add_user))) {
       form_set_error('electoral_list][add_user', t('User %user does not exist.', array('%user' => $add_user)));
       return FALSE;
     }
