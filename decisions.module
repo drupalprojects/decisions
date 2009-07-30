@@ -1500,22 +1500,24 @@ function decisions_form(&$node, &$form_state) {
   
   $form['settings']['date']['startdate'] = array(
     '#type' => 'fieldset',
-    '#collapsed' => FALSE,
-    '#description' => t('Opening date')
+    '#title' => t('Opening date')
   );  
   $form['settings']['date']['startdate']['date'] = _decisions_form_date($startdate);
   
   $form['settings']['date']['noenddate'] = array(
     '#type' => 'checkbox',
     '#title' => t('No closing date'),
-    '#default_value' => ($runtime == DECISIONS_RUNTIME_INFINITY),
+    '#default_value' => ($runtime != DECISIONS_RUNTIME_INFINITY),
     '#description' => t('Check this box if you do not want the vote to close on a specific date.'),
+    '#attributes' => array('onClick' => 'Drupal.toggleFieldset($("#enddate"))'),
   );
 
   $form['settings']['date']['enddate'] = array(
     '#type' => 'fieldset',
-    '#collapsed' => FALSE,
-    '#description' => t('Closing date')
+    '#collapsed' => ($runtime != DECISIONS_RUNTIME_INFINITY),
+    '#collapsible' => TRUE,
+    '#attributes' => array('id' => 'enddate'),
+    '#title' => t('Closing date')
   );  
   $form['settings']['date']['enddate']['date'] = _decisions_form_date($enddate);
 
