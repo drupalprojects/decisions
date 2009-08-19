@@ -663,12 +663,33 @@ function decisions_votes_tab() {
     $header[] = array('data' => t('Visitor'), 'field' => 'u.name');
     $header[] = array('data' => t('Vote'), '');
 
-    $result = pager_query('SELECT v.value, v.uid, v.vote_source, v.tag, u.name FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_id = %d'. tablesort_sql($header), 20, 0, NULL, $node->nid);
+    /* this query will group all the vote of a user in one record so that the pager can deal with it
+     *
+     * the "votes" column will look something like: 
+     *
+     *  v1=>t1,v2=>t2
+     *
+     * for a table like this:
+     *
+     * uid | v1 | t1
+     * uid | v2 | t2
+     *
+     * where vN are values and tN are tags (tags being the choice being made and values the score given to it)
+     *
+     * XXX: highly MySQL specific
+     */
+    $query = 'SELECT u.name, v.uid, v.vote_source, GROUP_CONCAT(DISTINCT CONCAT(v.value,"=>",v.tag) ORDER BY v.value) as votes FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_id = %d GROUP BY v.uid' . tablesort_sql($header) . '';
+    $query_count = 'SELECT COUNT(DISTINCT v.uid) FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_id = %d GROUP BY content_id'. tablesort_sql($header);
+    $result = pager_query($query, variable_get('decisions_votes_per_page', 20), 0, $query_count, $node->nid);
     $votes = array();
     $names = array();
     while ($vote = db_fetch_object($result)) {
       $key = $vote->uid? $vote->uid : $vote->vote_source;
-      $votes[$key][] = $vote;
+      $choices = explode(',', $vote->votes);
+      foreach ($choices as $choice) {
+        $choice = explode("=>", $choice);
+        $votes[$key][] = (object) array('value' => $choice[0], 'tag' => $choice[1]);
+      }
       $names[$key] = $vote->name ? theme('username', $vote) : check_plain($vote->vote_source);
     }
 
@@ -686,7 +707,7 @@ function decisions_votes_tab() {
     }
 
     $output .= theme('table', $header, $rows);
-    $output .= theme('pager', NULL, 20, 0);
+    $output .= theme('pager', array(), variable_get('decisions_votes_per_page', 20), 0);
     print theme('page', $output);
   }
   else {
