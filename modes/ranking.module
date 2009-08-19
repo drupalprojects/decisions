@@ -47,7 +47,8 @@ function ranking_node_info() {
  */
 function ranking_decisions_algorithms() {
   return array('instant runoff' => t('Instant run-off voting, also known as IVR or Alternative Voting, is an algorithm by which the candidate having the least ballots gets its votes redistributed to the other candidates. See <a href="http://en.wikipedia.org/wiki/Instant-runoff_voting">Instant runoff voting on Wikipedia</a> for more information.'),
-               'borda count' => t('Borda count is an algorithm by which each candidate gets a number of points assigned based on the number of candidates standing. See the <a href="http://en.wikipedia.org/wiki/Borda_count">Borda count article on Wikipedia</a> for more information.'));
+               'borda count' => t('Borda count is an algorithm by which each candidate gets a number of points assigned based on the number of candidates standing. See the <a href="http://en.wikipedia.org/wiki/Borda_count">Borda count article on Wikipedia</a> for more information.'),
+               'condorcet' => t('Condorcet finds the one candidate who would beat all other candidates in all possible two-person races.  In this implementation, ties are broken using Schulze method. See the <a href="http://en.wikipedia.org/wiki/Schulze_method">Schulze method article on Wikipedia</a> for more information.'));
 }
 
 /**
@@ -127,55 +128,94 @@ function ranking_decisions_view_results($node, $teaser, $page) {
 
   $output = '';
 
-  // If no one has voted, $results = array() and thus is empty
-  if (!empty($results)) {
-
-    $output .= t('Results: ') .'<ol>';
-
-    for ($i = 0; $i < count($results->ranking); $i++) {
-      $output .= '<li> ';
-      $first_one = TRUE;
-
-      // Loop through all choices with this ranking
-      foreach ($results->ranking[$i]['choices'] as $choice) {
-        $output .= ($first_one? '' : ', ') . check_plain($node->choice[$choice]['label']);
-        $first_one = FALSE;
-      }
-
-      // Show the ranking's score if it exists (depends on algorithm)
-      if (isset($results->ranking[$i]['viewscore'])) {
-        $output .= ' ('. $results->ranking[$i]['viewscore'] .')';
-      }
-      $output .= '</li>';
+  if ($node->algorithm == 'condorcet') { // Use this display method only if using condorcet.
+    $rows[0][] = "";
+    $options = count($node->choice);
+    for ($i = 1; $i<=$options; $i++) {
+      $rows[0][] = array('data' => check_plain($node->choice[$i]['label']), 'header' => 1);
     }
-    $output .= '</ol>';
-
-    if (user_access('inspect all votes') && isset($results->matrix)) {
-      $header[0] = "Rounds";
-      $round = 1;
-      if (count($results->matrix) > 0) {
-        foreach ($results->matrix as $a_round) {
-          $header[$round] = $round;
-          $round++;
-        }
-      }
-    
-      $round = 1;
-      $i = 0;
-      if (count($results->matrix) > 0) {
-        foreach ($results->matrix as $a_round) {
-          foreach ($node->choice as $key => $choicename) {
-            $rows[$i][0] = $choicename['label'];
-            $rows[$i][$round] = count($a_round[$key]);
-            $i++;
+    for ($i = 1; $i<=$options; $i++) {
+      $rows[$i][0] = array('data' => check_plain($node->choice[$i]['label']), 'header' => 1);
+      for ($j = 1; $j<=$options; $j++) {
+        if ($i==$j) {
+          $rows[$i][$j] = "N/A";
+        } else {
+          if ($results->matrix[$i][$j]) {
+            $rows[$i][$j] = $results->matrix[$i][$j];
+          } else {
+            $rows[$i][$j] = 0;
           }
-          $i=0;
-          $round++;
         }
       }
-      $output .= theme('table', $header, $rows);
     }
-  }
+    
+    $output .= theme_table(array(), $rows, array(), "The number in a given square is the number of times the row was preferred to the column.");
+
+    // Display the outcome of the Schulze count.
+    $output .= '<p>Results</p><ul>';
+    for ($i=1; $i<=count($results->ranking); $i++) {
+      $output .= "<li><em>Round ". $i ."</em>: ". $results->ranking[$i][0] .": ";
+      $first_one = TRUE;
+      for ($j=1; $j<count($results->ranking[$i]); $j++) {
+        if (!$first_one) {$output .= ", ";}
+        $output .= check_plain($node->choice[$results->ranking[$i][$j]]['label']);
+        $first_one=FALSE;
+      }
+      $output .= "</li>";
+    }
+    $output .= "</ul>";
+  } else {
+
+    // If no one has voted, $results = array() and thus is empty
+    if (!empty($results)) {
+
+      $output .= t('Results: ') .'<ol>';
+
+      for ($i = 0; $i < count($results->ranking); $i++) {
+        $output .= '<li> ';
+        $first_one = TRUE;
+
+        // Loop through all choices with this ranking
+        foreach ($results->ranking[$i]['choices'] as $choice) {
+          $output .= ($first_one? '' : ', ') . check_plain($node->choice[$choice]['label']);
+          $first_one = FALSE;
+        }
+
+        // Show the ranking's score if it exists (depends on algorithm)
+        if (isset($results->ranking[$i]['viewscore'])) {
+          $output .= ' ('. $results->ranking[$i]['viewscore'] .')';
+        }
+        $output .= '</li>';
+      }
+      $output .= '</ol>';
+
+      if (user_access('inspect all votes') && isset($results->matrix)) {
+        $header[0] = "Rounds";
+        $round = 1;
+        if (count($results->matrix) > 0) {
+          foreach ($results->matrix as $a_round) {
+            $header[$round] = $round;
+            $round++;
+          }
+        }
+    
+        $round = 1;
+        $i = 0;
+        if (count($results->matrix) > 0) {
+          foreach ($results->matrix as $a_round) {
+            foreach ($node->choice as $key => $choicename) {
+              $rows[$i][0] = $choicename['label'];
+              $rows[$i][$round] = count($a_round[$key]);
+              $i++;
+            }
+            $i=0;
+            $round++;
+          }
+        }
+        $output .= theme('table', $header, $rows);
+      }
+    }
+  } // end condorcet else.
   return $output;
 }
 
@@ -272,12 +312,14 @@ function ranking_decisions_vote_validate($node, $form_values) {
   }
 
   // Check that multiple choices are not set to the same value
-  foreach ($setvalues as $val => $count) {
-    if ($val != 0 && $count > 1) {
-      form_set_error('choice', t('Multiple choices given the rank of @val.', array('@val' => $val)));
-      $ok = FALSE;
+  if ($node->algorithm != "condorcet") { // condorcet uses ties.
+    foreach ($setvalues as $val => $count) {
+      if ($val != 0 && $count > 1) {
+        form_set_error('choice', t('Multiple choices given the rank of @val.', array('@val' => $val)));
+        $ok = FALSE;
+      }
     }
-  }
+  } // end condorcet if.
 
 
   return $ok;
@@ -304,8 +346,11 @@ function _ranking_decisions_calculate_results($node) {
   if ($node->algorithm == 'borda count') {
     return _decisions_calculate_bordacount($node);
   }
-  else {
+  else if ($node->algorithm == 'instant runoff') {
     return _decisions_calculate_instantrunoff($node);
+  }
+  else {
+    return _decisions_calculate_condorcet($node);
   }
 }
 
@@ -616,4 +661,222 @@ function _decisions_calculate_instantrunoff($node) {
   $result_obj->total_votes = $total_votes;
   return $result_obj;
 
+}
+
+/**
+ * Calculate the results using condorcet voting.
+ * 
+ * @param $node
+ *      The node object for the current decision
+ *
+ * @return 
+ *      Should return an object that include the following attributes
+ *   -matrix: 2d array listing the aggregate preferences
+ *   -ranking : 2d array listing the results of the Schulze count.
+ *   -total_votes : the total number of voters who participated
+ */
+function _decisions_calculate_condorcet ($node) {
+  $votes = _decisions_votes($node);
+  
+  if (count($votes) == 0) {
+    // no votes yet
+    return array();
+  }
+
+  // aggregate votes by user (uid if logged in, IP if anonymous)
+  // in ascending order of value
+  $user_votes = array();
+
+  foreach ($votes as $vote) {
+    if ($vote['uid'] == 0) {
+      // anonymous user
+      $key = $vote['vote_source'];
+    }
+    else {
+      // logged-in user
+      $key = $vote['uid'];
+    }
+
+    $user_votes[$key][$vote['tag']] = $vote['value']; // TAG and Value had to be reversed here to allow for ties.
+  }
+
+  $choice_votes = array();
+
+  $total_choices = count($node->choice);
+  $total_votes = count($user_votes);
+
+  // Loop through each user's vote
+  foreach ($user_votes as $uid => $user_vote) {
+    // Create an array of choice ranks, so we don't look for any of them more than once.
+    $choice_ranks = array();
+    // Go through all the node choices, and find their ranking.
+    for ($choice = 1; $choice <= $total_choices; $choice++) {
+      $ranking = 256; // default value applied to anything that isn't ranked.  Tied for last.  Problem if there were more than 256 options.
+      if (array_key_exists($choice, $user_vote)) { $ranking = $user_vote[$choice]; } // Pull the ranking from the vote.
+      $choice_ranks[$choice] = 0 - $ranking; // We inverse the numerical values  so a high ranking is bad, negatives work fine.
+    }
+    // Loop through to compare every choice.
+    for ($choice_A = 1; $choice_A <= $total_choices-1; $choice_A++) {
+      // Loop through all choices to which choice_A has not been compared, excluding itself.
+      for ($choice_B = $choice_A+1; $choice_B <= $total_choices; $choice_B++) {
+        // Figure out where to put the points.
+        if ($choice_ranks[$choice_A]>$choice_ranks[$choice_B]) {
+          // Indicate A beat B
+          $choice_votes[$choice_A][$choice_B] = $choice_votes[$choice_A][$choice_B] + 1;
+          $choice_votes[$choice_B][$choice_A] = $choice_votes[$choice_B][$choice_A] + 0;
+        } else if ($choice_ranks[$choice_B]>$choice_ranks[$choice_A]) {
+          // Indicate B beat A
+          $choice_votes[$choice_B][$choice_A] = $choice_votes[$choice_B][$choice_A] + 1;
+          $choice_votes[$choice_A][$choice_B] = $choice_votes[$choice_A][$choice_B] + 0;
+        } else {
+          // Indicate a Tie
+          $choice_votes[$choice_B][$choice_A] = $choice_votes[$choice_B][$choice_A] + 0.5;
+          $choice_votes[$choice_A][$choice_B] = $choice_votes[$choice_A][$choice_B] + 0.5;
+        } // end if
+      } // end for
+    } // end for
+  } // end foreach
+
+  //Return the results.
+  $result_obj->matrix = $choice_votes;
+  $result_obj->ranking = _decisions_shultz($choice_votes);
+  $result_obj->total_votes = $total_votes;
+  return $result_obj;
+}
+
+function _compare_beatpaths($a, $b) {
+  return strcmp($b[2],$a[2]);
+}
+
+/**
+ * Determine the shultz method winner from a pairwise matrix.
+ *
+ * @param $matrix;
+ *   A pair-wise matrix of results.
+ *
+ * @return
+ *    Should return an array appropriate for the condorcet display method.
+ *    
+ * Note: There is another heuristic where strongest
+ * beatpaths are locked in, and weaker beatpaths that conflict with them are ignored.
+ * From my understanding, that would eliminate entirely the need for the second half of the
+ * Floyd-Warshall algorithm.  
+ * I think that would be much faster to implement and run, but I would want to satisfy myself that
+ * the results were the same either way, so I went for the hard way first.
+ */
+function _decisions_shultz($matrix) {
+  $ranking = array();
+  $candidates = count($matrix);
+  // Create a matrix of path strengths. Based on the Floyd-Warshall algorithm.
+  $strongest_paths = array();
+  for ($i = 1; $i<=$candidates; $i++) {
+    for ($j = 1; $j<=$candidates; $j++) {
+      if ($i!=$j) {
+      if ($matrix[$i][$j]>$matrix[$j][$i]) {
+          $strongest_paths[$i][$j] = $matrix[$i][$j];
+      } else {
+          $strongest_paths[$i][$j] = 0;
+      }
+      }
+    }
+  }
+  for ($i = 1; $i<=$candidates; $i++) {
+    for ($j = 1; $j<=$candidates; $j++) {
+      if ($i != $j) {
+        for ($k = 1; $k<=$candidates; $k++) {
+          if (($j!=$k) && ($i != $k)) {
+            $strongest_paths[$j][$k] = max ($strongest_paths[$j][$k], min ($strongest_paths[$j][$i], $strongest_paths[$i][$k]));
+          }
+        }
+      }
+    }
+  }
+  // Create an array of for,against,strength values from the strongest_paths array to allow sorting.
+  $beatpath = array();
+  for ($i = 1; $i<=$candidates; $i++) {
+    for ($j = 1; $j<=$candidates; $j++) {
+      if ($i!=$j && $strongest_paths[$i][$j] != 0) {
+        $beatpath[] = array($i, $j, $strongest_paths[$i][$j]);
+    }
+    }
+  }
+  // sort the array so that we're starting with the strongest links.
+  usort($beatpath,"_compare_beatpaths");
+  
+  $round_count = 0;
+  $original_candidates = $candidates;
+  $orig_beatpath = count($beatpath);
+  $pathed_out = array(); // 1 indicates that the candidate has been pathed out. 2 indicates their beatpaths have been removed.
+  while ($candidates>1 && count($beatpath)>0) {
+    // Find if there are any candidates that have been pathed out.
+    // Pathed out means that A has a path to beat B, but B has no path to beat A, so B is eliminated.
+    $round_count++;
+    if ($round_count > $original_candidates) { // We have a problem.
+      $broken = TRUE;
+      break;
+    }
+    for ($i=1; $i<$original_candidates; $i++) {
+      for ($j=$i+1; $j<=$original_candidates; $j++) {
+        $forward = FALSE;
+        $reverse = FALSE;
+        for ($k=0; $k<count($beatpath); $k++){
+          if (($beatpath[$k][0] == $i) && ($beatpath[$k][1] == $j)) {
+            $forward = TRUE;
+          }
+          if (($beatpath[$k][1] == $i) && ($beatpath[$k][0] == $j)) {
+            $reverse = TRUE;
+          }
+        }
+        if ($forward == TRUE && $reverse == FALSE) {
+          $pathed_out[$j] = 1;
+        }
+        if ($forward == FALSE && $reverse == TRUE) {
+          $pathed_out[$i] = 1;
+        }
+      }
+    }
+    $pathed_out_count = 0;
+    for ($i=1; $i<=$original_candidates; $i++) {
+      if ($pathed_out[$i] == 1) {$pathed_out_count++;}
+    }
+    if ($pathed_out_count>0) { // Some candidate was eliminated this round.
+      // Remove all of the beatpaths associated with them.
+      $ranking[$round_count][] = "Eliminated";
+      for ($i=1; $i<=$original_candidates; $i++) {
+        if ($pathed_out[$i] == 1) {
+          $ranking[$round_count][] = $i;
+          $candidates--;
+          for ($j=0; $j<$orig_beatpath; $j++) {
+            if (($beatpath[$j][0]) == $i || ($beatpath[$j][1] == $i)) {
+              unset($beatpath[$j]);
+            }
+          }
+          $pathed_out[$i] = 2;
+        }
+      }
+    } else { // No candidates were eliminated this round.  There is a Cyclical Tie.
+      // Drop all the beatpaths tied for weakest.
+      $index = count($beatpath)-1;
+      $value = $beatpath[$index][2];
+      do {
+        unset($beatpath[$index]);
+        $new = $beatpath[$index-1][2];
+        $index--;
+      } while ($new == $value);
+      $ranking[$round_count][] = "Cyclical Tie";
+    }
+  }
+  // Everyone left is tied for the win.
+  $round_count++;
+  $ranking[$round_count][] = "Winner";
+  for ($i=1; $i<=$original_candidates; $i++) {
+    if (!$pathed_out[$i]) {
+      $ranking[$round_count][] = $i;
+      $winner_count++;
+    }
+  }
+  if ($winner_count>1) {
+    $ranking[$round_count][0] = "Tie for Win";
+  }
+  return $ranking;
 }
