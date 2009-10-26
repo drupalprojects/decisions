@@ -155,7 +155,7 @@ function ranking_decisions_view_results($node, $teaser, $page) {
       }
     }
     
-    $output .= theme_table(array(), $rows, array(), "The number in a given square is the number of times the row was preferred to the column.");
+    $output .= theme_table(array(), $rows, array(), "The table below indicates the number of voters who preferred the row to the column.");
 
     // Display the outcome of the Schulze count.
     $output .= '<p>Results</p><ul>';
