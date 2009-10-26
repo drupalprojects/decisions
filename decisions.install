@@ -25,6 +25,7 @@ function decisions_schema() {
          'algorithm' => array('type' => 'varchar', 'length' => '100', 'not null' => FALSE),
          'showvotes' => array('type' => 'int', 'size' => 'tiny', 'not null' => FALSE, 'disp-width' => '4'),
          'startdate' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => FALSE, 'disp-width' => '10')),
+         'randomize' => array('type' => 'int', 'size' => 'tiny', 'not null' => FALSE, 'default' => 1, 'disp-width' => '4'),
     'primary key' => array('nid'),
   );
 
@@ -108,6 +109,16 @@ function decisions_update_5() {
     $items[] = update_sql("ALTER TABLE {decisions} MODIFY `quorum` int(10) NOT NULL AFTER mode");
     $items[] = update_sql("ALTER TABLE {decisions} CHANGE COLUMN quorum `quorum_abs` int(10) unsigned NOT NULL default '0'");
     $items[] = update_sql("ALTER TABLE {decisions} ADD COLUMN quorum_percent float unsigned NOT NULL default '0' AFTER quorum_abs");
+    break;
+  }
+  return $items;
+}
+
+function decisions_update_6000() {
+  switch ($GLOBALS['db_type']) {
+  case 'mysql':
+  case 'mysqli':
+    $items[] = update_sql("ALTER TABLE {decisions} ADD COLUMN `randomize` tinyint default '0'");
     break;
   }
   return $items;

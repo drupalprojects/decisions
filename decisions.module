@@ -1133,7 +1133,7 @@ function decisions_insert($node) {
   // just create an empty entry for now
   $mode = _decisions_get_mode($node);
 
-  db_query("INSERT INTO {decisions} (nid, mode, quorum_abs, quorum_percent, uselist, active, runtime, maxchoices, algorithm, startdate) VALUES (%d, '%s', %d, %f, %d, %d, %d, %d, '%s', %d)", $node->nid, $mode, $node->settings['quorum']['quorum_abs'], $node->settings['quorum']['quorum_percent'], $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $startdate);
+  db_query("INSERT INTO {decisions} (nid, mode, quorum_abs, quorum_percent, uselist, active, runtime, maxchoices, algorithm, startdate, randomize) VALUES (%d, '%s', %d, %f, %d, %d, %d, %d, '%s', %d, %d)", $node->nid, $mode, $node->settings['quorum']['quorum_abs'], $node->settings['quorum']['quorum_percent'], $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $startdate, $node->settings['randomize']);
 
   // create the electoral list if desired
 
@@ -1210,7 +1210,7 @@ function decisions_update($node) {
     }
   } 
 
-  db_query("UPDATE {decisions} SET quorum_abs=%d, quorum_percent=%f, active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d, startdate=%d WHERE nid = %d", $node->settings['quorum']['quorum_abs'], $node->settings['quorum']['quorum_percent'], $node->settings['active'], $runtime, $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $startdate, $node->nid);
+  db_query("UPDATE {decisions} SET quorum_abs=%d, quorum_percent=%f, active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d, startdate=%d, randomize=%d WHERE nid = %d", $node->settings['quorum']['quorum_abs'], $node->settings['quorum']['quorum_percent'], $node->settings['active'], $runtime, $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $startdate, $node->settings['randomize'], $node->nid);
   // XXX: should update decisions here, when it has some parameters
   // XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in decisions_insert()
   db_query('DELETE FROM {decisions_choices} WHERE nid = %d', $node->nid);
@@ -1502,6 +1502,13 @@ function decisions_form(&$node, &$form_state) {
                                          '#default_value' => isset($node->showvotes)? $node->showvotes : 1,
                                          '#options' => $enabled,
                                          );
+  
+  $form['settings']['randomize'] = array(
+                                         '#type' => 'checkbox',
+                                         '#title' => t('Randomize answers order'),
+                                         '#default_value' => $node->randomize,
+                                         '#description' => t('Display answers in a random order each time the poll is displayed.'),
+                                        );
 
   $form['settings']['date'] = array(
     '#type' => 'fieldset',
@@ -1656,4 +1663,26 @@ function _decisions_date($format, $timestamp, $offset = NULL) {
   // make sure we apply the site first day of the week setting for dow requests
   $result = gmdate($format, $timestamp);
   return  $result;
+}
+
+/*
+ * Function to put choices in random order if option to
+ * list poll options in random order is selected in
+ * node create/edit form.
+ */
+function _decisions_randomize_options($choices, $num_choices) {
+  $randomized_choices = array();
+  // Put original ordered choices in separate variable.
+  $temp_choices = $choices;
+  // Put array keys from ordered choices in random order.
+  $rand_keys = array_rand($choices, $num_choices);
+  
+  // Use keys from randomized array to get data from temp variable.
+  // Use key+1 because $choices is 1 based and keys in randomized array
+  // are 0 based.
+  foreach($rand_keys as $key => $value) {
+    $randomized_choices[$key+1]['vote_offset'] = $temp_choices[$value]['vote_offset'];
+    $randomized_choices[$key+1]['label'] = $temp_choices[$value]['label'];    
+  }  
+  return $randomized_choices;  
 }

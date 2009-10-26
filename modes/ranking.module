@@ -64,6 +64,12 @@ function ranking_decisions_voting_form(&$node, $teaser, $page) {
 
   if ($node->choice) {
     $list = array();
+    
+    // Put options in random order if randomize option
+    // selected on node create/edit form.
+    if($node->randomize) {
+      $node->choice = _decisions_randomize_options($node->choice, $node->choices); 
+    }
 
     $num_choices = count($node->choice);
 
