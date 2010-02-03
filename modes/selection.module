@@ -118,17 +118,22 @@ function selection_decisions_view_results($node, $teaser, $page) {
     $votes[$voteval]++;
   }
 
+  foreach ($node->choice as $i => $ch) {
+    if (!array_key_exists($i, $votes)) {
+      $votes[$i] = 0;
+    }
+  }
+  // sort the votes
+  arsort($votes);
+ 
   $total_votes = array_sum($votes);
   if ($node->choice && $total_votes > 0) {
     // TODO: Those <div>s and <br />s should be in a theme function. First collect all the data in a structure, then theme it.
     // display results for each possible choice
     $output .= '<div class="poll">';
-    foreach ($node->choice as $i => $ch) {
-      if (!array_key_exists($i, $votes)) {
-        $votes[$i] = 0;
-      }
-      $percentage = round(100 * $votes[$i] / $total_votes, 0);
-      $output .= theme('decisions_bar',  check_plain($ch['label']), $percentage, format_plural($votes[$i], '1 vote', '@count votes'));
+    foreach ($votes as $i => $vote) {
+      $percentage = round(100 * $vote / $total_votes, 0);
+      $output .= theme('decisions_bar',  check_plain($node->choice[$i]['label']), $percentage, format_plural($vote, '1 vote', '@count votes'));
     }
     $output .= '</div>';
   }
