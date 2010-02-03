@@ -1385,13 +1385,15 @@ function decisions_form(&$node, &$form_state) {
                          '#default_value' => $node->title,
                          );
 
-  $form['body'] = array(
-                        '#type' => 'textarea',
-                        '#title' => t('Description'),
-                        '#required' => FALSE,
-                        '#default_value' => $node->body,
-                        );
-                       
+  $type = node_get_types('type', $node);
+  if (empty($type->body_label) || $type->body_label == "Body") {
+    $type->body_label = t("Description");
+  }
+
+  $form['body_field'] = node_body_field($node, $type->body_label, $type->min_word_count);
+  $form['body_field']['teaser_js']['#rows'] = 2;
+  $form['body_field']['body']['#rows'] = 2;
+
   if (isset($form_state['values']['choice']['choices']) && is_numeric($form_state['values']['choice']['choices'])) {
     $choices = max(2, $form_state['values']['choice']['choices']);
   } 
