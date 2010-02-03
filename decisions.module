@@ -1050,7 +1050,8 @@ function _decisions_block_mostrecent() {
  */
 function _decisions_can_view_results($node) {
   $view_results = variable_get('decisions_view_results', DECISIONS_DEFAULT_VIEW_RESULTS);
-  return (_decisions_meets_quorum($node) && // node meets the quorum
+  return user_access('administer decisions') || 
+          (_decisions_meets_quorum($node) && // node meets the quorum
           strpos($node->type, 'decisions_') === 0 &&
           (!_decisions_is_open($node)       // node is closed
           || ($node->voted && $view_results == 'aftervote') // user voted
