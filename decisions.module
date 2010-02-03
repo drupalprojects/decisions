@@ -1173,7 +1173,7 @@ function decisions_validate(&$node) {
 
   $startdate = _decisions_translate_form_date($node->settings['date']['startdate']['date']);
   $enddate =  _decisions_translate_form_date($node->settings['date']['enddate']['date']);
-  if ($enddate < $startdate) {
+  if (!$node->settings['date']['noenddate'] && $enddate < $startdate) {
     form_set_error('enddate', t('The specified close date is less than the opening date.'));
   }
 
