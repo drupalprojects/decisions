@@ -131,9 +131,13 @@ function selection_decisions_view_results($node, $teaser, $page) {
     // TODO: Those <div>s and <br />s should be in a theme function. First collect all the data in a structure, then theme it.
     // display results for each possible choice
     $output .= '<div class="poll">';
+    $max_votes = 0;
+    foreach ($votes as $i => $vote) {
+      $max_votes = ( $vote > $max_votes ? $vote : $max_votes );
+    }
     foreach ($votes as $i => $vote) {
       $percentage = round(100 * $vote / $total_votes, 0);
-      $output .= theme('decisions_bar',  check_plain($node->choice[$i]['label']), $percentage, format_plural($vote, '1 vote', '@count votes'));
+      $output .= theme('decisions_bar',  check_plain($node->choice[$i]['label']), $vote, $total_votes, $max_votes);
     }
     $output .= '</div>';
   }

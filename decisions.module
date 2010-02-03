@@ -317,10 +317,10 @@ function theme_decisions_view_voting($form) {
 /**
  * Theme stub for a decisions bar.
  */
-function theme_decisions_bar($title, $percentage, $votes) {
+function theme_decisions_bar($title, $vote, $total_votes, $max_votes) {
   $output = '<div class="text">'. $title .'</div>';
-  $output .= '<div class="bar"><div style="width: '. $percentage .'%;" class="foreground"></div></div>';
-  $output .= '<div class="percent">'. $percentage .'% ('. $votes .')</div>';
+  $output .= '<div class="bar"><div style="width: '. round(100 * $vote / $max_votes, 0) .'%;" class="foreground"></div></div>';
+  $output .= '<div class="percent">'. round(100 * $vote / $total_votes, 0) .'% ('. format_plural($vote, '1 vote', '@count votes').')</div>';
   return $output;
 }
  
