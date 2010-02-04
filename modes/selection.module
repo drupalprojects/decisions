@@ -11,13 +11,14 @@
 function selection_help($section) {
   $help = "";
   switch ($section) {
-  case 'admin/modules#description':
-    break;
-  default:
-    if ($section == 'node/add#decisions-selection') {
-      $help = t('Creates a decision where the user selects one or many options.');
-    }
-    break;
+    case 'admin/modules#description':
+      break;
+
+    default:
+      if ($section == 'node/add#decisions-selection') {
+        $help = t('Creates a decision where the user selects one or many options.');
+      }
+      break;
   }
   return $help;
 }
@@ -26,10 +27,17 @@ function selection_node_info() {
   return array('decisions_selection' => array('name' => t('Decisions - selection'), 'module' => 'decisions', 'description' => t('Creates a decision where the user selects one or many options.')));
 }
 
-function selection_perm() { return decisions_perm(); } 
-function selection_acces($op, $node, $account) { return decisions_access($op, $node, $account); }
-function selection_form(&$node) { return decisions_form($node); }
+function selection_perm() {
+  return decisions_perm();
+}
 
+function selection_acces($op, $node, $account) {
+  return decisions_access($op, $node, $account);
+}
+
+function selection_form(&$node) {
+  return decisions_form($node);
+}
 
 /**
  * Implementation of the decisions_algorithms() hook
@@ -40,7 +48,7 @@ function selection_decisions_algorithms() {
 
 /**
  * Implementation of the decisions_voting_hook_form() hook for the selection module.
- * 
+ *
  * This creates a list of choices to allow the user to vote on choices.
  */
 function selection_decisions_voting_form(&$node, $teaser, $page) {
@@ -49,8 +57,8 @@ function selection_decisions_voting_form(&$node, $teaser, $page) {
 
     // Put options in random order if randomize option
     // selected on node create/edit form.
-    if($node->randomize) {
-      $node->choice = _decisions_randomize_options($node->choice, $node->choices); 
+    if ($node->randomize) {
+      $node->choice = _decisions_randomize_options($node->choice, $node->choices);
     }
 
     if ($node->maxchoices == 1) {
@@ -62,11 +70,11 @@ function selection_decisions_voting_form(&$node, $teaser, $page) {
       }
 
       $form['choice'] = array(
-                              '#type' => 'radios',
-                              '#title' => $page ? '' : check_plain($node->title),
-                              '#default_value' => -1,
-                              '#options' => $list
-                              );
+        '#type' => 'radios',
+        '#title' => $page ? '' : check_plain($node->title),
+        '#default_value' => -1,
+        '#options' => $list,
+      );
     }
     else {
       // approval voting
@@ -76,20 +84,20 @@ function selection_decisions_voting_form(&$node, $teaser, $page) {
         }
       }
       $form['choice'] = array(
-                              '#type' => 'checkboxes',
-                              '#title' => $page ? '' : check_plain($node->title),
-                              '#options' => $list,
-                              );
+        '#type' => 'checkboxes',
+        '#title' => $page ? '' : check_plain($node->title),
+        '#options' => $list,
+      );
     }
   }
   $form['nid'] = array(
-                       '#type' => 'hidden',
-                       '#value' => $node->nid
-                       );
+    '#type' => 'hidden',
+    '#value' => $node->nid,
+  );
   $form['vote'] = array(
-                        '#type' => 'submit',
-                        '#value' => t('Vote')
-                        );
+    '#type' => 'submit',
+    '#value' => t('Vote'),
+  );
   $form['#action'] = url('node/'. $node->nid);
   return $form;
 }
@@ -110,7 +118,7 @@ function selection_decisions_view_results($node, $teaser, $page) {
 
     // approval
     $voteval = $result['tag'];
-    
+
     if (!array_key_exists($voteval, $votes)) {
       $votes[$voteval] = 0;
     }
@@ -125,7 +133,7 @@ function selection_decisions_view_results($node, $teaser, $page) {
   }
   // sort the votes
   arsort($votes);
- 
+
   $total_votes = array_sum($votes);
   if ($node->choice && $total_votes > 0) {
     // TODO: Those <div>s and <br />s should be in a theme function. First collect all the data in a structure, then theme it.
@@ -133,11 +141,11 @@ function selection_decisions_view_results($node, $teaser, $page) {
     $output .= '<div class="poll">';
     $max_votes = 0;
     foreach ($votes as $i => $vote) {
-      $max_votes = ( $vote > $max_votes ? $vote : $max_votes );
+      $max_votes = ($vote > $max_votes ? $vote : $max_votes);
     }
     foreach ($votes as $i => $vote) {
       $percentage = round(100 * $vote / $total_votes, 0);
-      $output .= theme('decisions_bar',  check_plain($node->choice[$i]['label']), $vote, $total_votes, $max_votes);
+      $output .= theme('decisions_bar', check_plain($node->choice[$i]['label']), $vote, $total_votes, $max_votes);
     }
     $output .= '</div>';
   }
@@ -148,7 +156,7 @@ function selection_decisions_view_results($node, $teaser, $page) {
 
 /**
  * implementation of the format_votes() hook.
- * 
+ *
  * formats how a user's votes should be displayed.
  *
  * @returns a formatted string
@@ -164,7 +172,6 @@ function selection_decisions_format_votes($node, $votes) {
   return implode(', ', $unordered_votes);
 }
 
-
 /**
  * implementation of the submit() hook
  *
@@ -175,11 +182,12 @@ function selection_decisions_vote($node, $form_values) {
   if ($node->maxchoices == 1) {
     // plurality voting
     $vote = array(
-                  'value' => 1,
-                  'tag' => $form_values['choice'],
-                  'value_type' => 'option',
-                  'content_type' => 'decisions',
-                  'content_id' => $node->nid);
+      'value' => 1,
+      'tag' => $form_values['choice'],
+      'value_type' => 'option',
+      'content_type' => 'decisions',
+      'content_id' => $node->nid,
+    );
     $votes[] = $vote;
   }
   else {
@@ -187,11 +195,11 @@ function selection_decisions_vote($node, $form_values) {
     foreach ($node->choice as $key => $choice) {
       if (isset($form_values['choice'][$key]) && $form_values['choice'][$key]) {
         $vote = array(
-                      'value' => 1,
-                      'value_type' => 'option',
-                      'tag' => $key,
-                      'content_type' => 'decisions',
-                      'content_id' => $node->nid
+          'value' => 1,
+          'value_type' => 'option',
+          'tag' => $key,
+          'content_type' => 'decisions',
+          'content_id' => $node->nid,
         );
         $votes[] = $vote;
       }
@@ -234,12 +242,14 @@ function selection_decisions_vote_validate($node, $form_values) {
         $numchoices++;
       }
     }
-        
+
     // too many choices ranked
     if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
       form_set_error('choice',
-                     t('%num choices were selected but only %max are allowed.',
-                       array('%num' => $numchoices, '%max' => $node->maxchoices)));
+        t('%num choices were selected but only %max are allowed.',
+          array('%num' => $numchoices, '%max' => $node->maxchoices)
+        )
+      );
       $ok = FALSE;
     }
 
@@ -252,4 +262,3 @@ function selection_decisions_vote_validate($node, $form_values) {
   }
   return $ok;
 }
-

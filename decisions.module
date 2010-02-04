@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  *
@@ -19,7 +18,6 @@ define('DECISIONS_DEFAULT_ELECTORAL_LIST', 0);
 // always, aftervote, or afterclose
 define('DECISIONS_DEFAULT_VIEW_RESULTS', 'aftervote');
 define('DECISIONS_RUNTIME_INFINITY', 0);
-
 
 /**
  * hook_init() implementation
@@ -61,12 +59,13 @@ function decisions_block($op = 'list', $delta = 'mostrecent', $edit = array()) {
   elseif ($op == 'view') {
     if (user_access('view decisions')) {
       switch ($delta) {
-      case 'mostrecent':
-        $block = array('subject' => t('Decisions - Newest'), 'content' => _decisions_block_mostrecent());
-        break;
-      default:
-        $block = array();
-        break;
+        case 'mostrecent':
+          $block = array('subject' => t('Decisions - Newest'), 'content' => _decisions_block_mostrecent());
+          break;
+
+        default:
+          $block = array();
+          break;
       }
     }
   }
@@ -90,8 +89,8 @@ function decisions_cron() {
  */
 function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_id) {
   if ($content_type == 'decisions') {
-    $node = node_load($content_id);
-    $mode = _decisions_get_mode($node);
+    $node     = node_load($content_id);
+    $mode     = _decisions_get_mode($node);
     $function = "{$mode}_decisions_votingapi_calculate";
     if (function_exists($function)) {
       return call_user_func($function, $node, $cache, $votes, $content_type, $content_id);
@@ -104,8 +103,8 @@ function decisions_votingapi_calculate(&$cache, $votes, $content_type, $content_
  */
 function decisions_help($path, $arg) {
   switch ($path) {
-  case 'admin/modules#description':
-    return t('Allow people to reproduce and surpass the kinds of decision-making instances that exist in face-to-face meetings.');
+    case 'admin/modules#description':
+      return t('Allow people to reproduce and surpass the kinds of decision-making instances that exist in face-to-face meetings.');
   }
 }
 
@@ -124,7 +123,7 @@ function decisions_menu() {
     'page arguments' => array('decisions_admin'),
     'access arguments' => array('administer decisions'),
     'type' => MENU_NORMAL_ITEM,
-   );
+  );
 
   $items['node/%node/votes'] = array(
     'title' => 'Votes',
@@ -133,7 +132,7 @@ function decisions_menu() {
     'access callback' => '_decisions_votes_access',
     'access arguments' => array(1, 'inspect all votes'),
     'weight' => 4,
-    'type' => MENU_LOCAL_TASK
+    'type' => MENU_LOCAL_TASK,
   );
   $items['node/%node/results'] = array(
     'title' => 'Results',
@@ -141,8 +140,9 @@ function decisions_menu() {
     'page arguments' => array(1),
     'access callback' => '_decisions_can_view_results',
     'access arguments' => array(1),
-    'weight' => 1, 	 
-    'type' => MENU_LOCAL_TASK);
+    'weight' => 1,
+    'type' => MENU_LOCAL_TASK,
+  );
   $items['node/%node/electoral_list'] = array(
     'title' => 'Electoral list',
     'page callback' => 'decisions_electoral_list_tab',
@@ -150,7 +150,7 @@ function decisions_menu() {
     'access callback' => '_decisions_electoral_list_access',
     'access arguments' => array(1, 'view electoral list'),
     'weight' => 2,
-    'type' => MENU_LOCAL_TASK
+    'type' => MENU_LOCAL_TASK,
   );
   // Allow voters to be removed
   $items['node/%node/remove'] = array(
@@ -194,26 +194,26 @@ function decisions_admin() {
   $enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
 
   $form['main']['decisions_default_electoral_list'] = array(
-                                                            '#type' => 'radios',
-                                                            '#title' => t('Use electoral list by default'),
-                                                            '#description' => t('Use an electoral list by default for new decisions.'),
-                                                            '#default_value' => variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
-                                                            '#options' => $enabled,
-                                                            );
+    '#type' => 'radios',
+    '#title' => t('Use electoral list by default'),
+    '#description' => t('Use an electoral list by default for new decisions.'),
+    '#default_value' => variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
+    '#options' => $enabled,
+  );
 
   $view_results = array(
-                        'always' => t('Always'),
-                        'aftervote' => t('After user has voted'),
-                        'afterclose' => t('After voting has closed'),
-                        );
+    'always' => t('Always'),
+    'aftervote' => t('After user has voted'),
+    'afterclose' => t('After voting has closed'),
+  );
 
   $form['main']['decisions_view_results'] = array(
-                                                  '#type' => 'radios',
-                                                  '#title' => t('When should results be displayed'),
-                                                  '#description' => t('Determines when users may view the results of the decision.'),
-                                                  '#default_value' => variable_get('decisions_view_results', DECISIONS_DEFAULT_VIEW_RESULTS),
-                                                  '#options' => $view_results,
-                                                  );
+    '#type' => 'radios',
+    '#title' => t('When should results be displayed'),
+    '#description' => t('Determines when users may view the results of the decision.'),
+    '#default_value' => variable_get('decisions_view_results', DECISIONS_DEFAULT_VIEW_RESULTS),
+    '#options' => $view_results,
+  );
 
   return system_settings_form($form);
 }
@@ -221,7 +221,7 @@ function decisions_admin() {
 function decisions_cancel_form($form_state, $nid) {
   $form['node'] = array('#type' => 'hidden', '#value' => $nid);
   $form['submit'] = array('#type' => 'submit', '#value' => t('Cancel your vote'));
-  return $form; 
+  return $form;
 }
 
 function decisions_cancel_form_submit($form, &$form_state) {
@@ -230,8 +230,8 @@ function decisions_cancel_form_submit($form, &$form_state) {
 
 /*******************/
 /* Theme functions */
-/*******************/
 
+/*******************/
 function decisions_theme($existing, $type, $theme, $path) {
   return array(
     'decisions_view_header' => array('arguments' => array('node' => NULL, 'teaser' => FALSE)),
@@ -240,11 +240,11 @@ function decisions_theme($existing, $type, $theme, $path) {
     'decisions_status' => array('arguments' => array('message' => NULL)),
     'decisions_morechoices' => array('arguments' => array(), 'decisions_morechoices' => NULL),
     'decisions_view_own_result' => array(),
-    );
+  );
 }
 
 function theme_decisions_view_own_result() {
-  $output = '<div class="decisions-own-result">' . t("Your vote has been recorded.") . '</div>';
+  $output = '<div class="decisions-own-result">'. t("Your vote has been recorded.") .'</div>';
   return $output;
 }
 
@@ -258,12 +258,15 @@ function theme_decisions_view_header($node, $teaser = FALSE) {
   // dates
   $output .= '<div class="decisions-dates">';
   $output .= theme('item_list',
-              array(
-                 t('Current date: @date', array('@date' => format_date(time()))),
-                 t('Opening date: @date', array('@date' => format_date($node->startdate))),
-                 ($node->runtime == DECISIONS_RUNTIME_INFINITY ? 
-                   t('No closing date.') :
-                   t('Closing date: @date', array('@date' => format_date($node->startdate + $node->runtime))))));
+    array(
+      t('Current date: @date', array('@date' => format_date(time()))),
+      t('Opening date: @date', array('@date' => format_date($node->startdate))),
+      ($node->runtime == DECISIONS_RUNTIME_INFINITY ?
+        t('No closing date.') :
+        t('Closing date: @date', array('@date' => format_date($node->startdate + $node->runtime)))
+      ),
+    )
+  );
   $output .= '</div>';
 
   // votes
@@ -271,12 +274,12 @@ function theme_decisions_view_header($node, $teaser = FALSE) {
   $num_voters = _decisions_count_voters($node);
   $output .= '<div class="decisions-votes">';
   $output .= t('@num-voters out of @num-voters-eligible eligible @voters cast their ballot',
-               array(
-                 '@num-voters' => $num_voters,
-                 '@num-voters-eligible' => $num_eligible_voters,
-                 '@voters' => format_plural($num_eligible_voters, 'voter', 'voters')
-               )
-              );
+    array(
+      '@num-voters' => $num_voters,
+      '@num-voters-eligible' => $num_eligible_voters,
+      '@voters' => format_plural($num_eligible_voters, 'voter', 'voters'),
+    )
+  );
   $output .= '</div>';
 
   // quorum
@@ -286,7 +289,7 @@ function theme_decisions_view_header($node, $teaser = FALSE) {
     $output .= t('Quorum: @d', array('@d' => $quorum));
     $output .= '</div>';
   }
-    
+
   $output .= '</div>';
   return $output;
 }
@@ -296,7 +299,7 @@ function theme_decisions_view_header($node, $teaser = FALSE) {
  * themes to make this nicer/different
  */
 function theme_decisions_view_voting($form) {
-  
+
   $render = 'drupal_render';
   if (!function_exists($render)) {
     $render = 'form_render';
@@ -320,17 +323,16 @@ function theme_decisions_view_voting($form) {
 function theme_decisions_bar($title, $vote, $total_votes, $max_votes) {
   $output = '<div class="text">'. $title .'</div>';
   $output .= '<div class="bar"><div style="width: '. round(100 * $vote / $max_votes, 0) .'%;" class="foreground"></div></div>';
-  $output .= '<div class="percent">'. round(100 * $vote / $total_votes, 0) .'% ('. format_plural($vote, '1 vote', '@count votes').')</div>';
+  $output .= '<div class="percent">'. round(100 * $vote / $total_votes, 0) .'% ('. format_plural($vote, '1 vote', '@count votes') .')</div>';
   return $output;
 }
- 
+
 /**
  * Outputs a status line.
  */
 function theme_decisions_status($message) {
   return '<div class="error">'. $message .'</div>';
 }
-
 
 /****************************/
 /* Electoral list functions */
@@ -342,35 +344,34 @@ function theme_decisions_status($message) {
 function decisions_electoral_list_form($form_state, $nid) {
   $form = array();
   $form['electoral_list'] = array(
-                                  '#type' => 'fieldset',
-                                  '#tree' => TRUE,
-                                  '#title' => t('Administer electoral list'),
-                                  '#collapsible' => TRUE,
-                                  '#weight' => 2,
-                                  '#collapsed' => TRUE,
-                                  );
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Administer electoral list'),
+    '#collapsible' => TRUE,
+    '#weight' => 2,
+    '#collapsed' => TRUE,
+  );
 
   $form['electoral_list']['add_user'] = array(
-                                              '#type' => 'textfield',
-                                              '#title' => t('Add user'),
-                                              '#size' => 40,
-                                              '#autocomplete_path' => 'user/autocomplete',
-                                              '#description' => t('Add an individual user to the electoral list'),
-                                              );
+    '#type' => 'textfield',
+    '#title' => t('Add user'),
+    '#size' => 40,
+    '#autocomplete_path' => 'user/autocomplete',
+    '#description' => t('Add an individual user to the electoral list'),
+  );
 
   $form['electoral_list']['submit'] = array(
-                                            '#type' => 'submit',
-                                            '#value' => t('Modify electoral list'),
-                                            );
+    '#type' => 'submit',
+    '#value' => t('Modify electoral list'),
+  );
 
   $form['electoral_list']['reset'] = array(
-                                           '#type' => 'button',
-                                           '#value' => t('Reset electoral list'),
-                                           );
+    '#type' => 'button',
+    '#value' => t('Reset electoral list'),
+  );
 
   $form['nid'] = array('#type' => 'hidden', '#value' => $nid);
-  return $form;        
-
+  return $form;
 }
 
 /**
@@ -386,32 +387,32 @@ function decisions_electoral_list_tab() {
     drupal_set_title(check_plain($node->title));
     if (user_access('administer decisions')) {
       $form['electoral_list'] = array(
-                                      '#type' => 'fieldset',
-                                      '#tree' => TRUE,
-                                      '#title' => t('Administer electoral list'),
-                                      '#collapsible' => TRUE,
-                                      '#weight' => 2,
-                                      '#collapsed' => TRUE,
-                                      );
-  	 
+        '#type' => 'fieldset',
+        '#tree' => TRUE,
+        '#title' => t('Administer electoral list'),
+        '#collapsible' => TRUE,
+        '#weight' => 2,
+        '#collapsed' => TRUE,
+      );
+
       $form['electoral_list']['add_user'] = array(
-                                                  '#type' => 'textfield',
-                                                  '#title' => t('Add user'),
-                                                  '#size' => 40,
-                                                  '#autocomplete_path' => 'user/autocomplete',
-                                                  '#description' => t('Add an individual user to the electoral list'),
-                                                  );
-  	 
+        '#type' => 'textfield',
+        '#title' => t('Add user'),
+        '#size' => 40,
+        '#autocomplete_path' => 'user/autocomplete',
+        '#description' => t('Add an individual user to the electoral list'),
+      );
+
       $form['electoral_list']['submit'] = array(
-                                                '#type' => 'submit',
-                                                '#value' => t('Modify electoral list'),
-                                                );
-  	 
+        '#type' => 'submit',
+        '#value' => t('Modify electoral list'),
+      );
+
       $form['electoral_list']['reset'] = array(
-                                               '#type' => 'button',
-                                               '#value' => t('Reset electoral list'),
-                                               );
-  	 
+        '#type' => 'button',
+        '#value' => t('Reset electoral list'),
+      );
+
       $form['nid'] = array('#type' => 'hidden', '#value' => $node->nid);
       $output .= drupal_get_form('decisions_electoral_list_form', $node->nid);
     }
@@ -419,15 +420,15 @@ function decisions_electoral_list_tab() {
 
     $header[] = array('data' => t('Voter'), 'field' => 'u.name');
 
-    $result = pager_query("SELECT u.uid, u.name FROM {decisions_electoral_list} el LEFT JOIN {users} u ON el.uid = u.uid WHERE el.nid = %d" . tablesort_sql($header), 20, 0, NULL, $node->nid);
+    $result = pager_query("SELECT u.uid, u.name FROM {decisions_electoral_list} el LEFT JOIN {users} u ON el.uid = u.uid WHERE el.nid = %d". tablesort_sql($header), 20, 0, NULL, $node->nid);
     $eligible_voters = array();
     while ($voter = db_fetch_object($result)) {
       $temp = array(theme('username', $voter));
-      
+
       if (user_access('administer decisions')) {
         $temp[] = l(t('remove'), 'node/'. $node->nid .'/remove/'. $voter->uid);
       }
-      
+
       $eligible_voters[] = $temp;
     }
     $output .= theme('table', $header, $eligible_voters);
@@ -452,10 +453,10 @@ function decisions_electoral_list_remove_voter($node, $uid) {
   else {
     drupal_set_message(t('No user found with a uid of %uid.', array('%uid' => $uid)));
   }
-  
+
   drupal_goto('node/'. $node->nid .'/electoral_list');
 }
-  	 
+
 /**
  * Validate changes to the electoral list
  */
@@ -484,7 +485,7 @@ function decisions_electoral_list_form_validate($form, &$form_state) {
     return FALSE;
   }
 }
-  	 
+
 /**
  * Submit changes to the electoral list
  */
@@ -500,7 +501,6 @@ function decisions_electoral_list_form_submit($form, &$form_state) {
     drupal_not_found();
   }
 }
-
 
 /***********************************/
 /* Decision-mode related functions */
@@ -565,7 +565,7 @@ function decisions_voting_form_submit($form, &$form_state) {
 function decisions_voting_form_validate($form, &$form_state) {
   $node = node_load($form_state['values']['nid']);
   $mode = _decisions_get_mode($node);
-  if (function_exists("{$mode}_decisions_vote_validate") ) {
+  if (function_exists("{$mode}_decisions_vote_validate")) {
     return call_user_func("{$mode}_decisions_vote_validate", $node, $form_state['values']);
   }
   return TRUE;
@@ -579,7 +579,8 @@ function decisions_voting_form_validate($form, &$form_state) {
  */
 function decisions_vote($node, $form_values) {
   $mode = _decisions_get_mode($node);
-  $ok = FALSE; // error by default
+  // error by default
+  $ok = FALSE;
   if (_decisions_eligible($node)) {
     if (function_exists("{$mode}_decisions_vote")) {
       call_user_func("{$mode}_decisions_vote", $node, $form_values);
@@ -602,12 +603,14 @@ function decisions_algorithms($mode) {
     $algs = call_user_func("{$mode}_decisions_algorithms");
     $error = FALSE;
     if (!is_array($algs)) {
-      $error = t('Element returned by the call to function @function is not an array, returning dummy value.', 
-                    array('@function' => "decisions_{$mode}_algorithms"));
+      $error = t('Element returned by the call to function @function is not an array, returning dummy value.',
+        array('@function' => "decisions_{$mode}_algorithms")
+      );
     }
     else if (count($algs) == 0) {
-      $error = t('Array returned by the call to function @function is empty, returning dummy value.', 
-                    array('@function' => "decisions_{$mode}_algorithms"));      
+      $error = t('Array returned by the call to function @function is empty, returning dummy value.',
+        array('@function' => "decisions_{$mode}_algorithms")
+      );
     }
     if ($error) {
       watchdog('decisions', $error, WATCHDOG_WARNING);
@@ -619,7 +622,6 @@ function decisions_algorithms($mode) {
   }
   return $algs;
 }
-
 
 /*************/
 /* Callbacks */
@@ -641,7 +643,7 @@ function decisions_cancel($nid) {
       drupal_set_message(t("You are not allowed to cancel an invalid choice."), 'error');
     }
     drupal_goto('node/'. $nid);
-  }       
+  }
   else {
     drupal_not_found();
   }
@@ -678,17 +680,17 @@ function decisions_votes_tab() {
      *
      * XXX: highly MySQL specific
      */
-    $query = 'SELECT u.name, v.uid, v.vote_source, GROUP_CONCAT(DISTINCT CONCAT(v.value,"=>",v.tag) ORDER BY v.value) as votes FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_id = %d GROUP BY v.uid' . tablesort_sql($header) . '';
+    $query       = 'SELECT u.name, v.uid, v.vote_source, GROUP_CONCAT(DISTINCT CONCAT(v.value,"=>",v.tag) ORDER BY v.value) as votes FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_id = %d GROUP BY v.uid'. tablesort_sql($header) .'';
     $query_count = 'SELECT COUNT(DISTINCT v.uid) FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_id = %d GROUP BY content_id'. tablesort_sql($header);
-    $result = pager_query($query, variable_get('decisions_votes_per_page', 20), 0, $query_count, $node->nid);
-    $votes = array();
-    $names = array();
+    $result      = pager_query($query, variable_get('decisions_votes_per_page', 20), 0, $query_count, $node->nid);
+    $votes       = array();
+    $names       = array();
     while ($vote = db_fetch_object($result)) {
-      $key = $vote->uid? $vote->uid : $vote->vote_source;
+      $key = $vote->uid ? $vote->uid : $vote->vote_source;
       $choices = explode(',', $vote->votes);
       foreach ($choices as $choice) {
         $choice = explode("=>", $choice);
-        $votes[$key][] = (object) array('value' => $choice[0], 'tag' => $choice[1]);
+        $votes[$key][] = (object)array('value' => $choice[0], 'tag' => $choice[1]);
       }
       $names[$key] = $vote->name ? theme('username', $vote) : check_plain($vote->vote_source);
     }
@@ -699,7 +701,7 @@ function decisions_votes_tab() {
       _decisions_panic_on_mode($mode, __FUNCTION__);
       drupal_not_found();
     }
-    
+
     $rows = array();
     foreach ($names as $key => $name) {
       $rows[$key]['name'] = $name;
@@ -716,31 +718,33 @@ function decisions_votes_tab() {
 }
 
 /**
- * Callback for 'results' tab for decisions you can vote on. 	 
- */ 	 
-function decisions_results() { 	 
-  if ($node = menu_get_object()) { 	 
-    drupal_set_title(check_plain($node->title)); 	 
-    return node_show($node, 0); 	 
-  } 	 
-  else { 	 
-    // The url does not provide the appropriate node id 	 
-    drupal_not_found(); 	 
-  } 	 
+ * Callback for 'results' tab for decisions you can vote on.
+ */
+function decisions_results() {
+  if ($node = menu_get_object()) {
+    drupal_set_title(check_plain($node->title));
+    return node_show($node, 0);
+  }
+  else {
+    // The url does not provide the appropriate node id
+    drupal_not_found();
+  }
 }
 
- /**
+/**
  * Callback to display a reset votes confirmation form
  */
 function decisions_reset_form($form_state, $node) {
   $form['nid'] = array('#type' => 'hidden', '#value' => $node->nid);
   return confirm_form($form,
-                         t('Are you sure you want to reset the votes for !title?',
-                           array('!title' => theme('placeholder', $node->title))),
-                         'node/'. $node->nid,
-                         t('This action cannot be undone.'),
-                         t('Reset votes'),
-                         t('Cancel') );
+    t('Are you sure you want to reset the votes for !title?',
+      array('!title' => theme('placeholder', $node->title))
+    ),
+    'node/'. $node->nid,
+    t('This action cannot be undone.'),
+    t('Reset votes'),
+    t('Cancel')
+  );
 }
 
 /**
@@ -772,11 +776,11 @@ function _decisions_get_mode($node) {
  * Callback function to see if a node is acceptable for poll menu items.
  */
 function _decisions_votes_access($node, $perm) {
-	return user_access($perm) && $node->showvotes && strpos($node->type, 'decisions_') === 0;
+  return user_access($perm) && $node->showvotes && strpos($node->type, 'decisions_') === 0;
 }
 
 function _decisions_reset_access($node, $perm) {
-	return user_access($perm) && strpos($node->type, 'decisions_') === 0;
+  return user_access($perm) && strpos($node->type, 'decisions_') === 0;
 }
 
 function _decisions_electoral_list_access($node, $perm) {
@@ -788,20 +792,28 @@ function _decisions_electoral_list_access($node, $perm) {
  */
 function _decisions_is_open($node) {
   $time = time();
-  return ($node->active &&                    // node must be active
-          // current time must be past start date and before end date
-          ($time >= $node->startdate) &&
-          ($node->runtime == DECISIONS_RUNTIME_INFINITY ||
-           $time < ($node->startdate + $node->runtime)));
+  return ($node->active &&
+    // current time must be past start date and before end date
+    ($time >= $node->startdate) &&
+    ($node->runtime == DECISIONS_RUNTIME_INFINITY ||
+      $time < ($node->startdate + $node->runtime)
+    )
+  );
 }
 
 /**
  * Function that tells if the given user can vote on this decision.
+ *
+ * Depends on the decision being open in the first place
+ *
+ * @see _decisions_is_open()
  */
 function _decisions_can_vote($node, $user = NULL) {
-  return (_decisions_is_open($node) &&         // node must be open
-          !$node->voted &&                    // user should not have already voted
-          _decisions_eligible($node, $user));  // user must be eligible to vote
+  return (_decisions_is_open($node) &&
+    // user should not have already voted
+    !$node->voted &&
+    // user must be eligible to vote
+    _decisions_eligible($node, $user));
 }
 
 /**
@@ -813,7 +825,6 @@ function _decisions_meets_quorum($node) {
   $quorum = _decisions_get_quorum($node);
   return ($num_voters >= $quorum);
 }
-
 
 /**
  * Internal function factored out that just rings lots of bells when
@@ -859,7 +870,7 @@ function _decisions_count_eligible($node) {
       $result = db_fetch_object(db_query("SELECT COUNT(DISTINCT ur.uid) AS num FROM {users_roles} ur JOIN {permission} p ON ur.rid = p.rid WHERE FIND_IN_SET(' vote on decisions', p.perm) AND ur.uid <> 0"));
     }
   }
-  return $result->num;    
+  return $result->num;
 }
 
 /**
@@ -887,16 +898,16 @@ function _decisions_count_voters($node) {
  */
 function _decisions_user_votes($node) {
   $votes = _decisions_votes($node);
-  
+
   // aggregate votes by user (uid if logged in, IP if anonymous)
   // in ascending order of value
   $user_votes = array();
 
   foreach ($votes as $vote) {
-    $key = ($vote->uid == 0 ? $vote->vote_source: $vote->uid);
+    $key = ($vote->uid == 0 ? $vote->vote_source : $vote->uid);
     $user_votes[$key][] = $vote;
   }
-  
+
   return $user_votes;
 }
 
@@ -921,10 +932,12 @@ function _decisions_eligible($node, $uid = NULL) {
 
 /**
  * Constructs the time select boxes.
- * 
+ *
  * @ingroup event_support
+ *
  * @param $timestamp The time GMT timestamp of the event to use as the default
  *   value.
+ *
  * @return An array of form elements for month, day, year, hour, and minute
  */
 function _decisions_form_date($timestamp) {
@@ -934,8 +947,8 @@ function _decisions_form_date($timestamp) {
   // ...hours
   if (variable_get('event_ampm', '0')) {
     $hour_format = t('g');
-    $hours = drupal_map_assoc(range(1, 12));
-    $am_pms = array('am' => t('am'), 'pm' => t('pm'));
+    $hours       = drupal_map_assoc(range(1, 12));
+    $am_pms      = array('am' => t('am'), 'pm' => t('pm'));
   }
   else {
     $hour_format = t('H');
@@ -951,52 +964,60 @@ function _decisions_form_date($timestamp) {
     '#default_value' => _decisions_date('d', $timestamp),
     '#maxlength' => 2,
     '#size' => 2,
-    '#required' => TRUE);
+    '#required' => TRUE,
+  );
   $form['month'] = array(
     '#type' => 'select',
     '#default_value' => _decisions_date('n', $timestamp),
     '#options' => $months,
-    '#required' => TRUE);
+    '#required' => TRUE,
+  );
   $form['year'] = array(
     '#type' => 'textfield',
     '#default_value' => _decisions_date('Y', $timestamp),
     '#maxlength' => 4,
     '#size' => 4,
-    '#required' => TRUE);
+    '#required' => TRUE,
+  );
   $form['hour'] = array(
     '#prefix' => '</div>&#8212;<div class="time">',
     '#type' => 'select',
     '#default_value' => _decisions_date($hour_format, $timestamp),
     '#options' => $hours,
-    '#required' => TRUE);
+    '#required' => TRUE,
+  );
   $form['minute'] = array(
     '#prefix' => ':',
     '#type' => 'select',
     '#default_value' => _decisions_date('i', $timestamp),
     '#options' => $minutes,
-    '#required' => TRUE);
+    '#required' => TRUE,
+  );
   if (isset($am_pms)) {
     $form['ampm'] = array(
       '#type' => 'radios',
       '#default_value' => _decisions_date('a', $timestamp),
       '#options' => $am_pms,
-      '#required' => TRUE);
+      '#required' => TRUE,
+    );
   }
   $form['close'] = array(
     '#type' => 'markup',
-    '#value' => '</div></div>');
+    '#value' => '</div></div>',
+  );
 
   return $form;
 }
 
 /**
  * Takes a time element and prepares to send it to form_date()
- * 
+ *
  * @param $time
  *   The time to be turned into an array. This can be:
  *   - a timestamp when from the database
  *   - an array (day, month, year) when previewing
  *   - null for new nodes
+ *
  * @returnn
  *   an array for form_date (day, month, year)
  */
@@ -1010,7 +1031,7 @@ function _decisions_form_prepare_datetime($time = '', $offset = 0) {
   $time_array = array();
   if (is_array($time)) {
     $time_array = $time;
-  } 
+  }
   // otherwise build the array from the timestamp
   elseif (is_numeric($time)) {
     $time_array = array(
@@ -1050,12 +1071,15 @@ function _decisions_block_mostrecent() {
  */
 function _decisions_can_view_results($node) {
   $view_results = variable_get('decisions_view_results', DECISIONS_DEFAULT_VIEW_RESULTS);
-  return user_access('administer decisions') || 
-          (_decisions_meets_quorum($node) && // node meets the quorum
-          strpos($node->type, 'decisions_') === 0 &&
-          (!_decisions_is_open($node)       // node is closed
-          || ($node->voted && $view_results == 'aftervote') // user voted
-          || ($view_results == 'always'))); // all can view
+  return user_access('administer decisions') || (_decisions_meets_quorum($node) &&
+    strpos($node->type, 'decisions_') === 0 &&
+    // node is closed
+    (!_decisions_is_open($node)
+      // user voted
+      || ($node->voted && $view_results == 'aftervote')
+      // all can view
+      || ($view_results == 'always'))
+  );
 }
 
 /**
@@ -1073,7 +1097,6 @@ function _decisions_electoral_list_reset($node) {
     // all users must not be allowed to vote, add relevant users only
     return db_query("INSERT INTO {decisions_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users_roles u, permission p WHERE FIND_IN_SET(' view decisions', p.perm) AND u.rid = p.rid AND u.uid <> 0", $node->nid);
   }
-
 }
 
 /**
@@ -1123,14 +1146,14 @@ function decisions_insert($node) {
     $runtime = DECISIONS_RUNTIME_INFINITY;
   }
   else {
-    $enddate =  _decisions_translate_form_date($node->settings['date']['enddate']['date']);
+    $enddate = _decisions_translate_form_date($node->settings['date']['enddate']['date']);
     if ($enddate < $startdate) {
       form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
       $enddate = $startdate;
     }
     $runtime = $enddate - $startdate;
   }
-  
+
   // just create an empty entry for now
   $mode = _decisions_get_mode($node);
 
@@ -1172,11 +1195,10 @@ function decisions_validate(&$node) {
   }
 
   $startdate = _decisions_translate_form_date($node->settings['date']['startdate']['date']);
-  $enddate =  _decisions_translate_form_date($node->settings['date']['enddate']['date']);
+  $enddate = _decisions_translate_form_date($node->settings['date']['enddate']['date']);
   if (!$node->settings['date']['noenddate'] && $enddate < $startdate) {
     form_set_error('enddate', t('The specified close date is less than the opening date.'));
   }
-
 }
 
 /**
@@ -1191,14 +1213,14 @@ function decisions_update($node) {
     $runtime = DECISIONS_RUNTIME_INFINITY;
   }
   else {
-    $enddate =  _decisions_translate_form_date($node->settings['date']['enddate']['date']);
+    $enddate = _decisions_translate_form_date($node->settings['date']['enddate']['date']);
     if ($enddate < $startdate) {
       form_set_error('enddate', t('The specified close date is less than the opening date, setting it to the same for now.'));
       $enddate = $startdate;
     }
     $runtime = $enddate - $startdate;
   }
-    
+
   $uselist = db_result(db_query("SELECT uselist FROM {decisions} WHERE nid = %d", $node->nid));
   if ($node->settings['uselist'] != $uselist) {
     // create the electoral list if activated
@@ -1209,7 +1231,7 @@ function decisions_update($node) {
     else {
       db_query("DELETE FROM {decisions_electoral_list} WHERE nid = %d", $node->nid);
     }
-  } 
+  }
 
   db_query("UPDATE {decisions} SET quorum_abs=%d, quorum_percent=%f, active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d, startdate=%d, randomize=%d WHERE nid = %d", $node->settings['quorum']['quorum_abs'], $node->settings['quorum']['quorum_percent'], $node->settings['active'], $runtime, $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $startdate, $node->settings['randomize'], $node->nid);
   // XXX: should update decisions here, when it has some parameters
@@ -1242,11 +1264,14 @@ function decisions_submit(&$node) {
 function decisions_add_choices_submit($form, &$form_state) {
   // Set the form to rebuild and run submit handlers.
   node_form_submit_build_node($form, $form_state);
-  if (!isset($form_state['values']['choice'])) return;
+  if (!isset($form_state['values']['choice'])) {
+    return;
+  }
 
-  // Add new choices 
+  // Add new choices
   if ($form_state['values']['choice']['morechoices']) {
-    $form_state['values']['choice']['choices'] = count($form_state['values']['choice']) + 1; // adding 1 + 2 elements
+    // adding 1 + 2 elements
+    $form_state['values']['choice']['choices'] = count($form_state['values']['choice']) + 1;
   }
 }
 
@@ -1257,30 +1282,31 @@ function decisions_add_choices_js() {
 
   $form_build_id = $_POST['form_build_id'];
   $form_id = $_POST['form_id'];
-  
+
   $form_state = array('submitted' => FALSE);
-  $form = form_get_cache($form_build_id, $form_state);  
-  
-  // Update related form data 
+  $form = form_get_cache($form_build_id, $form_state);
+
+  // Update related form data
   if (!$form['choice']['choices']['#default_value']) {
-    $form['choice']['choices']['#default_value'] = 0; // silence a warning
+    // silence a warning
+    $form['choice']['choices']['#default_value'] = 0;
   }
   $count = ++$form['choice']['choices']['#default_value'];
   $form['settings']['maxchoices']['#options'] = _decisions_choice_list($count);
   $form['choice'][$count]['label'] = _decisions_new_choice($count);
 
   form_set_cache($form_build_id, $form, $form_state);
-  
-  $form['#post'] = $_POST; 
-  $form['#redirect'] = FALSE; 
-  $form['#programmed'] = FALSE; 
+
+  $form['#post']       = $_POST;
+  $form['#redirect']   = FALSE;
+  $form['#programmed'] = FALSE;
 
   $form = form_builder($form_id, $form, $form_state);
 
   $newchoice = $form['choice'][$count];
   $output = theme('status_messages') . drupal_render($newchoice);
 
-  drupal_json(array('status' => TRUE, 'data' => $output)); 
+  drupal_json(array('status' => TRUE, 'data' => $output));
 }
 
 /**
@@ -1312,7 +1338,7 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
     }
   }
   $node->content['decisions']['status']['#value'] = $status_messages;
-  $node->content['decisions']['#weight'] = 1;  
+  $node->content['decisions']['#weight'] = 1;
 
   if (arg(2) != 'results' && _decisions_can_vote($node)) {
     // User hasn't voted and we're not on the results tab
@@ -1323,7 +1349,8 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
     // show results only if the user has voted or decision is closed
     $node->content['decisions']['results']['#value'] = decisions_view_results($node, $teaser, $page);
     $node->content['decisions']['list']['#value'] = theme('decisions_view_header', $node, $teaser);
-  } else {
+  }
+  else {
     $node->content['decisions']['#value'] = theme('decisions_view_own_result');
   }
   if (isset($node->voted) && $node->voted && user_access('cancel own vote') && $node->active) {
@@ -1335,9 +1362,10 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
 
 /**
  * Generate a new choice element in decisions form
- * 
+ *
  * @param $index position of choice item in list
- * @param $value default value of choice element 
+ * @param $value default value of choice element
+ *
  * @return new choice element
  */
 function _decisions_new_choice($index, $value = NULL) {
@@ -1360,7 +1388,7 @@ function _decisions_new_choice($index, $value = NULL) {
 function _decisions_choice_list($choices) {
   $max_choice_list = array();
   for ($i = 0; $i <= $choices; $i++) {
-    $max_choice_list[$i] = ($i == 0? 'No limit' : $i);
+    $max_choice_list[$i] = ($i == 0 ? 'No limit' : $i);
   }
   return $max_choice_list;
 }
@@ -1373,18 +1401,19 @@ function _decisions_choice_list($choices) {
 function decisions_form(&$node, &$form_state) {
   $mode = _decisions_get_mode($node);
   if (array_key_exists('values', $form_state)) {
-    $form_values = $form_state['values']; # adapt to D6 FormsAPI
+    # adapt to D6 FormsAPI
+    $form_values = $form_state['values'];
   }
   else {
     $form_values = array();
   }
 
   $form['title'] = array(
-                         '#type' => 'textfield',
-                         '#title' => ucfirst($mode) .' '. t('Question'),
-                         '#required' => TRUE,
-                         '#default_value' => $node->title,
-                         );
+    '#type' => 'textfield',
+    '#title' => ucfirst($mode) .' '. t('Question'),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+  );
 
   $type = node_get_types('type', $node);
   if (empty($type->body_label) || $type->body_label == "Body") {
@@ -1397,7 +1426,7 @@ function decisions_form(&$node, &$form_state) {
 
   if (isset($form_state['values']['choice']['choices']) && is_numeric($form_state['values']['choice']['choices'])) {
     $choices = max(2, $form_state['values']['choice']['choices']);
-  } 
+  }
   else {
     $choices = max(2, isset($node->choice) && count($node->choice) ? count($node->choice) : 5);
   }
@@ -1405,19 +1434,20 @@ function decisions_form(&$node, &$form_state) {
   $form['choice']['js'] = array(
     '#type' => 'markup',
     '#theme' => 'decisions_morechoices',
-  );  
-  
+  );
+
   $form['choice']['choices'] = array(
     '#type' => 'hidden',
-    '#default_value' => $choices,  
+    '#default_value' => $choices,
   );
-      
+
   $form['choice']['morechoices'] = array(
     '#type' => 'submit',
     '#value' => t('Add more choices'),
     '#description' => t("Click this button to add more choices to this form."),
     '#weight' => 2,
-    '#submit' => array('decisions_add_choices_submit'), // falback method for when JS is turned off
+    // falback method for when JS is turned off
+    '#submit' => array('decisions_add_choices_submit'),
     '#ahah' => array(
       'path' => 'decisions/add_choices_js',
       'wrapper' => 'edit-choice-morechoices',
@@ -1428,53 +1458,53 @@ function decisions_form(&$node, &$form_state) {
 
   // Decisions choices
   $form['choice'] += array(
-                           '#type' => 'fieldset',
-                           '#title' => t('Decision choices'),
-                           '#description' => t('Enter all available choices here. Leave text box empty to delete a choice.'),
-                           '#collapsible' => TRUE,
-                           '#prefix' => '<div class="poll-form">',
-                           '#suffix' => '</div>', 
-                           '#tree' => TRUE,
-                           '#weight' => 1,
-                           );
+    '#type' => 'fieldset',
+    '#title' => t('Decision choices'),
+    '#description' => t('Enter all available choices here. Leave text box empty to delete a choice.'),
+    '#collapsible' => TRUE,
+    '#prefix' => '<div class="poll-form">',
+    '#suffix' => '</div>',
+    '#tree' => TRUE,
+    '#weight' => 1,
+  );
 
   for ($a = 1; $a <= $choices; $a++) {
     $form['choice'][$a]['label'] = _decisions_new_choice($a, (isset($node->choice) ? $node->choice[$a]['label'] : NULL));
   }
 
   $form['settings'] = array(
-                            '#type' => 'fieldset',
-                            '#tree' => TRUE,
-                            '#title' => t('Decision settings'),
-                            '#collapsible' => TRUE,
-                            '#collapsed' => TRUE,
-                            '#weight' => 2,
-                            );
- 
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Decision settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#weight' => 2,
+  );
+
   $form['settings']['maxchoices'] = array(
-                                          '#type' => 'select',
-                                          '#title' => t('Maximum Choices'),
-                                          '#default_value' => (isset($node->maxchoices)? $node->maxchoices : 0),
-                                          '#options' => _decisions_choice_list($choices),
-                                          '#description' => t('Limits the total number of choices voters may select.'),
-                                          );
+    '#type' => 'select',
+    '#title' => t('Maximum Choices'),
+    '#default_value' => (isset($node->maxchoices) ? $node->maxchoices : 0),
+    '#options' => _decisions_choice_list($choices),
+    '#description' => t('Limits the total number of choices voters may select.'),
+  );
 
   $algs = decisions_algorithms($mode);
   $alg_desc = '';
   foreach ($algs as $alg => $desc) {
     $voting_algorithms[$alg] = ucwords($alg);
-    $alg_desc .= ucwords($alg) . " - " . $desc . "<br />";
+    $alg_desc .= ucwords($alg) ." - ". $desc ."<br />";
   }
 
   $defaultalg = (isset($node->algorithm) ? $node->algorithm : (isset($algs[0]) ? $algs[0] : ''));
   if (count($voting_algorithms) > 1) {
     $form['settings']['algorithm'] = array(
-                                         '#type' => 'select',
-                                         '#title' => t('Algorithm'),
-                                         '#options' => $voting_algorithms,
-                                         '#default_value' => $defaultalg,
-                                         '#description' => t('Voting algorithm to use to calculate the winner.') . "<br />" . $alg_desc,
-                                         );
+      '#type' => 'select',
+      '#title' => t('Algorithm'),
+      '#options' => $voting_algorithms,
+      '#default_value' => $defaultalg,
+      '#description' => t('Voting algorithm to use to calculate the winner.') ."<br />". $alg_desc,
+    );
   }
   else {
     $form['settings']['algorithm'] = array('#type' => 'hidden', '#value' => $defaultalg);
@@ -1482,36 +1512,36 @@ function decisions_form(&$node, &$form_state) {
 
   $active = array(1 => t('Active'), 0 => t('Closed'));
   $form['settings']['active'] = array(
-                                      '#type' => 'radios',
-                                      '#title' => t('Decision Status'),
-                                      '#options' => $active,
-                                      '#default_value' => (isset($node->active)? $node->active : 1),
-                                      '#description' => t('When a decision is closed users may no longer vote on it.'),
-                                      );
+    '#type' => 'radios',
+    '#title' => t('Decision Status'),
+    '#options' => $active,
+    '#default_value' => (isset($node->active) ? $node->active : 1),
+    '#description' => t('When a decision is closed users may no longer vote on it.'),
+  );
 
   $enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
   $form['settings']['uselist'] = array(
-                                       '#type' => 'checkbox',
-                                       '#title' => t('Restrict voting to electoral list'),
-                                       '#description' => t('If enabled, a list of eligible voters will be created and only that group will be able to vote in the decision.'),
-                                       '#default_value' => isset($node->uselist)? $node->uselist : variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
-                                       '#options' => $enabled,
-                                       );
+    '#type' => 'checkbox',
+    '#title' => t('Restrict voting to electoral list'),
+    '#description' => t('If enabled, a list of eligible voters will be created and only that group will be able to vote in the decision.'),
+    '#default_value' => isset($node->uselist) ? $node->uselist : variable_get('decisions_default_electoral_list', DECISIONS_DEFAULT_ELECTORAL_LIST),
+    '#options' => $enabled,
+  );
 
   $form['settings']['showvotes'] = array(
-                                         '#type' => 'checkbox',
-                                         '#title' => t('Show individual votes'),
-                                         '#description' => t('Users with the appropriate permissions will be able to see how each person voted.'),
-                                         '#default_value' => isset($node->showvotes)? $node->showvotes : 1,
-                                         '#options' => $enabled,
-                                         );
-  
+    '#type' => 'checkbox',
+    '#title' => t('Show individual votes'),
+    '#description' => t('Users with the appropriate permissions will be able to see how each person voted.'),
+    '#default_value' => isset($node->showvotes) ? $node->showvotes : 1,
+    '#options' => $enabled,
+  );
+
   $form['settings']['randomize'] = array(
-                                         '#type' => 'checkbox',
-                                         '#title' => t('Randomize answers order'),
-                                         '#default_value' => $node->randomize,
-                                         '#description' => t('Display answers in a random order each time the poll is displayed.'),
-                                        );
+    '#type' => 'checkbox',
+    '#title' => t('Randomize answers order'),
+    '#default_value' => $node->randomize,
+    '#description' => t('Display answers in a random order each time the poll is displayed.'),
+  );
 
   $form['settings']['date'] = array(
     '#type' => 'fieldset',
@@ -1519,22 +1549,23 @@ function decisions_form(&$node, &$form_state) {
     '#collapsed' => TRUE,
     '#collapsible' => TRUE,
   );
-  
+
   $startdate = !is_null($node->startdate) ? $node->startdate : time();
   $runtime = !is_null($node->runtime) ? $node->runtime : variable_get('decisions_default_runtime', 24 * 60 * 60);
   if ($runtime == DECISIONS_RUNTIME_INFINITY) {
-    $enddate = $startdate; // by default
+    // by default
+    $enddate = $startdate;
   }
   else {
     $enddate = $startdate + $runtime;
   }
-  
+
   $form['settings']['date']['startdate'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Opening date')
-  );  
+    '#title' => t('Opening date'),
+  );
   $form['settings']['date']['startdate']['date'] = _decisions_form_date($startdate);
-  
+
   $form['settings']['date']['noenddate'] = array(
     '#type' => 'checkbox',
     '#title' => t('No closing date'),
@@ -1548,51 +1579,51 @@ function decisions_form(&$node, &$form_state) {
     '#collapsed' => ($runtime != DECISIONS_RUNTIME_INFINITY),
     '#collapsible' => TRUE,
     '#attributes' => array('id' => 'enddate'),
-    '#title' => t('Closing date')
-  );  
+    '#title' => t('Closing date'),
+  );
   $form['settings']['date']['enddate']['date'] = _decisions_form_date($enddate);
 
-  
+
   $form['settings']['quorum'] = array(
-                            '#type' => 'fieldset',
-                            '#tree' => TRUE,
-                            '#title' => t('Quorum'),
-                            '#collapsible' => TRUE,
-                            '#collapsed' => TRUE,
-                            '#weight' => 2,
-                            '#description' => t('These settings allow for a decision to be valid only if a certain number of eligible voters have cast their ballot. It can be configured both with an absolute number and a percentage of eligible voters. For example, a common setting is "50% + 1", which would be expressed as "@percent: 50" and "@number: 1". Note that the quorum has no impact on the winning conditions.', array('@percent' => t('Percentage (%)'), '@number' => t('Number'))),
-                            );
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Quorum'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#weight' => 2,
+    '#description' => t('These settings allow for a decision to be valid only if a certain number of eligible voters have cast their ballot. It can be configured both with an absolute number and a percentage of eligible voters. For example, a common setting is "50% + 1", which would be expressed as "@percent: 50" and "@number: 1". Note that the quorum has no impact on the winning conditions.', array('@percent' => t('Percentage (%)'), '@number' => t('Number'))),
+  );
 
   $form['settings']['quorum']['quorum_abs'] = array(
-                                       '#type' => 'textfield',
-                                       '#size' => 10,
-                                       '#title' => t('Number'),
-                                       '#default_value' => ($node->quorum_abs? $node->quorum_abs : 0),
-                                       '#required' => TRUE,
-                                       '#description' => t('Minimum number of voters required to cast their ballot for this decision to be valid, in addition to the percentage.')
-                                       );
+    '#type' => 'textfield',
+    '#size' => 10,
+    '#title' => t('Number'),
+    '#default_value' => ($node->quorum_abs ? $node->quorum_abs : 0),
+    '#required' => TRUE,
+    '#description' => t('Minimum number of voters required to cast their ballot for this decision to be valid, in addition to the percentage.'),
+  );
 
   $form['settings']['quorum']['quorum_percent'] = array(
-                                       '#type' => 'textfield',
-                                       '#size' => 10,
-                                       '#title' => t('Percentage (%)'),
-                                       '#default_value' => ($node->quorum_percent? $node->quorum_percent : 0),
-                                       '#required' => TRUE,
-                                       '#description' => t('Minimum numbers of voters required for this decision to be valid, expressed as a percentage of the eligible voters rounded up.'),
-                                       '#weight' => -1,
-                                       );
-                                                                           
+    '#type' => 'textfield',
+    '#size' => 10,
+    '#title' => t('Percentage (%)'),
+    '#default_value' => ($node->quorum_percent ? $node->quorum_percent : 0),
+    '#required' => TRUE,
+    '#description' => t('Minimum numbers of voters required for this decision to be valid, expressed as a percentage of the eligible voters rounded up.'),
+    '#weight' => -1,
+  );
+
   return $form;
 }
 
 function theme_decisions_morechoices(&$element) {
-    
-    drupal_add_js('misc/jquery.form.js');
-    drupal_add_js('misc/ahah.js');
-    drupal_add_js(drupal_get_path('module', 'decisions') .'/decisions.js', 'module');
 
-    $output = drupal_render($element);     
-    return $output;
+  drupal_add_js('misc/jquery.form.js');
+  drupal_add_js('misc/ahah.js');
+  drupal_add_js(drupal_get_path('module', 'decisions') .'/decisions.js', 'module');
+
+  $output = drupal_render($element);
+  return $output;
 }
 
 /**
@@ -1620,6 +1651,7 @@ function _decisions_translate_form_date($array) {
  * @param $format The date() format to apply to the timestamp.
  * @param $timestamp The GMT timestamp value.
  * @param $offset Time zone offset to apply to the timestamp.
+ *
  * @return gmdate() formatted date value
  */
 function _decisions_mktime($hour, $minute, $second, $month, $day, $year, $offset = NULL) {
@@ -1648,6 +1680,7 @@ function _decisions_mktime($hour, $minute, $second, $month, $day, $year, $offset
  * @param $format The date() format to apply to the timestamp.
  * @param $timestamp The GMT timestamp value.
  * @param $offset Time zone offset to apply to the timestamp.
+ *
  * @return gmdate() formatted date value
  */
 function _decisions_date($format, $timestamp, $offset = NULL) {
@@ -1665,7 +1698,7 @@ function _decisions_date($format, $timestamp, $offset = NULL) {
 
   // make sure we apply the site first day of the week setting for dow requests
   $result = gmdate($format, $timestamp);
-  return  $result;
+  return $result;
 }
 
 /*
@@ -1679,13 +1712,13 @@ function _decisions_randomize_options($choices, $num_choices) {
   $temp_choices = $choices;
   // Put array keys from ordered choices in random order.
   $rand_keys = array_rand($choices, $num_choices);
-  
+
   // Use keys from randomized array to get data from temp variable.
   // Use key+1 because $choices is 1 based and keys in randomized array
   // are 0 based.
-  foreach($rand_keys as $key => $value) {
-    $randomized_choices[$key+1]['vote_offset'] = $temp_choices[$value]['vote_offset'];
-    $randomized_choices[$key+1]['label'] = $temp_choices[$value]['label'];    
-  }  
-  return $randomized_choices;  
+  foreach ($rand_keys as $key => $value) {
+    $randomized_choices[$key + 1]['vote_offset'] = $temp_choices[$value]['vote_offset'];
+    $randomized_choices[$key + 1]['label'] = $temp_choices[$value]['label'];
+  }
+  return $randomized_choices;
 }
