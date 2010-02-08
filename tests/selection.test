@@ -1,0 +1,77 @@
+<?php
+
+// $Id:
+/**
+ * @file
+ * Tests for the Decisions Module.
+ *
+ * 
+ */
+
+class SelectionTestCase extends DrupalWebTestCase {
+  /**
+  * Implementation of getInfo().
+  */
+
+  public static function getInfo() {
+
+    return array(
+      'name' => t('Decisions Selections CRUD'),
+      'description' => t('Create, edit, delete a new selection node with two choices'),
+      'group' => t('Decisions'),
+    );
+  }
+
+  /**
+  * Implementation of setUp().
+  */
+  function setUp() {
+    parent::setUp('selection', 'decisions', 'votingapi');
+    // Create and login user
+    $admin_user = $this->drupalCreateUser(array('administer decisions', 'create decisions', 'vote on decisions'));
+    $this->drupalLogin($admin_user);
+  }
+
+  /*
+   * Submit a closed decision, then open it, then close it again.
+   */
+  function testSelectionCRUD() {
+    //Submit a new selection decision.
+    $selection = array();
+    $title = 'Test selection';
+    $node->type = 'decisions_selection';
+    $type_name = node_get_types('name', $node);
+    $selection['title'] = $title;
+    $choice1 = $this->randomName(4);
+    $choice2 = $this->randomName(4);
+
+    //Assign 2 labels and set the decision to be closed. 
+    $selection["choice[1][label]"] = $choice1;
+    $selection["choice[2][label]"] = $choice2;
+    $selection['settings[active]'] = 0;
+    $selection['settings[date][startdate][date][year]'] = '1900';
+    $selection['settings[date][startdate][date][year]'] = '1900';
+    $selection['settings[date][noenddate]'] = 1;
+
+    $this->drupalPost('node/add/decisions-selection', $selection, t('Save'));
+    $this->assertRaw(t("@type %title has been created.", array('@type' => $type_name, '%title' => $title)), t("@type %title has been created.", array('@type' => $type_name, '%title' => $title)));
+    //We look for "This decision is" because that is the beginning of all closed/inactive text.
+    $this->assertText(t('This decision is currently closed'), t("Decision closed text is displayed."));
+
+    //Open the decision.
+    $nid = db_result(db_query("SELECT nid FROM {node} WHERE type = 'decisions_selection' AND title = '%s'", $title));
+    $selection['settings[active]'] = 1;
+    $this->drupalPost('node/'. $nid . '/edit', $selection, t('Save'));
+    $this->assertNoRaw(t('This decision is'), t("Decision closed text does is not displayed"));
+
+    //Verify that the choices appear when the decision is open.
+    $this->assertText($choice1, t("Choice 1 appears."));
+    $this->asserttext($choice2, t("Choice 2 appears."));
+
+    //Close the decision. Depending on how results are displayed, the choices may or may not appear.
+    $selection['settings[active]'] = 0;
+    $this->drupalPost('node/'. $nid . '/edit', $selection, t('Save'));
+    $this->assertRaw(t('This decision is currently closed'), t("Decision closed text is displayed."));
+
+  }
+}
