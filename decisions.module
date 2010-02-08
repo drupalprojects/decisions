@@ -860,7 +860,7 @@ function _decisions_count_eligible($node) {
     // authenticated users are not added to the users_roles permission,
     // probably for performance reasons
     $roles = user_roles(FALSE, 'vote on decisions');
-    if ($roles[DRUPAL_AUTHENTICATED_RID]) {
+    if (isset($roles[DRUPAL_AUTHENTICATED_RID])) {
       // special case: any authenticated user can vote
       // consider all current to be elligible
       $result = db_fetch_object(db_query("SELECT COUNT(*) AS num FROM {users} u WHERE u.uid <> 0"));
@@ -1157,7 +1157,7 @@ function decisions_insert($node) {
   // just create an empty entry for now
   $mode = _decisions_get_mode($node);
 
-  db_query("INSERT INTO {decisions} (nid, mode, quorum_abs, quorum_percent, uselist, active, runtime, maxchoices, algorithm, startdate, randomize) VALUES (%d, '%s', %d, %f, %d, %d, %d, %d, '%s', %d, %d)", $node->nid, $mode, $node->settings['quorum']['quorum_abs'], $node->settings['quorum']['quorum_percent'], $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $startdate, $node->settings['randomize']);
+  db_query("INSERT INTO {decisions} (nid, mode, quorum_abs, quorum_percent, uselist, active, runtime, maxchoices, algorithm, startdate, randomize) VALUES (%d, '%s', %d, %f, %d, %d, %d, %d, '%s', %d, %d)", $node->nid, $mode, $node->settings['quorum']['quorum_abs'], $node->settings['quorum']['quorum_percent'], $node->settings['uselist'], $node->settings['active'], $runtime, $node->settings['maxchoices'], $node->settings['algorithm'], $startdate, $node->settings['randomize']);
 
   // create the electoral list if desired
 
@@ -1539,7 +1539,7 @@ function decisions_form(&$node, &$form_state) {
   $form['settings']['randomize'] = array(
     '#type' => 'checkbox',
     '#title' => t('Randomize answers order'),
-    '#default_value' => $node->randomize,
+    '#default_value' => isset($node->randomize) ? $node->randomize : FALSE,
     '#description' => t('Display answers in a random order each time the poll is displayed.'),
   );
 
@@ -1550,8 +1550,8 @@ function decisions_form(&$node, &$form_state) {
     '#collapsible' => TRUE,
   );
 
-  $startdate = !is_null($node->startdate) ? $node->startdate : time();
-  $runtime = !is_null($node->runtime) ? $node->runtime : variable_get('decisions_default_runtime', 24 * 60 * 60);
+  $startdate = isset($node->startdate) ? $node->startdate : time();
+  $runtime = isset($node->runtime) ? $node->runtime : variable_get('decisions_default_runtime', 24 * 60 * 60);
   if ($runtime == DECISIONS_RUNTIME_INFINITY) {
     // by default
     $enddate = $startdate;
@@ -1598,7 +1598,7 @@ function decisions_form(&$node, &$form_state) {
     '#type' => 'textfield',
     '#size' => 10,
     '#title' => t('Number'),
-    '#default_value' => ($node->quorum_abs ? $node->quorum_abs : 0),
+    '#default_value' => isset($node->quorum_abs) ? $node->quorum_abs : 0,
     '#required' => TRUE,
     '#description' => t('Minimum number of voters required to cast their ballot for this decision to be valid, in addition to the percentage.'),
   );
@@ -1607,7 +1607,7 @@ function decisions_form(&$node, &$form_state) {
     '#type' => 'textfield',
     '#size' => 10,
     '#title' => t('Percentage (%)'),
-    '#default_value' => ($node->quorum_percent ? $node->quorum_percent : 0),
+    '#default_value' => isset($node->quorum_percent) ? $node->quorum_percent : 0,
     '#required' => TRUE,
     '#description' => t('Minimum numbers of voters required for this decision to be valid, expressed as a percentage of the eligible voters rounded up.'),
     '#weight' => -1,
