@@ -24,11 +24,11 @@ msgstr ""
 
 #: decisions.module:59;65
 msgid "Decisions - Newest"
-msgstr "Decisions - Neueste"
+msgstr "Abstimmungen - Neueste"
 
 #: decisions.module:108
 msgid "Allow people to reproduce and surpass the kinds of decision-making instances that exist in face-to-face meetings."
-msgstr ""
+msgstr "Ermögliche das Reproduzieren und Optimieren von Entscheidungsfindungsprozessen die bei persönlichen Treffen existieren."
 
 #: decisions.module:194;1468
 msgid "Disabled"
@@ -44,7 +44,7 @@ msgstr "Wahlliste als Standard verwenden"
 
 #: decisions.module:199
 msgid "Use an electoral list by default for new decisions."
-msgstr "Ein Wahlliste als Standard für neue Abstimmungen verwenden."
+msgstr "Für neue Abstimmungen standardmäßig eine Wahlliste verwenden."
 
 #: decisions.module:205
 msgid "Always"
@@ -56,7 +56,7 @@ msgstr "Nachdem der Benutzer abgestimmt hat"
 
 #: decisions.module:207
 msgid "After voting has closed"
-msgstr "Nachdem die Abstimmung beendet ist."
+msgstr "Nachdem die Abstimmung beendet ist"
 
 #: decisions.module:212
 msgid "When should results be displayed"
@@ -64,7 +64,7 @@ msgstr "Wann sollen Ergebnisse angezeigt werden"
 
 #: decisions.module:213
 msgid "Determines when users may view the results of the decision."
-msgstr "Legt fest, wann die Benutzer das Ergebnis einer Abstimmung sehen dürfen"
+msgstr "Legt fest, wann die Benutzer das Ergebnis einer Abstimmung sehen dürfen."
 
 #: decisions.module:223
 msgid "Cancel your vote"
@@ -84,11 +84,11 @@ msgstr "Eröffnungsdatum: @date"
 
 #: decisions.module:265
 msgid "No closing date."
-msgstr "Kein Abschlußdatum."
+msgstr "Kein Abschlussdatum."
 
 #: decisions.module:266
 msgid "Closing date: @date"
-msgstr "Abschlußdatum: @date"
+msgstr "Abschlussdatum: @date"
 
 #: decisions.module:273
 msgid "@num-voters out of @num-voters-eligible eligible @voters cast their ballot"
@@ -136,7 +136,7 @@ msgstr "%user wurde von der Wahlliste entfernt."
 
 #: decisions.module:453
 msgid "No user found with a uid of %uid."
-msgstr "Es wurde kein Benutzer mit der uid von %uid gefunden."
+msgstr "Es wurde kein Benutzer mit der uid %uid gefunden."
 
 #: decisions.module:466
 msgid "Electoral list cleared."
@@ -184,7 +184,7 @@ msgstr "Sie sind nicht berechtigt ein ungültige Auswahl zurückzunehmen."
 
 #: decisions.module:661
 msgid "This table lists all the recorded votes for this Decision. If anonymous users are allowed to vote, they will be identified by the IP address of the computer they used when they voted."
-msgstr "Diese Tabelle listet alle gespeicherten Stimmen für diese Abstimmung auf. Wenn anonyme Benutze stimmberechtigt sind, dann werden diese über die IP-Adresse des Computers identifiziert, der zur Abstimmung verwendet wurde."
+msgstr "Diese Tabelle listet alle gespeicherten Stimmen dieser Abstimmung auf. Wenn anonyme Benutzer stimmberechtigt sind, dann werden diese über die IP-Adresse des Computers identifiziert, der zur Abstimmung verwendet wurde."
 
 #: decisions.module:663
 msgid "Visitor"
@@ -198,7 +198,7 @@ msgstr "Abstimmen"
 
 #: decisions.module:717
 msgid "Are you sure you want to reset the votes for !title?"
-msgstr "Möchten Sie wirklich die Stimmen für !title zurücknehmen?"
+msgstr "Möchten Sie wirklich die Stimmen für !title löschen?"
 
 #: decisions.module:720
 msgid "This action cannot be undone."
@@ -206,7 +206,7 @@ msgstr "Diese Aktion kann nicht rückgängig gemacht werden."
 
 #: decisions.module:721;165
 msgid "Reset votes"
-msgstr "Stimmen rücksetzen"
+msgstr "Stimmen löschen"
 
 #: decisions.module:722
 msgid "Cancel"
@@ -271,11 +271,11 @@ msgstr "g"
 
 #: decisions.module:917
 msgid "am"
-msgstr "am"
+msgstr "AM"
 
 #: decisions.module:917
 msgid "pm"
-msgstr "pm"
+msgstr "PM"
 
 #: decisions.module:920
 #, fuzzy
@@ -288,7 +288,7 @@ msgstr "Keine aktiven Abstimmungen."
 
 #: decisions.module:1106;1174
 msgid "The specified close date is less than the opening date, setting it to the same for now."
-msgstr "Das angegebene Abschlußdatum liegt vor dem Eröffnungsdatum. Es wird für jetzt gleichgesetzt."
+msgstr "Das angegebene Abschlussdatum liegt vor dem Eröffnungsdatum. Es wird deshalb auf den gleichen Wert gesetzt."
 
 #: decisions.module:1149
 msgid "You must fill in at least two choices."
@@ -296,19 +296,19 @@ msgstr "Sie müssen mindestens zwei Auswahlmöglichkeiten eingeben."
 
 #: decisions.module:1155
 msgid "The specified close date is less than the opening date."
-msgstr "Das angegebene Abschlußdatum liegt vor dem Eröffnungsdatum."
+msgstr "Das angegebene Abschlussdatum liegt vor dem Eröffnungsdatum."
 
 #: decisions.module:1278
 msgid "This decision is not valid. You will not be able to see it until the quorum is met. The quorum is set at @quorum."
-msgstr "Diese Abstimmung ist nicht gültig. Sie werden das Ergebnis erst sehen, wenn die Mindestanzahl (quorum) erreicht ist. Die Mindestanzahl ist auf @quorum gesetzt."
+msgstr "Diese Abstimmung ist nicht gültig. Sie werden das Ergebnis erst sehen, wenn die Mindestanzahl (Quorum) erreicht ist. Die Mindestanzahl ist auf @quorum gesetzt."
 
 #: decisions.module:1281
 msgid "This decision is currently closed."
-msgstr "Diese Abstimmung ist im Moment abgeschlossen."
+msgstr "Diese Abstimmung ist momentan deaktiviert."
 
 #: decisions.module:1286
 msgid "This decision is not yet opened."
-msgstr "Diese Abstimmung ist noch nicht eröffnet"
+msgstr "Diese Abstimmung wurde noch nicht eröffnet."
 
 #: decisions.module:1289
 msgid "This decision is now closed."
@@ -333,11 +333,11 @@ msgstr "Weitere Auswahlmöglichkeiten hinzufügen"
 
 #: decisions.module:1394
 msgid "Click this button to add more choices to this form."
-msgstr "Drücken Sie diesen Knopf um weitere Auswahlmöglichkeiten hinzuzufügen."
+msgstr "Betätigen Sie diese Schaltfläche um weitere Auswahlmöglichkeiten hinzuzufügen."
 
 #: decisions.module:1408
 msgid "Decision choices"
-msgstr "Decision Auswahlmöglichkeiten"
+msgstr "Auswahlmöglichkeiten der Abstimmung"
 
 #: decisions.module:1409
 msgid "Enter all available choices here. Leave text box empty to delete a choice."
@@ -349,11 +349,11 @@ msgstr "Abstimmungseinstellungen"
 
 #: decisions.module:1432
 msgid "Maximum Choices"
-msgstr "Maximale Stimmen"
+msgstr "Maximale Auswahlmöglichkeiten"
 
 #: decisions.module:1435
 msgid "Limits the total number of choices voters may select."
-msgstr "Dies schränkt die max. Anzahl an Stimmen ein, welche eine Person abgeben darf."
+msgstr "Dies schränkt die maximale Anzahl an Auswahlmöglichkeiten ein, welche ein Abstimmungsteilnehmer auswählen darf."
 
 #: decisions.module:1449
 msgid "Algorithm"
@@ -361,7 +361,7 @@ msgstr "Algorithmus"
 
 #: decisions.module:1452
 msgid "Voting algorithm to use to calculate the winner."
-msgstr "Abstimmungsalgorithmus der zum Berechnen des Gewinners verwendet wird,"
+msgstr "Wahlalgorithmus der zur Berechnung des Gewinners verwendet wird."
 
 #: decisions.module:1459
 msgid "Active"
@@ -369,7 +369,7 @@ msgstr "Aktiv"
 
 #: decisions.module:1459
 msgid "Closed"
-msgstr "Geschlosen"
+msgstr "Abgeschlossen"
 
 #: decisions.module:1462
 msgid "Decision Status"
@@ -377,7 +377,7 @@ msgstr "Abstimmungsstatus"
 
 #: decisions.module:1465
 msgid "When a decision is closed users may no longer vote on it."
-msgstr "Für eine geschlossene Abstimmung kann ein Benutzer keine Stimme mehr abgeben."
+msgstr "Sobald eine Abstimmung geschlossen ist ist die Stimmabgabe nicht mehr möglich."
 
 #: decisions.module:1471
 msgid "Restrict voting to electoral list"
@@ -389,7 +389,7 @@ msgstr "Bei Aktivierung wird eine Liste berechtigter Wähler erzeugt und nur die
 
 #: decisions.module:1479
 msgid "Show individual votes"
-msgstr "Einzele Stimmen anzeigen"
+msgstr "Einzelne Stimmen anzeigen"
 
 #: decisions.module:1480
 msgid "Users with the appropriate permissions will be able to see how each person voted."
@@ -397,7 +397,7 @@ msgstr "Benutzer mit passender Berechtigung können die Stimmen jedes einzelnen 
 
 #: decisions.module:1487
 msgid "Date options"
-msgstr "Datumoptionen"
+msgstr "Datumsoptionen"
 
 #: decisions.module:1503
 msgid "Opening date"
@@ -405,15 +405,15 @@ msgstr "Eröffnungsdatum"
 
 #: decisions.module:1509
 msgid "No closing date"
-msgstr "Kein Abschlußdatum"
+msgstr "Kein Abschlussdatum"
 
 #: decisions.module:1511
 msgid "Check this box if you do not want the vote to close on a specific date."
-msgstr "Aktivieren Sie diese Box, wenn die Abstimmung zu keinem bestimmten Datum geschlossen werden soll."
+msgstr "Aktivieren Sie diese Box, wenn die Abstimmung nicht zu einem bestimmten Datum geschlossen werden soll."
 
 #: decisions.module:1520
 msgid "Closing date"
-msgstr "Abschlußdatum"
+msgstr "Abschlussdatum"
 
 #: decisions.module:1528
 msgid "Quorum"
@@ -421,7 +421,7 @@ msgstr "Quorum"
 
 #: decisions.module:1532
 msgid "These settings allow for a decision to be valid only if a certain number of eligible voters have cast their ballot. It can be configured both with an absolute number and a percentage of eligible voters. For example, a common setting is \"50% + 1\", which would be expressed as \"@percent: 50\" and \"@number: 1\". Note that the quorum has no impact on the winning conditions."
-msgstr "Die Einstellungen erlauben eine Abstimmung für gültig zu erklären nur wenn eine bestimmte Anzahl an berechtigen Wählern ihre Stimme abgegeben hat. Es kann eine absolute Zahl und ein Prozentwert für berechtige Wähler angegeben werden. Ein Beispiel: Eine gebräuchliche Einstellung ist \"50% + 1\", das bedeutet \"@percent : 50\" und \"@number: 1\". Bemerkung: Die Mindestanzahl (quorum) hat keinen Einfluss auf die Auszählung."
+msgstr "Die Einstellungen erlauben es eine Abstimmung nur dann für gültig zu erklären wenn eine bestimmte Anzahl an Wahlberechtigten ihre Stimme abgegeben hat. Es kann sowohl eine absolute Anzahl als auch ein prozentualer Anteil an der Gesamtmenge der Wahlberechtigten angegeben werden. Ein Beispiel: Eine gebräuchliche Einstellung ist \"50% + 1\", was als \"@percent : 50\" und \"@number: 1\" ausgedrückt wird. Bemerkung: Die Mindestanzahl (Quorum) hat keinen Einfluss auf die Bedingungen des Wahlgewinns."
 
 #: decisions.module:1532;1547
 msgid "Percentage (%)"
@@ -433,11 +433,11 @@ msgstr "Nummer"
 
 #: decisions.module:1541
 msgid "Minimum number of voters required to cast their ballot for this decision to be valid, in addition to the percentage."
-msgstr "Eine minimale Anzahl von Wählern müssen für die Gültigkeit dieser Abstimmung Ihre Stimme abgegeben haben, zusätzlich zur Prozentzahl."
+msgstr "Minimale Anzahl an Wählern die zur Gültigkeit dieser Abstimmung Ihre Stimme abgeben müssen, zusätzlich zum prozentualen Anteil."
 
 #: decisions.module:1550
 msgid "Minimum numbers of voters required for this decision to be valid, expressed as a percentage of the eligible voters rounded up."
-msgstr "Eine minimale Anzahl von Wählern sind für die Gültigkeit dieser Abstimmung nötig. Ausgedrückt als gerundete Prozentzahl der berechtigen Wähler."
+msgstr "Minimale Anzahl von Wählern die zur Gültigkeit dieser Abstimmung nötig sind. Ausgedrückt als gerundeter prozentualer Anteil an berechtigen Wählern."
 
 #: decisions.module:802
 msgid "decisions"
@@ -463,11 +463,11 @@ msgstr "Abstimmungen anzeigen"
 
 #: decisions.module:186
 msgid "vote on decisions"
-msgstr "Bei Abstimmungen wählen"
+msgstr "An Abstimmungen teilnehmen"
 
 #: decisions.module:186
 msgid "cancel own vote"
-msgstr "Eigene Stimme zurücknehmen"
+msgstr "Eigene Stimme zurückziehen"
 
 #: decisions.module:186
 msgid "administer decisions"
@@ -491,7 +491,7 @@ msgstr "Abstimmungen einrichten"
 
 #: decisions.module:122
 msgid "Configure Decisions"
-msgstr "Decisions einrichten"
+msgstr "Abstimmungen einrichten"
 
 #: decisions.module:130
 msgid "Votes"
@@ -525,11 +525,11 @@ msgstr "Erstellt eine Abstimmung bei der n Optionen von 1 bis n geordnet sind."
 
 #: modes/ranking.module:39
 msgid "Ranking decision"
-msgstr "Ranglisten-Entscheidung"
+msgstr "Ranglisten-Abstimmung"
 
 #: modes/ranking.module:49
 msgid "Instant run-off voting, also known as IVR or Alternative Voting, is an algorithm by which the candidate having the least ballots gets its votes redistributed to the other candidates. See <a href=\"http://en.wikipedia.org/wiki/Instant-runoff_voting\">Instant runoff voting on Wikipedia</a> for more information."
-msgstr "Rangfolgewahl ist ein Algorithmus, bei dem der Kandidat mit den wenigsten Stimmen für die nächste Runde gestrichen wird. Lesen Sie <a href=\"http://de.wikipedia.org/wiki/Instant-Runoff-Voting\">Instant runoff voting in der Wikipedia</a> für weitere Information."
+msgstr "Rangfolgewahl ist ein Algorithmus, bei dem der Kandidat mit den wenigsten Stimmen für die nächste Runde gestrichen wird. Lesen Sie <a href=\"http://de.wikipedia.org/wiki/Instant-Runoff-Voting\">Instant Runoff Voting in der Wikipedia</a> für weitere Informationen."
 
 #: modes/ranking.module:50
 msgid "Borda count is an algorithm by which each candidate gets a number of points assigned based on the number of candidates standing. See the <a href=\"http://en.wikipedia.org/wiki/Borda_count\">Borda count article on Wikipedia</a> for more information."
@@ -537,15 +537,15 @@ msgstr "Borda-Wahl ist ein Algorithmus bei dem jeder Kandidat eine Anzahl an Sti
 
 #: modes/ranking.module:73
 msgid "1st"
-msgstr "1er"
+msgstr "Erster"
 
 #: modes/ranking.module:76
 msgid "2nd"
-msgstr "2ter"
+msgstr "Zweiter"
 
 #: modes/ranking.module:79
 msgid "3rd"
-msgstr "3ter"
+msgstr "Dritter"
 
 #: modes/ranking.module:82
 msgid "!{num}th"
@@ -557,7 +557,7 @@ msgstr "Stimmen"
 
 #: modes/ranking.module:91
 msgid "Rank the following options in your prefered order, the lower the number the better"
-msgstr "Sortieren Sie die folgenden Optionen aufgrund Ihrer Vorlieben. Je kleiner die Nummer umso besser."
+msgstr "Sortieren Sie die folgenden Optionen aufgrund Ihrer Vorlieben. Je kleiner die Nummer desto besser."
 
 #: modes/ranking.module:133
 msgid "Results: "
@@ -565,16 +565,16 @@ msgstr "Ergebnisse:"
 
 #: modes/ranking.module:263
 msgid "@num choices were selected but only @max are allowed."
-msgstr "Es wurden @num Stimmen ausgewählt, es sind aber nur @max erlaubt."
+msgstr "Es wurden @num Auswahlmöglichkeiten gewählt, es sind aber nur @max erlaubt."
 
 #: modes/ranking.module:270
 #: modes/selection.module:234
 msgid "At least one choice must be selected."
-msgstr "Es muss mindestens eine Auswahlmöglichkeit ausgewählt sein."
+msgstr "Es muss mindestens eine Auswahlmöglichkeit gewählt werden."
 
 #: modes/ranking.module:277
 msgid "Multiple choices given the rank of @val."
-msgstr "Mehrere Auswahlmöglichkeiten ergeben den Rang @val."
+msgstr "Mehrere Auswahlmöglichkeiten der Ordnung @val."
 
 #: modes/selection.module:18;26
 msgid "Creates a decision where the user selects one or many options."
@@ -582,7 +582,7 @@ msgstr "Erzeugt eine Abstimmung, bei der Wähler eine oder mehrere Auswahlmögli
 
 #: modes/selection.module:26
 msgid "Decisions - selection"
-msgstr "Decisions - Auswahl"
+msgstr "Abstimmungen - Auswahl"
 
 #: modes/selection.module:38
 msgid "The plurality algorithm determines the winner based solely on the number of votes received: the one with the larger number of votes wins. See the <a href=\"http://en.wikipedia.org/wiki/Plurality_voting_system\">Plurality voting system on Wikipedia</a> for more information"
@@ -604,7 +604,7 @@ msgstr "Rangliste"
 
 #: modes/ranking.info:0
 msgid "A decision mode for the Decisions module that allows voters to rank choices."
-msgstr "Ein Entscheidungsmodus für das Abstimmungsmodul der den Wählern das gewichten von Auswahlmöglichkeiten erlaubt."
+msgstr "Ein Abstimmungsmodus für das Abstimmungsmodul der den Wählern das Gewichten von Auswahlmöglichkeiten erlaubt."
 
 #: modes/selection.info:0
 msgid "Selection"
@@ -612,5 +612,5 @@ msgstr "Auswahl"
 
 #: modes/selection.info:0
 msgid "A decision mode for the Decisions module that allows select one or many options."
-msgstr "Ein Entscheidungsmodus für das Abstimmungsmodul, welcher die Auswahl einer oder mehrerer Möglichkeiten erlaubt."
+msgstr "Ein Abstimmungsmodus für das Abstimmungsmodul der die Auswahl einer oder mehrerer Möglichkeiten erlaubt."
 
