@@ -62,15 +62,19 @@ function ranking_decisions_algorithms() {
 }
 
 /**
- * Implementation of the decisions_voting_hook_form() hook for the runoff module.
+ * Implementation of the decisions_hook_voting_form() hook for the runoff module.
  *
  * This displays a textfield per choice, that should be filled with a
  * ranking.
  */
-function ranking_decisions_voting_form(&$node, $teaser, $page) {
+function decisions_ranking_voting_form($form_state, &$node, $teaser, $page) {
 
   $weight = 0;
   $form = array();
+  $form['node'] = array(
+    '#type' => 'value',
+    '#value' => $node,
+  );
 
   if ($node->choice) {
     $list = array();
@@ -269,9 +273,10 @@ function ranking_decisions_format_votes($node, $votes) {
  *
  * This takes care of registering the vote in runoff nodes.
  */
-function ranking_decisions_vote($node, $form_values) {
+function decisions_ranking_voting_form_submit($form, &$form_state) {
   $votes = array();
-  foreach ($form_values['choice'] as $choice => $rank) {
+  $node = $form_state['values']['node'];
+  foreach ($form_state['values']['choice'] as $choice => $rank) {
     // A zero value indicates they didn't rank that choice
     if ($rank != 0) {
       $vote = array('value' => $rank,
@@ -284,29 +289,28 @@ function ranking_decisions_vote($node, $form_values) {
     }
   }
   votingapi_add_votes($votes);
+  drupal_set_message(t('Your vote was registered.'));
 }
 
 /**
- * implementation of the vote validation hook for the runoff module.
- *
  * This checks if the submitted values are within range, if they are
  * not empty, and if they are not repeated.
  *
  * @returns boolean false on invalid forms, true otherwise.
  */
-function ranking_decisions_vote_validate($node, $form_values) {
-  $ok = TRUE;
+function decisions_ranking_voting_form_validate($form, &$form_state) {
+  $node = $form_state['values']['node'];
+
   // array used to check which values are set
   $setvalues = array();
-
   $numchoices = 0;
   foreach ($node->choice as $key => $choice) {
 
     // count the number of choices that are ranked
-    if (!empty($form_values['choice'][$key])) {
+    if (!empty($form_state['values']['choice'][$key])) {
       $numchoices++;
     }
-    $intvalue = intval($form_values['choice'][$key]);
+    $intvalue = intval($form_state['values']['choice'][$key]);
     // mark this value as seen
     if (!array_key_exists($intvalue, $setvalues)) {
       $setvalues[$intvalue] = 1;
@@ -317,21 +321,18 @@ function ranking_decisions_vote_validate($node, $form_values) {
     // check range
     if ($intvalue > count($node->choice) || $intvalue < 0) {
       form_set_error('Choice_'. $key, "illegal rank for choice $key: $intvalue (min: 1, max: ". count($node->choice) .")");
-      $ok = FALSE;
     }
   }
 
   // too many choices ranked
   if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
     form_set_error('choice', t('@num choices were selected but only @max are allowed.', array('@num' => $numchoices, '@max' => $node->maxchoices)));
-    $ok = FALSE;
   }
 
   // not enough choices ranked
   $minchoices = 1;
   if ($numchoices < $minchoices) {
     form_set_error('choice', t('At least one choice must be selected.'));
-    $ok = FALSE;
   }
 
   // Check that multiple choices are not set to the same value
@@ -340,14 +341,11 @@ function ranking_decisions_vote_validate($node, $form_values) {
     foreach ($setvalues as $val => $count) {
       if ($val != 0 && $count > 1) {
         form_set_error('choice', t('Multiple choices given the rank of @val.', array('@val' => $val)));
-        $ok = FALSE;
       }
     }
   }
   // end condorcet if.
 
-
-  return $ok;
 }
 
 /***********************************************************************

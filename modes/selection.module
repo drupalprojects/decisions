@@ -47,20 +47,22 @@ function selection_decisions_algorithms() {
 }
 
 /**
- * Implementation of the decisions_voting_hook_form() hook for the selection module.
- *
- * This creates a list of choices to allow the user to vote on choices.
+ * Implementation of decisions_hook_voting_form.
+ * Presents a list of choices for the user to vote on.
  */
-function selection_decisions_voting_form(&$node, $teaser, $page) {
+function decisions_selection_voting_form($form_state, &$node, $teaser, $page) {
+  $form['node'] = array(
+    '#type' => 'value',
+    '#value' => $node,
+  );
+
   if ($node->choice) {
     $list = array();
-
     // Put options in random order if randomize option
     // selected on node create/edit form.
     if ($node->randomize) {
       $node->choice = _decisions_randomize_options($node->choice, $node->choices);
     }
-
     if ($node->maxchoices == 1) {
       // plurality voting
       foreach ($node->choice as $i => $choice) {
@@ -90,15 +92,10 @@ function selection_decisions_voting_form(&$node, $teaser, $page) {
       );
     }
   }
-  $form['nid'] = array(
-    '#type' => 'hidden',
-    '#value' => $node->nid,
-  );
   $form['vote'] = array(
     '#type' => 'submit',
     '#value' => t('Vote'),
   );
-  $form['#action'] = url('node/'. $node->nid);
   return $form;
 }
 
@@ -173,17 +170,16 @@ function selection_decisions_format_votes($node, $votes) {
 }
 
 /**
- * implementation of the submit() hook
- *
- * registers the vote as a key for this node using votingapi_set_vote()
+ * Registers the vote as a key for this node using votingapi_set_vote().
  */
-function selection_decisions_vote($node, $form_values) {
+function decisions_selection_voting_form_submit($form, &$form_state) {
+  $node = $form_state['values']['node'];
   $votes = array();
   if ($node->maxchoices == 1) {
     // plurality voting
     $vote = array(
       'value' => 1,
-      'tag' => $form_values['choice'],
+      'tag' => $form_state['values']['choice'],
       'value_type' => 'option',
       'content_type' => 'decisions',
       'content_id' => $node->nid,
@@ -193,7 +189,7 @@ function selection_decisions_vote($node, $form_values) {
   else {
     // approval voting
     foreach ($node->choice as $key => $choice) {
-      if (isset($form_values['choice'][$key]) && $form_values['choice'][$key]) {
+      if (isset($form_state['values']['choice'][$key]) && $form_state['values']['choice'][$key]) {
         $vote = array(
           'value' => 1,
           'value_type' => 'option',
@@ -206,6 +202,7 @@ function selection_decisions_vote($node, $form_values) {
     }
   }
   votingapi_add_votes($votes);
+  drupal_set_message(t('Your vote was registered.'));
 }
 
 /**
@@ -215,13 +212,12 @@ function selection_decisions_vote($node, $form_values) {
  *
  * @returns boolean true if the form is valid
  */
-function selection_decisions_vote_validate($node, $form_values) {
-  $ok = TRUE;
+function decisions_selection_voting_form_validate($form, &$form_state) {
+  $node = $form_state['values']['node'];
   if ($node->maxchoices == 1) {
     // plurality voting
-    if (!array_key_exists($form_values['choice'], $node->choice)) {
+    if (!array_key_exists($form_state['values']['choice'], $node->choice)) {
       form_set_error('choice', 'At least one choice must be selected.');
-      $ok = FALSE;
     }
   }
   else {
@@ -238,7 +234,7 @@ function selection_decisions_vote_validate($node, $form_values) {
       //}
 
       // see if the box is checked
-      if (!empty($form_values['choice'][$key])) {
+      if (!empty($form_state['values']['choice'][$key])) {
         $numchoices++;
       }
     }
@@ -250,15 +246,12 @@ function selection_decisions_vote_validate($node, $form_values) {
           array('%num' => $numchoices, '%max' => $node->maxchoices)
         )
       );
-      $ok = FALSE;
     }
 
     // not enough choices ranked
     $minchoices = 1;
     if ($numchoices < $minchoices) {
       form_set_error('choice', t('At least one choice must be selected.'));
-      $ok = FALSE;
     }
   }
-  return $ok;
 }

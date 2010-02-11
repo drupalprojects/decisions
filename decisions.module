@@ -477,12 +477,10 @@ function decisions_electoral_list_form_validate($form, &$form_state) {
     // Check that the user exists
     if (!db_fetch_object(db_query('SELECT uid FROM {users} WHERE name="%s"', $add_user))) {
       form_set_error('electoral_list][add_user', t('User %user does not exist.', array('%user' => $add_user)));
-      return FALSE;
     }
   }
   else {
     form_set_error('electoral_list][add_user', t('Please enter a user.'));
-    return FALSE;
   }
 }
 
@@ -521,54 +519,6 @@ function decisions_view_results(&$node, $teaser, $page) {
   else {
     _decisions_panic_on_mode($mode, __FUNCTION__);
   }
-}
-
-/**
- * View the voting form.
- *
- * This calls a function decisions_vote_$mode, where $mode is defined
- * in the node. If the function does not exist, a watchdog error is
- * raised and the error is reported using drupal_set_message().
- *
- * This also takes care of registering new votes, if the vote button
- * has been pressed.
- */
-function decisions_voting_form($form, &$node, $teaser = FALSE, $page = FALSE) {
-  $mode = _decisions_get_mode($node);
-  if (function_exists("{$mode}_decisions_voting_form")) {
-    return call_user_func("{$mode}_decisions_voting_form", $node, $teaser, $page);
-  }
-  else {
-    _decisions_panic_on_mode($mode, __FUNCTION__);
-  }
-}
-
-function decisions_voting_form_submit($form, &$form_state) {
-  $node = node_load($form_state['values']['nid']);
-  decisions_vote($node, $form_state['values']);
-  drupal_set_message(t('Your vote was registered.'));
-  // Transferring makes the results tab display correctly
-  drupal_goto('node/'. $node->nid);
-}
-
-/**
- * Validate vote form submission
- *
- * This will call a hook named decisions_vote_validate_$mode and
- * return its value. hooks should check $POST to see if the vote data
- * submitted is valid and use form_set_error() if the form has invalid
- * data.
- *
- * @returns boolean true if form has valid data or if no hook is
- * defined in mode
- */
-function decisions_voting_form_validate($form, &$form_state) {
-  $node = node_load($form_state['values']['nid']);
-  $mode = _decisions_get_mode($node);
-  if (function_exists("{$mode}_decisions_vote_validate")) {
-    return call_user_func("{$mode}_decisions_vote_validate", $node, $form_state['values']);
-  }
-  return TRUE;
 }
 
 /**
@@ -1342,7 +1292,8 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
 
   if (arg(2) != 'results' && _decisions_can_vote($node)) {
     // User hasn't voted and we're not on the results tab
-    $node->content['decisions']['form']['#value'] = drupal_get_form('decisions_voting_form', $node, $teaser, $page);
+    $mode = _decisions_get_mode($node);
+    $node->content['decisions']['form']['#value'] = drupal_get_form('decisions_' . $mode . '_voting_form', $node, $teaser, $page);
     $node->content['decisions']['list']['#value'] = theme('decisions_view_header', $node, $teaser);
   }
   elseif (_decisions_can_view_results($node)) {
