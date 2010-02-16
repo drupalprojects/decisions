@@ -27,18 +27,6 @@ function selection_node_info() {
   return array('decisions_selection' => array('name' => t('Decisions - selection'), 'module' => 'decisions', 'description' => t('Creates a decision where the user selects one or many options.')));
 }
 
-function selection_perm() {
-  return decisions_perm();
-}
-
-function selection_acces($op, $node, $account) {
-  return decisions_access($op, $node, $account);
-}
-
-function selection_form(&$node) {
-  return decisions_form($node);
-}
-
 /**
  * Implementation of the decisions_algorithms() hook
  */
