@@ -215,6 +215,20 @@ function decisions_admin() {
     '#options' => $view_results,
   );
 
+  $form['main']['decisions_1click'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable one-click voting where available'),
+    '#description' => t('Some modules offer one-click voting with buttons or links instead of radios.'),
+    '#default_value' => variable_get('decisions_1click', 0),
+  );
+
+  $form['main']['decisions_ahah'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable asynchronous (AJAX) voting where available'),
+    '#description' => t('Some modules allow votes to be submitted with an asynchronous interface.'),
+    '#default_value' => variable_get('decisions_ahah', 0),
+  );
+  
   return system_settings_form($form);
 }
 

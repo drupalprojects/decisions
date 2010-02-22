@@ -1,8 +1,9 @@
 $(document).ready(function(){  
   $("a.decisions_selection_vote").click(function() {
     var link = this;
+    var path = $(this).attr('href');
     var votingDiv = $(link).parents("div.decisions_selection_voting");
-    var path = $(link).attr('href');
+    var resultsDiv =  $(link).parents(".decisions_selection_voting").siblings(".decisions_selection_results");
     $.ajax({
       type: "GET",
       global: false,
@@ -14,14 +15,14 @@ $(document).ready(function(){
         });
       },
       success: function(html) {
-        $(link).parents(".decisions_selection_voting").siblings(".decisions_selection_results").html(html);
+        resultsDiv.html(html);
         //If the page is a WSOD with an HTTP 200 response, that's not successful. This check could be expanded if necessary.
         if (html == '') {
           decisionsErrorText(votingDiv);
         }
         else {
           $(votingDiv).queue(function(){
-            $(this).siblings(".decisions_selection_results").fadeIn('slow');
+            resultsDiv.fadeIn('slow');
             $(votingDiv).dequeue();
           });
         }
@@ -34,7 +35,7 @@ $(document).ready(function(){
   });
   function decisionsErrorText(votingDiv) {
     $(votingDiv).queue(function(){
-      $(votingDiv).children(".decisions_selection_error").html('<span class="error">' + Drupal.t('errortext') + '</span>');
+      $(votingDiv).children(".decisions_selection_error").html('<span class="error">' + Drupal.t('An error occured. Please try voting again.') + '</span>');
       votingDiv.fadeIn('slow');
       $(votingDiv).dequeue();
     });
