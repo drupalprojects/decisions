@@ -215,6 +215,20 @@ function decisions_admin() {
     '#options' => $view_results,
   );
 
+  $form['main']['decisions_1click'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable one-click voting where available'),
+    '#description' => t('Some modules offer one-click voting with buttons or links instead of radios.'),
+    '#default_value' => variable_get('decisions_1click', 0),
+  );
+
+  $form['main']['decisions_ahah'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable asynchronous (AJAX) voting where available'),
+    '#description' => t('Some modules allow votes to be submitted with an asynchronous interface.'),
+    '#default_value' => variable_get('decisions_ahah', 0),
+  );
+  
   return system_settings_form($form);
 }
 
@@ -1264,7 +1278,7 @@ function decisions_add_choices_js() {
  */
 function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
   $mode = _decisions_get_mode($node);
-
+  
   // Since we have a body (the decision's description), we need to
   // include that in the $node->content array, too.
   $node = node_prepare($node, $teaser);
@@ -1289,7 +1303,6 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
   }
   $node->content['decisions']['status']['#value'] = $status_messages;
   $node->content['decisions']['#weight'] = 1;
-
   if (arg(2) != 'results' && _decisions_can_vote($node)) {
     // User hasn't voted and we're not on the results tab
     $mode = _decisions_get_mode($node);
