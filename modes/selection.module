@@ -78,6 +78,7 @@ function selection_vote($nid = 0, $cid = -1) {
       );
       $votes[] = $vote;
       votingapi_add_votes($votes);
+      votingapi_recalculate_results('decisions', $nid);
     }
     else {
       if (empty($_REQUEST['ajax'])) {
