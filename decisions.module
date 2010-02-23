@@ -585,15 +585,14 @@ function decisions_algorithms($mode) {
 /*
  * Return the decisions votes for a nid from a particular user (or IP address).
  */
-function decisions_get_votes($nid, $uid) {
+function decisions_get_votes($nid, $uid = 0) {
   $criteria['content_id'] = $nid;
   $criteria['content_type'] = 'decisions';
-  $criteria['content_id'] = $nid;
+  //We include the UID for both authenticated an anonymous users so that voting and then logging out doesn't preclude anons from voting.
+  //The site-wide anonymous vote rollover is still respected.
+  $criteria['uid'] = $uid;
   if ($uid == 0) {
     $criteria['vote_source'] = ip_address();
-  }
-  else {
-    $criteria['uid'] = $uid;
   }
   return votingapi_select_votes($criteria);
 }
