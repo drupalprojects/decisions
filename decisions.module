@@ -582,6 +582,30 @@ function decisions_algorithms($mode) {
   return $algs;
 }
 
+/*
+ * Return the decisions votes for a nid from a particular user (or IP address).
+ */
+function decisions_get_votes($nid, $uid) {
+  $criteria['content_id'] = $nid;
+  $criteria['content_type'] = 'decisions';
+  $criteria['content_id'] = $nid;
+  if ($uid == 0) {
+    $criteria['vote_source'] = ip_address();
+  }
+  else {
+    $criteria['uid'] = $uid;
+  }
+  return votingapi_select_votes($criteria);
+}
+
+/*
+ * Return results for a given nid.
+ */
+function decisions_get_results($nid) {
+  $criteria['content_id'] = $nid;
+  $criteria['content_type'] = 'decisions';
+  return votingapi_select_results($criteria);
+}
 /*************/
 /* Callbacks */
 /*************/

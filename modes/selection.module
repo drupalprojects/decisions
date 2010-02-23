@@ -77,7 +77,7 @@ function selection_vote($nid = 0, $cid = -1) {
         exit();
       }
     }
-    $voted = selection_get_votes($nid, $user->uid);
+    $voted = decisions_get_votes($nid, $user->uid);
     if (empty($voted)) {
       $vote = array(
         'value' => 1,
@@ -308,21 +308,6 @@ function selection_decisions_format_votes($node, $votes) {
     }
   }
   return implode(', ', $unordered_votes);
-}
-
-function selection_get_votes($nid, $uid) {
-  $criteria['content_id'] = $nid;
-  $criteria['value_type'] = 'option';
-  $criteria['content_type'] = 'decisions';
-  $criteria['content_id'] = $nid;
-  if ($uid == 0) {
-    $criteria['vote_source'] = ip_address();
-  }
-  else {
-    $criteria['uid'] = $uid;
-  }
-  $results = votingapi_select_votes($criteria);
-  return $results;
 }
 
 /**
