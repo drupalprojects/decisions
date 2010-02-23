@@ -619,6 +619,7 @@ function decisions_cancel($nid) {
       $criteria['content_type'] = 'decisions';
       $criteria['content_id'] = $node->nid;
       votingapi_delete_votes(votingapi_select_votes($criteria));
+      votingapi_recalculate_results('decisions', $node->nid, TRUE);
       drupal_set_message(t('Your vote was canceled.'));
     }
     else {
