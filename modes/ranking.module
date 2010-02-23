@@ -39,6 +39,16 @@ function ranking_form(&$node) {
   return decisions_form($node);
 }
 
+/*
+ * Implementation of hook_theme().
+ */
+function ranking_theme() {
+  return array(
+    'ranking_decisions_view_results' => array(
+      'arguments' => array('node' => NULL, 'teaser' => FALSE, 'page' => FALSE, 'this_vote' => array()),
+    ),
+  );
+}
 function ranking_node_info() {
   $info = array();
   $info['decisions_ranking'] = array(
@@ -140,9 +150,12 @@ function decisions_ranking_voting_form($form_state, &$node, $teaser, $page) {
 }
 
 /**
- * implementation of the decisions_view_results() hook for the runoff
+ * implementation of the theme_decisions_view_results() hook for the runoff
  * module
  */
+function theme_ranking_decisions_view_results($node, $teaser, $page) {
+  return ranking_decisions_view_results($node, $teaser, $page);
+}
 function ranking_decisions_view_results($node, $teaser, $page) {
   $results = _ranking_decisions_calculate_results($node);
 

@@ -527,12 +527,7 @@ function decisions_electoral_list_form_submit($form, &$form_state) {
 function decisions_view_results(&$node, $teaser, $page) {
   $mode = _decisions_get_mode($node);
   $function = "{$mode}_decisions_view_results";
-  if (function_exists($function)) {
-    return call_user_func($function, $node, $teaser, $page);
-  }
-  else {
-    _decisions_panic_on_mode($mode, __FUNCTION__);
-  }
+  return theme($function, $node, $teaser, $page);
 }
 
 /**

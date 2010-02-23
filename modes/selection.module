@@ -19,6 +19,16 @@ function selection_menu() {
   return $items;
 }
 
+/*
+ * Implementation of hook_theme().
+ */
+function selection_theme() {
+  return array(
+    'selection_decisions_view_results' => array(
+      'arguments' => array('node' => NULL, 'teaser' => FALSE, 'page' => FALSE, 'this_vote' => array()),
+    ),
+  );
+}
 function selection_help($section) {
   $help = "";
   switch ($section) {
@@ -98,7 +108,7 @@ function selection_vote($nid = 0, $cid = -1) {
     else {
       //Sadly, we must reload the node.
       $node = node_load($nid);
-      print selection_decisions_view_results($node, FALSE, FALSE, $votes);
+      print theme('selection_decisions_view_results', $node, FALSE, FALSE, $votes);
       exit();
     }
   }
@@ -314,6 +324,7 @@ function selection_get_votes($nid, $uid) {
   $results = votingapi_select_votes($criteria);
   return $results;
 }
+
 /**
  * Registers the vote as a key for this node using votingapi_set_vote().
  */
@@ -395,4 +406,8 @@ function decisions_selection_voting_form_validate($form, &$form_state) {
       form_set_error('choice', t('At least one choice must be selected.'));
     }
   }
+}
+
+function theme_selection_decisions_view_results($node = NULL, $teaser = FALSE, $page = FALSE, $this_vote = array()) {
+  return selection_decisions_view_results($node, $teaser, $page, $this_vote);
 }
