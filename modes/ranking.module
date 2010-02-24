@@ -27,18 +27,6 @@ function ranking_help($section) {
   return $help;
 }
 
-function ranking_perm() {
-  return decisions_perm();
-}
-
-function ranking_acces($op, $node, $account) {
-  return decisions_access($op, $node, $account);
-}
-
-function ranking_form(&$node) {
-  return decisions_form($node);
-}
-
 /*
  * Implementation of hook_theme().
  */
