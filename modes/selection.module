@@ -144,7 +144,7 @@ function selection_check_token($token, $nid = 0, $cid = 0) {
  * Implementation of decisions_hook_voting_form.
  * Presents a list of choices for the user to vote on.
  */
-function decisions_selection_voting_form($form_state, &$node, $teaser, $page) {
+function decisions_selection_voting_form($form_state, $node, $teaser, $page) {
   $one_click = variable_get('decisions_1click', 0);
   global $user;
   $form['node'] = array(
