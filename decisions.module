@@ -228,7 +228,15 @@ function decisions_admin() {
     '#description' => t('Some modules allow votes to be submitted with an asynchronous interface.'),
     '#default_value' => variable_get('decisions_ahah', 0),
   );
-  
+
+  $form['main']['decisions_voted_cache_fallback'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use the VotingAPI as a fallback when checking if a user voted.'),
+    '#description' => t("Decisions sets a cache item when a user votes and can fallback to the VotingAPI when the cache item doesn't exist.
+    Turning this fallback off can improve performance but may result in users voting twice in rare circumstances."),
+    '#default_value' => variable_get('decisions_voted_cache_fallback', 1),
+  );
+
   return system_settings_form($form);
 }
 
@@ -1088,19 +1096,16 @@ function _decisions_electoral_list_reset($node) {
  * Load the votes and decision-specific data into the node object.
  */
 function decisions_load($node) {
+  global $user;
   $decision = db_fetch_object(db_query("SELECT * FROM {decisions} WHERE nid = %d", $node->nid));
   $result = db_query("SELECT vote_offset, label FROM {decisions_choices} WHERE nid = %d ORDER BY vote_offset", $node->nid);
   while ($choice = db_fetch_array($result)) {
-    $decision->choice[$choice['vote_offset']] = $choice;
+    $decision->choice[$choice['vote_offset']] = $choice;  
   }
   $decision->choices = count($decision->choice);
 
   // See if user has voted
-  $criteria = votingapi_current_user_identifier();
-  $criteria['content_type'] = 'decisions';
-  $criteria['content_id'] = $node->nid;
-  $decision->voted = count(votingapi_select_votes($criteria)) > 0;
-
+  $decision->voted = decisions_voted($node->nid, $user->uid);
   return $decision;
 }
 
@@ -1705,4 +1710,67 @@ function _decisions_randomize_options($choices, $num_choices) {
     $randomized_choices[$key + 1]['label'] = $temp_choices[$value]['label'];
   }
   return $randomized_choices;
+}
+
+/*
+ * Check whether the user voted on a Decisions node
+ * according to the decisions cache.
+ * See decisions_votingapi_insert() for more information.
+ */
+function decisions_voted_cache($nid, $uid) {
+  $identifier = $uid > 0 ? $uid : ip_address();
+  $cache = cache_get('decisions-'. $nid . '-' . $identifier, 'cache_decisions');
+  if ($uid == 0) {
+    //Respect the VotingAPI anonymous window.
+    $in_window = time() <= $cache->created + variable_get('votingapi_anonymous_window', 3600);
+    if (!$in_window) {
+      return FALSE;
+    }
+  }
+  return empty($cache) ? FALSE : TRUE;
+}
+
+/*
+ * Check whether the given user voted on a particular node.
+ */
+function decisions_voted($nid, $uid) {
+  $fallback = variable_get('decisions_voted_cache_fallback', 1);
+  $voted_cache = decisions_voted_cache($nid, $uid);
+  if ($voted_cache) {
+    return TRUE;
+  }
+  else {
+    if ($fallback) {
+      $votes = decisions_get_votes($nid, $uid);
+      return(!empty($votes));
+    }
+    else {
+      return FALSE;
+    }
+  }
+}
+/*
+ * Implementation of hook_votingapi_insert().
+ * Sets a simple cache item that we can use to check if a user voted.
+ * This can be more performant on sites that use a fast cache store, like Memcache.
+ */
+function decisions_votingapi_insert($votes) {
+  foreach ($votes as $vote) {
+    if (isset($vote['content_type']) && $vote['content_type'] == 'decisions' ) {
+      $identifier = $vote['uid'] > 0 ? $vote['uid'] : ip_address();
+    }
+    cache_set('decisions-'. $vote['content_id'] . '-' . $identifier, $vote['vote_id'], 'cache_decisions');
+  }
+}
+
+/*
+ * Implementation of hook_votingapi_delete().
+ */
+function decisions_votingapi_delete($votes) {
+  foreach ($votes as $vote) {
+    if (isset($vote['content_type']) && $vote['content_type'] == 'decisions' ) {
+      $identifier = $vote['uid'] > 0 ? $vote['uid'] : ip_address();
+      cache_clear_all('decisions-'. $vote['content_id'] . '-' . $identifier, 'cache_decisions');
+    }
+  }
 }

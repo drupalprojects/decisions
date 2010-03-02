@@ -49,6 +49,8 @@ function decisions_schema() {
       'vote_offset' => array('vote_offset'),
     ),
   );
+  $schema['cache_decisions'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_decisions']['description'] =  '';
   return $schema;
 }
 
@@ -129,6 +131,14 @@ function decisions_update_6000() {
   return $items;
 }
 
+/*
+ * Add the Decisions cache table, currently used to tell where a user hs voted.
+ */
+function decisions_update_6001() {
+  $ret = array();
+  db_create_table($ret, 'cache_decisions', drupal_get_schema_unprocessed('system', 'cache'));
+  return $items;
+}
 /**
  * Implementation of hook_uninstall().
  */

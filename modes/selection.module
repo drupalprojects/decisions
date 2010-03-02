@@ -64,7 +64,7 @@ function selection_decisions_algorithms() {
  * @return
  * Returns HTML for AHAH voting, or redirects to the destination for synchronous voting.
  */
-function selection_vote($nid = 0, $cid = -1) {
+function selection_vote($nid, $cid) {
   global $user;
   if (selection_check_token($_REQUEST['token'], $nid, $cid)) {
     $valid_cid = db_result(db_query("SELECT label FROM {decisions_choices} WHERE nid = %d AND vote_offset = %d", $nid, $cid));
@@ -73,12 +73,11 @@ function selection_vote($nid = 0, $cid = -1) {
         drupal_goto(drupal_get_destination());
       }
       else {
-        print '';
         exit();
       }
     }
-    $voted = decisions_get_votes($nid, $user->uid);
-    if (empty($voted)) {
+    $voted = decisions_voted($nid, $user->uid);
+    if (!$voted) {
       $vote = array(
         'value' => 1,
         'tag' => $cid,
@@ -96,7 +95,6 @@ function selection_vote($nid = 0, $cid = -1) {
         drupal_goto(drupal_get_destination());
       }
       else {
-        print '';
         exit();
       }
     }
@@ -118,7 +116,6 @@ function selection_vote($nid = 0, $cid = -1) {
     drupal_goto(drupal_get_destination());
   }
   else {
-    print '';
     exit();
   }
 }
@@ -231,8 +228,7 @@ function decisions_selection_voting_form($form_state, $node, $teaser, $page) {
 }
 
 /**
- * Implementation of the decisions_view_results() hook for the selection module
- *
+ * Display the selection results.
  * TODO: implement (http://drupal.org/node/48249)
  */
 function selection_decisions_view_results($node, $teaser, $page, $this_vote = array()) {
