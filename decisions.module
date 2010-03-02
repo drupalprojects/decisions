@@ -1605,7 +1605,7 @@ function decisions_form(&$node, &$form_state) {
   return $form;
 }
 
-function theme_decisions_morechoices(&$element) {
+function theme_decisions_morechoices($element) {
 
   drupal_add_js('misc/jquery.form.js');
   drupal_add_js('misc/ahah.js');
