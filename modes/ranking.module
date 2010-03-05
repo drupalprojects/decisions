@@ -65,7 +65,7 @@ function ranking_decisions_algorithms() {
  * This displays a textfield per choice, that should be filled with a
  * ranking.
  */
-function decisions_ranking_voting_form($form_state, &$node, $teaser, $page) {
+function decisions_ranking_voting_form($form_state, $node, $teaser, $page) {
 
   $weight = 0;
   $form = array();
