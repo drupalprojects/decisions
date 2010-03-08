@@ -1322,7 +1322,7 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
       $status_messages .= theme('decisions_status', t("This decision is not yet opened."));
     }
     else if ($node->runtime != DECISIONS_RUNTIME_INFINITY && $time >= $node->startdate + $node->runtime) {
-      $status_messages .= theme(decisions_status, t("This decision is now closed."));
+      $status_messages .= theme('decisions_status', t("This decision is now closed."));
     }
   }
   $node->content['decisions']['status']['#value'] = $status_messages;
@@ -1720,6 +1720,9 @@ function _decisions_randomize_options($choices, $num_choices) {
 function decisions_voted_cache($nid, $uid) {
   $identifier = $uid > 0 ? $uid : ip_address();
   $cache = cache_get('decisions-'. $nid . '-' . $identifier, 'cache_decisions');
+  if (!isset($cache) || !is_object($cache)) {
+    return FALSE;
+  }
   if ($uid == 0) {
     //Respect the VotingAPI anonymous window.
     $in_window = time() <= $cache->created + variable_get('votingapi_anonymous_window', 3600);
@@ -1727,7 +1730,7 @@ function decisions_voted_cache($nid, $uid) {
       return FALSE;
     }
   }
-  return empty($cache) ? FALSE : TRUE;
+  return TRUE;
 }
 
 /*
@@ -1742,7 +1745,7 @@ function decisions_voted($nid, $uid) {
   else {
     if ($fallback) {
       $votes = decisions_get_votes($nid, $uid);
-      return(!empty($votes));
+      return empty($votes) ? FALSE : TRUE;
     }
     else {
       return FALSE;

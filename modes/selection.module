@@ -125,7 +125,7 @@ function selection_vote($nid, $cid) {
  */
 function selection_get_token($nid = 0, $cid = 0) {
   global $user;
-  $session_id = $user->uid ? session_id() : '';
+  $session_id = isset($user->uid) && $user->uid > 0 ? session_id() : '';
   $private_key = drupal_get_private_key();
   return md5($session_id . "selection-vote-$nid-$cid" . $private_key);
 }
@@ -232,6 +232,7 @@ function decisions_selection_voting_form($form_state, $node, $teaser, $page) {
  * TODO: implement (http://drupal.org/node/48249)
  */
 function selection_decisions_view_results($node, $teaser, $page, $this_vote = array()) {
+  global $user;
   $output = "";
   $results = votingapi_select_results(array('content_id' => $node->nid, 'content_type' => 'decisions'));
   // Count the votes for each choice
@@ -263,10 +264,10 @@ function selection_decisions_view_results($node, $teaser, $page, $this_vote = ar
     // display results for each possible choice
 
     //If AHAH and 1click are enabled, ensure that the fallback behavior shows the same vote confirmation.
-    if (variable_get('decisions_ahah', 0) == 1 && variable_get('decisions_ahah', 0) == 1 && ($node->maxchoices == 1)) {
+    if (variable_get('decisions_1click', 0) && ($node->maxchoices == 1)) {
       if (empty($this_vote)) {
         //Fallback behavior.
-        $this_vote = selection_get_votes($node->nid, $user->uid);
+        $this_vote = decisions_get_votes($node->nid, $user->uid);
       }
       $this_vote = array_shift($this_vote);
       $vote_label = $node->choice[$this_vote['tag']]['label'];
