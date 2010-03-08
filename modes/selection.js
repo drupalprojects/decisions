@@ -8,16 +8,17 @@ $(document).ready(function(){
       type: "GET",
       global: false,
       data: 'ajax=true',
+      dataType: 'string',
       url: path,
       beforeSend:function() {
         $(votingDiv).queue(function() {
           $(votingDiv).fadeOut('slow').dequeue();
         });
       },
-      success: function(html) {
-        resultsDiv.html(html);
+      success: function(response) {
+        $(resultsDiv).html(response);
         //If the page is a WSOD with an HTTP 200 response, that's not successful. This check could be expanded if necessary.
-        if (html == '') {
+        if (response == '') {
           decisionsErrorText(votingDiv);
         }
         else {
