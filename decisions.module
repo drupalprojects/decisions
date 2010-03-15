@@ -134,7 +134,7 @@ function decisions_menu() {
     'weight' => 4,
     'type' => MENU_LOCAL_TASK,
   );
-  $items['node/%node/results'] = array(
+  $items['node/%node/decision-results'] = array(
     'title' => 'Results',
     'page callback' => 'decisions_results',
     'page arguments' => array(1),
