@@ -78,8 +78,7 @@ function selection_vote($node, $cid) {
         exit();
       }
     }
-    $voted = !empty($node->voted);
-    if (!$voted) {
+    if (empty($voted)) {
       $new_vote = array(
         'value' => 1,
         'tag' => $cid,
