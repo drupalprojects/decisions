@@ -591,9 +591,55 @@ function decisions_algorithms($mode) {
 }
 
 /*
- * Return the decisions votes for a nid from a particular user (or IP address).
+ * Return the decisions vote for a nid from a particular user (or IP address).
  */
-function decisions_get_votes($nid, $uid = 0) {
+function decisions_get_vote($nid, $uid = 0) {
+  $fallback = variable_get('decisions_voted_cache_fallback', 1);
+  $vote_cache = decisions_get_vote_cache($nid, $uid);
+
+  if (empty($vote_cache)) {
+    if ($fallback) {
+      return decisions_get_vote_direct($nid, $uid);
+    }
+    else {
+      return FALSE;
+    }
+  }
+  return $vote_cache;
+}
+
+/*
+ * Check whether the user voted on a Decisions node
+ * according to the decisions cache.
+ * See decisions_votingapi_insert() for more information.
+ */
+function decisions_get_vote_cache($nid, $uid) {
+  $identifier = $uid > 0 ? $uid : ip_address();
+  $cache = cache_get('decisions-'. $nid . '-' . $identifier, 'cache_decisions');
+  if (empty($cache) || !is_object($cache)) {
+    return FALSE;
+  }
+  if ($uid == 0) {
+    //Respect the VotingAPI anonymous window.
+    $in_window = time() <= $cache->created + variable_get('votingapi_anonymous_window', 3600);
+    if (!$in_window) {
+      return FALSE;
+    }
+  }
+  return unserialize($cache->data);
+}
+
+/*
+ * Convenience wrapper around votingapi_select_votes.
+ * @param int $nid
+ *   The node id voted upon.
+ * @param int $uid.
+ *   The user id of the user who voted.
+ * @return array $vote
+ *   The VotingAPI vote array, if one exists.
+ */
+function decisions_get_vote_direct($nid, $uid) {
+
   $criteria['content_id'] = $nid;
   $criteria['content_type'] = 'decisions';
   //We include the UID for both authenticated an anonymous users so that voting and then logging out doesn't preclude anons from voting.
@@ -602,9 +648,9 @@ function decisions_get_votes($nid, $uid = 0) {
   if ($uid == 0) {
     $criteria['vote_source'] = ip_address();
   }
-  return votingapi_select_votes($criteria);
+  $vote = votingapi_select_votes($criteria);
+  return array_shift($vote);
 }
-
 /*
  * Return results for a given nid.
  */
@@ -622,7 +668,7 @@ function decisions_get_results($nid) {
  */
 function decisions_cancel($nid) {
   if ($node = node_load($nid)) {
-    if ($node->voted && $node->active) {
+    if (!empty($node->vote) && $node->active) {
       $criteria = votingapi_current_user_identifier();
       $criteria['content_type'] = 'decisions';
       $criteria['content_id'] = $node->nid;
@@ -802,7 +848,7 @@ function _decisions_is_open($node) {
 function _decisions_can_vote($node, $user = NULL) {
   return (_decisions_is_open($node) &&
     // user should not have already voted
-    !$node->voted &&
+    empty($node->vote) &&
     // user must be eligible to vote
     _decisions_eligible($node, $user));
 }
@@ -1103,9 +1149,7 @@ function decisions_load($node) {
     $decision->choice[$choice['vote_offset']] = $choice;  
   }
   $decision->choices = count($decision->choice);
-
-  // See if user has voted
-  $decision->voted = decisions_voted($node->nid, $user->uid);
+  $decision->vote = decisions_get_vote($node->nid, $user->uid);
   return $decision;
 }
 
@@ -1327,7 +1371,6 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
   }
   $node->content['decisions']['status']['#value'] = $status_messages;
   $node->content['decisions']['#weight'] = 1;
-
   if (arg(2) != 'results' && _decisions_can_vote($node)) {
     // User hasn't voted and we're not on the results tab
     $mode = _decisions_get_mode($node);
@@ -1342,7 +1385,7 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
   else {
     $node->content['decisions']['#value'] = theme('decisions_view_own_result');
   }
-  if (isset($node->voted) && $node->voted && user_access('cancel own vote') && $node->active) {
+  if (!empty($node->vote) && user_access('cancel own vote') && $node->active) {
     $node->content['decisions']['cancel']['#value'] = drupal_get_form('decisions_cancel_form', $node->nid);
   }
 
@@ -1713,46 +1756,6 @@ function _decisions_randomize_options($choices, $num_choices) {
 }
 
 /*
- * Check whether the user voted on a Decisions node
- * according to the decisions cache.
- * See decisions_votingapi_insert() for more information.
- */
-function decisions_voted_cache($nid, $uid) {
-  $identifier = $uid > 0 ? $uid : ip_address();
-  $cache = cache_get('decisions-'. $nid . '-' . $identifier, 'cache_decisions');
-  if (!isset($cache) || !is_object($cache)) {
-    return FALSE;
-  }
-  if ($uid == 0) {
-    //Respect the VotingAPI anonymous window.
-    $in_window = time() <= $cache->created + variable_get('votingapi_anonymous_window', 3600);
-    if (!$in_window) {
-      return FALSE;
-    }
-  }
-  return TRUE;
-}
-
-/*
- * Check whether the given user voted on a particular node.
- */
-function decisions_voted($nid, $uid) {
-  $fallback = variable_get('decisions_voted_cache_fallback', 1);
-  $voted_cache = decisions_voted_cache($nid, $uid);
-  if ($voted_cache) {
-    return TRUE;
-  }
-  else {
-    if ($fallback) {
-      $votes = decisions_get_votes($nid, $uid);
-      return empty($votes) ? FALSE : TRUE;
-    }
-    else {
-      return FALSE;
-    }
-  }
-}
-/*
  * Implementation of hook_votingapi_insert().
  * Sets a simple cache item that we can use to check if a user voted.
  * This can be more performant on sites that use a fast cache store, like Memcache.
@@ -1761,8 +1764,8 @@ function decisions_votingapi_insert($votes) {
   foreach ($votes as $vote) {
     if (isset($vote['content_type']) && $vote['content_type'] == 'decisions' ) {
       $identifier = $vote['uid'] > 0 ? $vote['uid'] : ip_address();
+      cache_set('decisions-'. $vote['content_id'] . '-' . $identifier, serialize($vote), 'cache_decisions');
     }
-    cache_set('decisions-'. $vote['content_id'] . '-' . $identifier, $vote['vote_id'], 'cache_decisions');
   }
 }
 
