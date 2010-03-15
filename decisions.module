@@ -1113,7 +1113,7 @@ function _decisions_can_view_results($node) {
     // node is closed
     (!_decisions_is_open($node)
       // user voted
-      || ($node->voted && $view_results == 'aftervote')
+      || (!empty($node->vote) && $view_results == 'aftervote')
       // all can view
       || ($view_results == 'always'))
   );
