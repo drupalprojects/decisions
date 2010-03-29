@@ -1107,16 +1107,28 @@ function _decisions_block_mostrecent() {
  * Returns true if the user can view the results of current node.
  */
 function _decisions_can_view_results($node) {
+  // Don't show this tab for non-decisions nodes.
+  if (strpos($node->type, 'decisions_') !== 0) {
+    return FALSE;
+  }
+  // If results are always visible:
   $view_results = variable_get('decisions_view_results', DECISIONS_DEFAULT_VIEW_RESULTS);
-  return user_access('administer decisions') || (_decisions_meets_quorum($node) &&
-    strpos($node->type, 'decisions_') === 0 &&
-    // node is closed
-    (!_decisions_is_open($node)
-      // user voted
-      || (!empty($node->vote) && $view_results == 'aftervote')
-      // all can view
-      || ($view_results == 'always'))
-  );
+  if ($view_results == 'always') {
+    return TRUE;
+  }
+  // If the user is an administrator.
+  if (user_access('administer decisions')) {
+    return TRUE;
+  }
+  // If the user already voted.
+  if (!empty($node->vote) && $view_results == 'aftervote') {
+    return TRUE;
+  }
+  if (_decisions_meets_quorum($node) && !_decisions_is_open($node)) {
+    return TRUE;
+  }
+  // Otherwise, return false.
+  return FALSE;
 }
 
 /**
