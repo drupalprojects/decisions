@@ -1107,7 +1107,7 @@ function _decisions_block_mostrecent() {
  * Returns true if the user can view the results of current node.
  */
 function _decisions_can_view_results($node) {
-  // Don't show this tab for non-decisions nodes.
+  // You can't view the Decisions results for non-Decisions node.
   if (strpos($node->type, 'decisions_') !== 0) {
     return FALSE;
   }
@@ -1127,7 +1127,7 @@ function _decisions_can_view_results($node) {
   if (_decisions_meets_quorum($node) && !_decisions_is_open($node)) {
     return TRUE;
   }
-  // Otherwise, return false.
+  // Otherwise, return FALSE.
   return FALSE;
 }
 
