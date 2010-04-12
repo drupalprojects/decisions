@@ -1369,16 +1369,13 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
   if (!_decisions_meets_quorum($node)) {
     $status_messages .= theme('decisions_status', t("This decision is not valid. You will not be able to see it until the quorum is met. The quorum is set at @quorum.", array('@quorum' => _decisions_get_quorum($node))));
   }
-  if (!$node->active) {
+  if (!decisions_voting_open($node)) {
     $status_messages .= theme('decisions_status', t("This decision is currently closed."));
   }
   else {
     $time = time();
     if ($time < $node->startdate) {
       $status_messages .= theme('decisions_status', t("This decision is not yet opened."));
-    }
-    else if ($node->runtime != DECISIONS_RUNTIME_INFINITY && $time >= $node->startdate + $node->runtime) {
-      $status_messages .= theme('decisions_status', t("This decision is now closed."));
     }
   }
   $node->content['decisions']['status']['#value'] = $status_messages;
@@ -1404,6 +1401,14 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
   return $node;
 }
 
+function decisions_voting_open($node) {
+  if ($node->active && $node->runtime != DECISIONS_RUNTIME_INFINITY && $time >= $node->startdate + $node->runtime) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
 /**
  * Generate a new choice element in decisions form
  *
