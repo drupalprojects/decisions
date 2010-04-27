@@ -136,8 +136,8 @@ function decisions_update_6000() {
  */
 function decisions_update_6001() {
   $ret = array();
-  db_create_table($ret, 'cache_decisions', drupal_get_schema_unprocessed('system', 'cache'));
-  return $items;
+  $ret[] = db_create_table($ret, 'cache_decisions', drupal_get_schema_unprocessed('system', 'cache'));
+  return $ret;
 }
 /**
  * Implementation of hook_uninstall().
