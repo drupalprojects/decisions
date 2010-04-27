@@ -957,14 +957,20 @@ function _decisions_eligible($node, $uid = NULL) {
     $uid = $user->uid;
   }
 
+  // first check if the user's role is eligible to vote
+  if(!user_access('vote on decisions')) {
+    return FALSE;
+  }
+
+  // if the role is eligible, check if there electoral list which includes the
+  // current user
   if ($node->uselist) {
     $can_vote = db_fetch_object(db_query("SELECT COUNT(*) AS eligible FROM {decisions_electoral_list} WHERE nid=%d AND uid=%d", $node->nid, $uid));
-    $eligible = $can_vote->eligible;
+    return $can_vote->eligible;
   }
-  else {
-    $eligible = user_access('vote on decisions');
-  }
-  return $eligible;
+
+  // if there is no list, the user is eligible by default
+  return TRUE;
 }
 
 /**
