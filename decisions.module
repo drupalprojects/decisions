@@ -1089,7 +1089,7 @@ function _decisions_form_prepare_datetime($time = '', $offset = 0) {
  */
 function _decisions_block_mostrecent() {
   $output = '';
-  $result = db_query_range('SELECT nid FROM {decisions} WHERE active=1 ORDER BY nid DESC', 1);
+  $result = db_query_range(db_rewrite_sql('SELECT n.nid FROM {decisions} d INNER JOIN {node} n ON d.nid = n.nid WHERE d.active=1 AND n.status = 1 ORDER BY n.nid DESC'), 1);
   // Check that there is an active decision
   if ($decision = db_fetch_object($result)) {
     $n = decisions_view(node_load($decision->nid), FALSE, FALSE, TRUE);
