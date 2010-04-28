@@ -262,11 +262,29 @@ function decisions_theme($existing, $type, $theme, $path) {
     'decisions_status' => array('arguments' => array('message' => NULL)),
     'decisions_morechoices' => array('arguments' => array(), 'decisions_morechoices' => NULL),
     'decisions_view_own_result' => array(),
+    'decisions_no_vote_access' => array(),
+    'decisions_no_view_access' => array(),
+    'decisions_no_vote_or_view_access' => array(),
   );
 }
 
 function theme_decisions_view_own_result() {
   $output = '<div class="decisions-own-result">'. t("Your vote has been recorded.") .'</div>';
+  return $output;
+}
+
+function theme_decisions_no_view_access() {
+  $output = '<div class="decisions-no-view-access">'. t("You do not have permission to view the results of votes.") .'</div>';
+  return $output;
+}
+
+function theme_decisions_no_vote_access() {
+  $output = '<div class="decisions-no-vote-access">'. t("You do not have permission to vote.") .'</div>';
+  return $output;
+}
+
+function theme_decisions_no_vote_or_view_access() {
+  $output = '<div class="decisions-no-vote-or-view-access">'. t("You do not have permission to vote, or view results of this vote.") .'</div>';
   return $output;
 }
 
@@ -1364,6 +1382,7 @@ function decisions_add_choices_js() {
  */
 function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
   $mode = _decisions_get_mode($node);
+  global $user;
 
   // Since we have a body (the decision's description), we need to
   // include that in the $node->content array, too.
@@ -1387,18 +1406,38 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
   $node->content['decisions']['status']['#value'] = $status_messages;
   $node->content['decisions']['#weight'] = 1;
   if (arg(2) != 'results' && _decisions_can_vote($node)) {
-    // User hasn't voted and we're not on the results tab
+    // User can vote (but hasn't voted yet) and we're not on the results tab
     $mode = _decisions_get_mode($node);
     $node->content['decisions']['form']['#value'] = drupal_get_form('decisions_' . $mode . '_voting_form', $node, $teaser, $page);
     $node->content['decisions']['list']['#value'] = theme('decisions_view_header', $node, $teaser);
   }
   elseif (_decisions_can_view_results($node)) {
-    // show results only if the user has voted or decision is closed
+    // show results only if the user has voted or decision is closed, and user
+    // can view results
     $node->content['decisions']['results']['#value'] = decisions_view_results($node, $teaser, $page);
     $node->content['decisions']['list']['#value'] = theme('decisions_view_header', $node, $teaser);
   }
-  else {
+  elseif (!user_access('view decisions') && !user_access('vote on decisions')) {
+    // explain to user that they don't have permission to vote or view vote results
+    $node->content['decisions']['#value'] = theme('decisions_no_vote_or_view_access');
+  }
+  elseif (!user_access('view decisions')) {
+    // explain to user that they don't have permission to view vote results
+    $node->content['decisions']['#value'] = theme('decisions_no_view_access');
+  }
+  elseif (!user_access('vote on decisions')) {
+    // explain to user that they don't have permission to vote
+    $node->content['decisions']['#value'] = theme('decisions_no_vote_access');
+  }
+  elseif (decisions_get_vote($node->nid, $user->uid)) {
+    // explain to user that they have already voted (they have no permission to
+    // view the results so there is nothing else to display)
     $node->content['decisions']['#value'] = theme('decisions_view_own_result');
+  }
+  else {
+    // explain to user that they don't have permission to vote or view vote results
+    // (although this is just for this node in particular)
+    $node->content['decisions']['#value'] = theme('decisions_no_vote_or_view_access');
   }
   if (!empty($node->vote) && user_access('cancel own vote') && $node->active) {
     $node->content['decisions']['cancel']['#value'] = drupal_get_form('decisions_cancel_form', $node->nid);
