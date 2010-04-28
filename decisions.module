@@ -459,6 +459,9 @@ function decisions_electoral_list_tab() {
     $output .= t('This table lists all the eligible voters for this Decision.');
 
     $header[] = array('data' => t('Voter'), 'field' => 'u.name');
+    if (user_access('administer decisions')) {
+      $header[] = array('data' => t('Action'));
+    }
 
     $result = pager_query("SELECT u.uid, u.name FROM {decisions_electoral_list} el LEFT JOIN {users} u ON el.uid = u.uid WHERE el.nid = %d". tablesort_sql($header), 20, 0, NULL, $node->nid);
     $eligible_voters = array();
