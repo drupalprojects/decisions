@@ -18,6 +18,7 @@ Design principles
   reflect the nature of the groups rather than impose a structure on
   the groups
 * Decisions should be auditable
+* Attempts to avoid 'cheating'
 
 Desired characteristics
 =======================
@@ -28,15 +29,18 @@ Desired characteristics
   * instant runoff voting
   * allocation voting (aka "scoring")
   * etc.
-* optional quorum validation
+* optional quorum validation (TODO)
 * variable quorum conditions (concensus, 50% + 1, 2/3 +1, etc.)
 * variable closing conditions (time limit vs. first past the post
-  vs. quorum)
-* delegatable votes
+  vs. quorum) (TODO)
+* delegatable votes (TODO)
 * weightable (allow weighting of votes to reflect, for example, role,
-  karma, or impact-of-decision-on-user)
-* spoilable votes
-* notifications
+  karma, or impact-of-decision-on-user) (TODO)
+* spoilable votes (TODO)
+* notifications (TODO)
+* when allowing all users with an account on the site to vote, avoid having
+  users stuff the ballot box by not allowing votes from user accounts created
+  after the poll was created (although they can be added manually)
 * ... and a whole lot more that we'll come up with
 
 Installation
@@ -47,8 +51,13 @@ See INSTALL.txt.
 Dependencies
 ============
 
-This module uses the new forms API of the Drupal 4.7.x branch and
-requires the voting_api.module.
+This module requires the voting_api.module.
+
+Known Issues
+============
+
+Voting from anonymous users is currently not working (even though the voting
+API supports this).
 
 License
 =======
@@ -65,6 +74,7 @@ Patrice D'Amours
 Chris Kennedy
 Mathieu Petit-Clair
 Yann Rocq
+Matt Corks
 [who's missing here?]
 
 Updates
