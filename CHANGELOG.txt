@@ -12,6 +12,9 @@ Decisions 6.x branch (HEAD, in progress)
  * Do not rely on REMOTE_ADDR environment, use ip_address() (fixes
    voting through proxy servers)
  * Ranking and selection have been tested and work generally well.
+ * Provide better messages to explain why users cannot vote, or see results.
+ * Users who are in the electoral list, but who are not in a role with
+   permissions to vote, are no longer allowed to vote.
 
 Decisions 5.x branch (stalled)
 ------------------------------
