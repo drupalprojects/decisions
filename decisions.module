@@ -1496,7 +1496,7 @@ function decisions_form(&$node, &$form_state) {
 
   $form['title'] = array(
     '#type' => 'textfield',
-    '#title' => ucfirst($mode) .' '. t('Question'),
+    '#title' => t('Question'),
     '#required' => TRUE,
     '#default_value' => $node->title,
   );
