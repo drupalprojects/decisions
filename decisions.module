@@ -1408,7 +1408,7 @@ function decisions_view(&$node, $teaser = FALSE, $page = FALSE) {
   }
   $node->content['decisions']['status']['#value'] = $status_messages;
   $node->content['decisions']['#weight'] = 1;
-  if (arg(2) != 'results' && _decisions_can_vote($node)) {
+  if (arg(2) != 'decision-results' && _decisions_can_vote($node)) {
     // User can vote (but hasn't voted yet) and we're not on the results tab
     $mode = _decisions_get_mode($node);
     $node->content['decisions']['form']['#value'] = drupal_get_form('decisions_' . $mode . '_voting_form', $node, $teaser, $page);
