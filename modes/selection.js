@@ -13,6 +13,7 @@ $(document).ready(function(){
       beforeSend:function() {
         $(votingDiv).queue(function() {
           $(votingDiv).fadeOut('slow').dequeue();
+          $(votingDiv).parent('div').addClass('decisions_spinner');
         });
       },
       success: function(response) {
@@ -23,6 +24,7 @@ $(document).ready(function(){
         }
         else {
           $(votingDiv).queue(function(){
+            $(votingDiv).parent('div').removeClass('decisions_spinner');
             resultsDiv.fadeIn('slow');
             $(votingDiv).dequeue();
           });
