@@ -878,9 +878,14 @@ function _decisions_can_vote($node, $user = NULL) {
  * Function that tells if the given decision meets the quorum.
  */
 function _decisions_meets_quorum($node) {
-  // compute number of people that have cast their vote
-  $num_voters = _decisions_count_voters($node);
+  $num_voters = 0;
   $quorum = _decisions_get_quorum($node);
+  // If the minimum required number of voters is 0,
+  // no reason to find out how many have voted. 
+  if (!empty($quorum)) {
+    // compute number of people that have cast their vote
+    $num_voters = _decisions_count_voters($node);
+  }
   return ($num_voters >= $quorum);
 }
 
@@ -935,6 +940,9 @@ function _decisions_count_eligible($node) {
  * Returns the quorum (minimum voters) of a node.
  */
 function _decisions_get_quorum($node) {
+  if (empty($node->quorum_abs) && empty($node->quorum_percent)) {
+    return 0;
+  }
   $num_eligible_voters = _decisions_count_eligible($node);
   $quorum = $node->quorum_abs + ceil(($node->quorum_percent / 100.0) * $num_eligible_voters);
   return min($quorum, $num_eligible_voters);
