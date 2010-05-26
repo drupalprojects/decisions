@@ -28,8 +28,12 @@ function selection_theme() {
     'selection_decisions_view_results' => array(
       'arguments' => array('node' => NULL, 'teaser' => FALSE, 'page' => FALSE, 'this_vote' => array()),
     ),
+    'selection_decisions_1click_controls' => array(
+      'arguments' => array('links' => array(), 'node' => NULL),
+    ),
   );
 }
+
 function selection_help($section) {
   $help = "";
   switch ($section) {
@@ -175,10 +179,7 @@ function decisions_selection_voting_form($form_state, $node, $teaser, $page) {
         }
         
         if (!empty($links)) {
-          $output = '';
-          $output .= '<div class="decisions_selection_1click">';
-          $output .= theme('links', $links, array('class' => 'decisions_selection_1click'));
-          $output .= '</div>';
+          $output = theme('selection_decisions_1click_controls', $links, $node);
         }
         $form['choices']['1click'] = array(
           '#value' => $output,
@@ -389,6 +390,14 @@ function decisions_selection_voting_form_validate($form, &$form_state) {
       form_set_error('choice', t('At least one choice must be selected.'));
     }
   }
+}
+
+function theme_selection_decisions_1click_controls($links = array(), $node){
+  $output = '';
+  $output .= '<div class="decisions_selection_1click">';
+  $output .= theme('links', $links, array('class' => 'decisions_selection_1click'));
+  $output .= '</div>';
+  return $output;
 }
 
 function theme_selection_decisions_view_results($node = NULL, $teaser = FALSE, $page = FALSE, $new_vote = array()) {
