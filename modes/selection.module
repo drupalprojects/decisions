@@ -111,7 +111,9 @@ function selection_vote($node, $cid) {
     else {
       // We pass along the vote cast in this request so that the user's choice
       // can be displayed along with the results.
-      print theme('selection_decisions_view_results', $node, FALSE, FALSE, $new_vote);
+      $page = empty($_GET['page']) ? FALSE : TRUE;
+      $teaser = empty($_GET['teaser']) ? FALSE : TRUE;
+      print theme('selection_decisions_view_results', $node, $teaser, $page, $new_vote);
       exit();
     }
   }
@@ -174,12 +176,18 @@ function decisions_selection_voting_form($form_state, $node, $teaser, $page) {
         foreach ($node->choice as $i => $choice) {
           $links[$i]['attributes']['class'] = 'decisions_selection_vote';
           $links[$i]['query'] = drupal_get_destination() . '&token='. selection_get_token($node->nid, $i);
+          if ($page) {
+            $links[$i]['query'] .= '&page=1';
+          }
+          if ($teaser) {
+            $links[$i]['query'] .= '&teaser=1';
+          }
           $links[$i]['title'] = check_plain($choice['label']);
           $links[$i]['href'] = "decisions_selection/vote/$node->nid/$i/";
         }
         
         if (!empty($links)) {
-          $output = theme('selection_decisions_1click_controls', $links, $node);
+          $output = theme('selection_decisions_1click_controls', $links, $node, $teaser, $page);
         }
         $form['choices']['1click'] = array(
           '#value' => $output,
@@ -392,7 +400,16 @@ function decisions_selection_voting_form_validate($form, &$form_state) {
   }
 }
 
-function theme_selection_decisions_1click_controls($links = array(), $node){
+/*
+ * Theme the 1click voting controls.
+ * @param array $links
+ *   An keyed array of links.
+ * @param NULL node
+ *   The selection node on which the links are appearing.
+ * @return
+ *   Themed HTML output or the 1click voting controls.
+ */
+function theme_selection_decisions_1click_controls($links = array(), $node = NULL, $teaser = FALSE, $page = TRUE){
   $output = '';
   $output .= '<div class="decisions_selection_1click">';
   $output .= theme('links', $links, array('class' => 'decisions_selection_1click'));
