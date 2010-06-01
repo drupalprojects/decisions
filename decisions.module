@@ -1845,3 +1845,16 @@ function decisions_votingapi_delete($votes) {
     }
   }
 }
+
+/*
+ * Implementation of hook_votingapi_relationships().
+ */
+function decisions_votingapi_relationships() {
+  $relationships[] = array(
+    'description' => t('Decisions'),
+    'content_type' => 'decisions',
+    'base_table' => 'node',
+    'content_id_column' => 'nid',
+  );
+  return $relationships;
+}
