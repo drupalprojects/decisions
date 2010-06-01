@@ -29,7 +29,7 @@ function selection_theme() {
       'arguments' => array('node' => NULL, 'teaser' => FALSE, 'page' => FALSE, 'this_vote' => array()),
     ),
     'selection_decisions_1click_controls' => array(
-      'arguments' => array('links' => array(), 'node' => NULL),
+      'arguments' => array('links' => array(), 'node' => NULL, 'teaser' => FALSE, 'page' => TRUE),
     ),
   );
 }
