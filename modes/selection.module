@@ -106,7 +106,9 @@ function selection_vote($node, $cid) {
     // Render the results
     if (empty($_REQUEST['ajax'])) {
       // Vote confirmation is displayed in the results so that the degradable behavior matches the AHAH behavior.
-      drupal_goto(drupal_get_destination());
+      // We set a query string so that Safari will refresh the page and show
+      // the results, and not the voting controls again.
+      drupal_goto(drupal_get_destination(), '&refresh=1');
     }
     else {
       // We pass along the vote cast in this request so that the user's choice
