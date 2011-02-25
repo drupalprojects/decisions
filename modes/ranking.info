@@ -1,4 +1,3 @@
-; $Id$
 name = Ranking
 description = A decision mode for the Decisions module that allows voters to rank choices.
 package = Voting

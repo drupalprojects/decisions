@@ -1,4 +1,3 @@
-// $Id$
 /** 
  * Required jQuery methods to enable ahah processing of decisions forms
  *

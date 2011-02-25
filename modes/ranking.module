@@ -7,7 +7,6 @@
  * from 1 to n
  */
 
-// $Id$
 
 /**
  * Implementation of hook_help()

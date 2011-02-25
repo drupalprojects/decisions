@@ -12,7 +12,6 @@
  * all the that was already written. (...and debugged!)
  */
 
-// $Id$
 
 define('DECISIONS_DEFAULT_ELECTORAL_LIST', 0);
 // always, aftervote, or afterclose
