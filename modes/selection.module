@@ -5,7 +5,6 @@
  *
  * This file implements a selection voting mode
  *
- * $Id$
  */
 
 function selection_help($section) {

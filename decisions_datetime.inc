@@ -7,7 +7,6 @@
  * Based on quiz module (which is, in turn, based on the event.module)
  * All references to event variables should be optional 
  * 
- * $Id$
  */
 
 /**
