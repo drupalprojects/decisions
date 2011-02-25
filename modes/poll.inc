@@ -5,7 +5,6 @@
  *
  * This file implements a "poll-like" voting mode
  *
- * $Id$
  */
 
 /**

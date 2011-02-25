@@ -6,7 +6,6 @@
  * This file implements a ranking mode, where n options are ranked
  * from 1 to n
  *
- * $Id$
  */
 
 /**

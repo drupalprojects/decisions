@@ -12,7 +12,6 @@
  * but we adapted it to "drupal forms api".  Thanks to everyone for
  * all the that was already written. (...and debugged!)
  *
- * $Id$
  */
 
 define('DECISIONS_DEFAULT_ELECTORAL_LIST', 0);
