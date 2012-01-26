@@ -240,7 +240,6 @@ function decisions_selection_voting_form($form_state, $node, $teaser, $page) {
 
 /**
  * Display the selection results.
- * TODO: implement (http://drupal.org/node/48249)
  */
 function selection_decisions_view_results($node, $teaser, $page, $new_vote = array()) {
   global $user;
