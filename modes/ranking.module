@@ -82,7 +82,7 @@ function decisions_ranking_voting_form($form_state, $node, $teaser, $page) {
       $node->choice = _decisions_randomize_options($node->choice, $node->choices);
     }
 
-    $num_choices = count($node->choice) - 1;
+    $num_choices = count($node->choice);
 
     // Generate the list of possible rankings
     $choices[0] = '--';
