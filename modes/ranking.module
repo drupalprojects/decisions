@@ -79,7 +79,7 @@ function decisions_ranking_voting_form($form_state, $node, $teaser, $page) {
     // Put options in random order if randomize option
     // selected on node create/edit form.
     if ($node->randomize) {
-      $node->choice = _decisions_randomize_options($node->choice, $node->choices);
+      shuffle($node->choice);
     }
 
     $num_choices = count($node->choice);
@@ -111,7 +111,7 @@ function decisions_ranking_voting_form($form_state, $node, $teaser, $page) {
 
     foreach ($node->choice as $key => $choice) {
       if ($choice['label']) {
-        $form['choice'][$key] = array(
+        $form['choice'][$choice['vote_offset']] = array(
           '#type' => 'select',
           '#title' => check_plain($choice['label']),
           '#options' => $choices,

@@ -1798,28 +1798,6 @@ function _decisions_date($format, $timestamp, $offset = NULL) {
 }
 
 /*
- * Function to put choices in random order if option to
- * list poll options in random order is selected in
- * node create/edit form.
- */
-function _decisions_randomize_options($choices, $num_choices) {
-  $randomized_choices = array();
-  // Put original ordered choices in separate variable.
-  $temp_choices = $choices;
-  // Put array keys from ordered choices in random order.
-  $rand_keys = array_rand($choices, $num_choices);
-
-  // Use keys from randomized array to get data from temp variable.
-  // Use key+1 because $choices is 1 based and keys in randomized array
-  // are 0 based.
-  foreach ($rand_keys as $key => $value) {
-    $randomized_choices[$key + 1]['vote_offset'] = $temp_choices[$value]['vote_offset'];
-    $randomized_choices[$key + 1]['label'] = $temp_choices[$value]['label'];
-  }
-  return $randomized_choices;
-}
-
-/*
  * Implementation of hook_votingapi_insert().
  * Sets a simple cache item that we can use to check if a user voted.
  * This can be more performant on sites that use a fast cache store, like Memcache.

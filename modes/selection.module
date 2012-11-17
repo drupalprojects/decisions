@@ -165,7 +165,7 @@ function decisions_selection_voting_form($form_state, $node, $teaser, $page) {
     // Put options in random order if randomize option
     // selected on node create/edit form.
     if ($node->randomize) {
-      $node->choice = _decisions_randomize_options($node->choice, $node->choices);
+      shuffle($node->choice);
     }
     //Single choice, "Plurality" voting.
     if ($node->maxchoices == 1) {
@@ -175,16 +175,16 @@ function decisions_selection_voting_form($form_state, $node, $teaser, $page) {
         $links = '';
 
         foreach ($node->choice as $i => $choice) {
-          $links[$i]['attributes']['class'] = 'decisions_selection_vote';
-          $links[$i]['query'] = drupal_get_destination() . '&token='. selection_get_token($node->nid, $i);
+          $links[$choice['vote_offset']]['attributes']['class'] = 'decisions_selection_vote';
+          $links[$choice['vote_offset']]['query'] = drupal_get_destination() . '&token='. selection_get_token($node->nid, $choice['vote_offset']);
           if ($page) {
-            $links[$i]['query'] .= '&page=1';
+            $links[$choice['vote_offset']]['query'] .= '&page=1';
           }
           if ($teaser) {
-            $links[$i]['query'] .= '&teaser=1';
+            $links[$choice['vote_offset']]['query'] .= '&teaser=1';
           }
-          $links[$i]['title'] = check_plain($choice['label']);
-          $links[$i]['href'] = "decisions_selection/vote/$node->nid/$i/";
+          $links[$choice['vote_offset']]['title'] = check_plain($choice['label']);
+          $links[$choice['vote_offset']]['href'] = "decisions_selection/vote/$node->nid/{$choice['vote_offset']}/";
         }
         
         if (!empty($links)) {
@@ -205,7 +205,7 @@ function decisions_selection_voting_form($form_state, $node, $teaser, $page) {
       else {
         foreach ($node->choice as $i => $choice) {
           if ($choice['label']) {
-            $list[$i] = check_plain($choice['label']);
+            $list[$choice['vote_offset']] = check_plain($choice['label']);
           }
         }
       }
@@ -220,7 +220,7 @@ function decisions_selection_voting_form($form_state, $node, $teaser, $page) {
     else {
       foreach ($node->choice as $i => $choice) {
         if ($choice['label']) {
-          $list[$i] = check_plain($choice['label']);
+          $list[$choice['vote_offset']] = check_plain($choice['label']);
         }
       }
       $form['choice'] = array(
