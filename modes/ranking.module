@@ -31,6 +31,9 @@ function ranking_help($section) {
  */
 function ranking_theme() {
   return array(
+    'ranking_voting_form' => array(
+      'arguments' => array('element' => NULL),
+    ),
     'ranking_decisions_view_results' => array(
       'arguments' => array('node' => NULL, 'teaser' => FALSE, 'page' => FALSE, 'this_vote' => array()),
     ),
@@ -104,6 +107,7 @@ function decisions_ranking_voting_form($form_state, $node, $teaser, $page) {
 
     $form['choice'] = array(
       '#type' => 'fieldset',
+      '#theme' => 'ranking_voting_form',
       '#tree' => TRUE,
       '#title' => t('Choices'),
       '#description' => t('Rank the following options in your prefered order, the lower the number the better'),
@@ -134,6 +138,32 @@ function decisions_ranking_voting_form($form_state, $node, $teaser, $page) {
 
   $form['#action'] = url('node/'. $node->nid);
   return $form;
+}
+
+/**
+ * Formats the ranking choices as a draggable table.
+ */
+function theme_ranking_voting_form($element) {
+  $rows = array();
+  foreach (element_children($element) as $key) {
+    if (isset($element[$key]['#title'])) {
+      $choice = &$element[$key];
+      $row = array();
+      $row[] = $choice['#title'];
+      $choice['#title'] = t('Rank for @title', array('@title' => $choice['#title']));
+      $choice['#attributes']['class'] = 'choice-rank';
+      $row[] = drupal_render($choice);
+
+      $rows[] = array('data' => $row, 'class' => 'draggable');
+    }
+  }
+  if (empty($rows)) {
+    $rows[] = array(array('data' => t('No choices available.'), 'colspan' => '2'));
+  }
+
+  $header = array(t('Choice'), t('Rank'));
+  drupal_add_tabledrag('ranking', 'order', 'sibling', 'choice-rank');
+  return theme('table', $header, $rows, array('id' => 'ranking')) . drupal_render($element);
 }
 
 /**
